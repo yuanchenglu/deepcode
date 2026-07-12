@@ -40,35 +40,32 @@ export function processMessage(
   adapter: PlatformAdapter,
   workdir: string,
 ): Effect.Effect<void> {
-  return Effect.catchIf(
-    Effect.gen(function* () {
-      const sessionId = getOrCreateSession(msg.chat.id)
-      const text = msg.content
+  // 用 Effect.ignoreLogged 兜底错误，不中断消费循环
+  // ignoreLogged 会记录错误但不传播（等效于 catchAll + 日志）
+  return Effect.gen(function* () {
+    const sessionId = getOrCreateSession(msg.chat.id)
+    const text = msg.content
 
-      console.log(`[SessionBridge] 处理消息: chat=${msg.chat.id} session=${sessionId} text="${text.slice(0, 80)}..."`)
+    console.log(`[SessionBridge] 处理消息: chat=${msg.chat.id} session=${sessionId} text="${text.slice(0, 80)}..."`)
 
-      // 通过 opencode run CLI 执行（子进程方式）
-      const output = yield* Effect.tryPromise({
-        try: () => executeCli(text, sessionId, workdir),
-        catch: (err) => new Error(`opencode run 失败: ${(err as Error).message}`),
-      })
+    // 通过 opencode run CLI 执行（子进程方式）
+    const output = yield* Effect.tryPromise({
+      try: () => executeCli(text, sessionId, workdir),
+      catch: (err) => new Error(`opencode run 失败: ${(err as Error).message}`),
+    })
 
-      // 截断过长输出（飞书消息有长度限制）
-      const replyText = output.length > 3000
-        ? output.slice(0, 3000) + "\n\n…（输出过长已截断）"
-        : output
+    // 截断过长输出（飞书消息有长度限制）
+    const replyText = output.length > 3000
+      ? output.slice(0, 3000) + "\n\n…（输出过长已截断）"
+      : output
 
-      // 回发结果
-      const reply: OutboundMessage = { chatId: msg.chat.id, type: "text", content: replyText }
-      yield* adapter.send(reply).pipe(Effect.ignore)
-      console.log(`[SessionBridge] 已回发结果给 chat=${msg.chat.id}`)
-    }),
+    // 回发结果
+    const reply: OutboundMessage = { chatId: msg.chat.id, type: "text", content: replyText }
+    yield* adapter.send(reply).pipe(Effect.ignore)
+    console.log(`[SessionBridge] 已回发结果给 chat=${msg.chat.id}`)
+  }).pipe(
     // 任何错误都记日志但不中断消费循环
-    () => true,
-    (err) =>
-      Effect.sync(() =>
-        console.error(`[SessionBridge] 处理消息失败: ${(err as Error).message}`),
-      ),
+    Effect.ignore({ log: true }),
   )
 }
 
@@ -77,6 +74,9 @@ export function processMessage(
  *
  * 在工作目录下执行 `opencode run -c "消息内容"`。
  * 超时 120 秒，超时则强制终止。
+ *
+ * 注：Bun 1.3+ 的 Subprocess.stdout 是 Web ReadableStream，
+ * 使用 getReader() 读取而非 Node.js stream 的 .on("data")。
  */
 async function executeCli(text: string, _sessionId: string, workdir: string): Promise<string> {
   const prompt = `[消息平台转发] ${text}`
@@ -97,13 +97,27 @@ async function executeCli(text: string, _sessionId: string, workdir: string): Pr
   const stdout: Buffer[] = []
   const stderr: Buffer[] = []
 
-  proc.stdout?.on("data", (chunk: Buffer) => stdout.push(chunk))
-  proc.stderr?.on("data", (chunk: Buffer) => stderr.push(chunk))
+  // 使用 Web Streams API 读取子进程输出
+  async function readStream(
+    stream: ReadableStream<Uint8Array<ArrayBuffer>> | null,
+    collector: Buffer[],
+  ): Promise<void> {
+    if (!stream) return
+    const reader = stream.getReader()
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      collector.push(Buffer.from(value))
+    }
+  }
+  await Promise.all([
+    readStream(proc.stdout, stdout),
+    readStream(proc.stderr, stderr),
+  ])
 
+  // proc.exited 是 Promise<number>，与超时赛跑
   const result = await Promise.race([
-    new Promise<{ exitCode: number }>((resolve) => {
-      proc.on("exit", (code) => resolve({ exitCode: code ?? -1 }))
-    }),
+    proc.exited.then((exitCode) => ({ exitCode })),
     new Promise<{ exitCode: number }>((resolve) => {
       setTimeout(() => {
         proc.kill("SIGTERM")

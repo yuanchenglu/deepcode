@@ -62,9 +62,11 @@ export function startGateway(port: number = 3099): Effect.Effect<void, GatewayEr
     const replyAdapter = adapters.values().next().value
     if (replyAdapter && mq) {
       const workdir = process.cwd()
-      yield* Effect.fork(
+      // forkScoped: 在当前 Scope 下启动后台 Fiber，Scope 关闭时自动终止
+      yield* Effect.forkScoped(
         startMessageConsumer(mq, replyAdapter, workdir).pipe(
-          Effect.catchAll(() => Effect.void),
+          // ignore: 静默吞掉所有错误，避免后台 Fiber 因未捕获异常而崩溃
+          Effect.ignore,
         ),
       )
     }
