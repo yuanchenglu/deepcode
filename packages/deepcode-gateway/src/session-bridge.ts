@@ -19,3 +19,4 @@ export function handleIncomingMessage(msg: GatewayMessage, adapter: PlatformAdap
 }
 
 export function getSessionMap(): ReadonlyMap<string, string> { return sessionMap }
+export function clearSessionMap(): void { sessionMap.clear() }
