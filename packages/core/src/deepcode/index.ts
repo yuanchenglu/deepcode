@@ -100,3 +100,12 @@ export { node as DeepCodeWindowManagerNode } from "./context-layout/window-manag
 // 模块九：Prompt 信号标签（mHC/MoE 对齐）
 // ============================================================
 export { node as DeepCodeSignalTaggerNode } from "./prompt-signal/tagger"
+
+// ============================================================
+// 模块十~十四：Raptor 补充模块（论文 I-06~I-12 补全）
+// ============================================================
+export { node as DeepCodeOKRPlanNode } from "./okr-plan"
+export { node as DeepCodeReviewAntiDriftNode } from "./review-anti-drift"
+export { node as DeepCodeScopeCreepGuardNode } from "./scope-creep-guard"
+export { node as DeepCodeSkillEvolutionNode } from "./skill-evolution"
+export { node as DeepCodeMemoryGranularityNode } from "./memory-granularity"

@@ -49,6 +49,12 @@ import {
   DeepCodeMetaDirectivesNode,
   DeepCodeWindowManagerNode,
   DeepCodeSignalTaggerNode,
+  // Raptor 补充模块（论文 I-06~I-12）
+  DeepCodeOKRPlanNode,
+  DeepCodeReviewAntiDriftNode,
+  DeepCodeScopeCreepGuardNode,
+  DeepCodeSkillEvolutionNode,
+  DeepCodeMemoryGranularityNode,
 } from "./deepcode"
 
 export { LocationServiceMap } from "./location-service-map"
@@ -101,6 +107,12 @@ export const locationServices = LayerNode.group([
   DeepCodeMetaDirectivesNode,
   DeepCodeWindowManagerNode,
   DeepCodeSignalTaggerNode,
+  // Raptor 补充模块
+  DeepCodeOKRPlanNode,
+  DeepCodeReviewAntiDriftNode,
+  DeepCodeScopeCreepGuardNode,
+  DeepCodeSkillEvolutionNode,
+  DeepCodeMemoryGranularityNode,
 ])
 
 export type LocationServices = LayerNode.Output<typeof locationServices>
