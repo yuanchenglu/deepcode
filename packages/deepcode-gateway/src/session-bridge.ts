@@ -81,8 +81,11 @@ export function processMessage(
 async function executeCli(text: string, _sessionId: string, workdir: string): Promise<string> {
   const prompt = `[消息平台转发] ${text}`
 
+  // deepcode CLI 入口：packages/opencode/bin/opencode（Node 脚本）
+  // 用 import.meta.url 从本文件解析出绝对路径，不依赖 workdir
+  const deepcodeCli = new URL("../../opencode/bin/opencode", import.meta.url).pathname
   const proc = Bun.spawn(
-    ["bun", "run", "opencode", "run", "-c", prompt, "--model", "deepseek-v4-flash"],
+    ["bun", deepcodeCli, "run", "-c", prompt, "--model", "deepseek-v4-flash"],
     {
       cwd: workdir,
       env: {
