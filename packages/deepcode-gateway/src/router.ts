@@ -15,14 +15,50 @@ export class Router {
   }
 
   dispatch(path: string, body: unknown): Effect.Effect<unknown, GatewayError> {
-    const queue = this.routes.get(path)
+    // 先尝试精确匹配，再尝试前缀匹配（如 /webhook/feishu/bridge → /webhook/feishu）
+    let queue = this.routes.get(path)
+    if (!queue) {
+      for (const [registered, q] of this.routes) {
+        if (path.startsWith(registered + "/") || path === registered) {
+          queue = q
+          break
+        }
+      }
+    }
     if (!queue) {
       return Effect.fail(new GatewayError("ADAPTER_NOT_FOUND", `No adapter for path: ${path}`))
     }
+
+    // 诊断日志：打印 body 顶层 key 路径（不打印值，避免 token 泄漏）
+    if (body && typeof body === "object") {
+      const keys = Object.keys(body as Record<string, unknown>)
+      console.log(`[Router] dispatch path="${path}" body keys:`, keys)
+      const evt = body as Record<string, unknown>
+      if (evt.header) {
+        const h = evt.header as Record<string, unknown>
+        console.log(`[Router] has header.event_type:`, h.event_type)
+      }
+      if (evt.event) {
+        console.log(`[Router] has event, keys:`, Object.keys(evt.event as object))
+      }
+      if (!evt.header && !evt.event) {
+        console.log(`[Router] NO header/event — 可能是 WS 原生格式`)
+        if (evt.message) {
+          const m = evt.message as Record<string, unknown>
+          console.log(`[Router] WS format: message.chat_id="${m.chat_id}", message.message_id="${m.message_id}"`)
+        }
+        if (evt.sender) {
+          console.log(`[Router] WS format: has sender, keys:`, Object.keys(evt.sender as object))
+        }
+      }
+    }
+
     const msg = parseEvent(path, body)
     if (!msg) {
+      console.log(`[Router] parseEvent returned undefined — 事件未识别`)
       return Effect.succeed({ ignored: true })
     }
+    console.log(`[Router] parsed message: id="${msg.id}" chat="${msg.chat.id}" sender="${msg.sender.id}"`)
     return Queue.offer(queue, msg).pipe(
       Effect.andThen(Effect.succeed({ received: true, messageId: msg.id })),
     )
@@ -52,7 +88,12 @@ function parseFeishuEvent(body: unknown): GatewayMessage | undefined {
       id: ((sender?.sender_id as Record<string, string>)?.open_id) || "",
       name: (sender?.sender_type as string) || "unknown",
     },
-    chat: { id: (eventBody.chat_id as string) || "", type: "private" },
+    // chat_id 在 event.message.chat_id（v2.0 事件结构）
+    // 兼容 fallback 到 event.chat_id（部分旧事件格式）
+    chat: {
+      id: (message?.chat_id as string) || (eventBody.chat_id as string) || "",
+      type: "private",
+    },
     timestamp: Date.now(),
     raw: body,
   }
