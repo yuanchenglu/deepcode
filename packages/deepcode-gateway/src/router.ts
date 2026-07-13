@@ -66,7 +66,18 @@ export class Router {
 }
 
 function parseEvent(path: string, body: unknown): GatewayMessage | undefined {
-  if (path.startsWith("/webhook/feishu")) return parseFeishuEvent(body)
+  if (path.startsWith("/webhook/feishu")) {
+    // 先尝试标准 HTTP callback 格式（{ header, event }）
+    const httpResult = parseFeishuEvent(body)
+    if (httpResult) return httpResult
+    // fallback: WS 桥接原生格式（无 header/event 包装）
+    // WS 协议 frame.payload 是裸事件 body：
+    // { sender: { sender_id: {...} }, message: { message_id, chat_id, content } }
+    if (body && typeof body === "object") {
+      return parseFeishuBridgeEvent(body as Record<string, unknown>)
+    }
+    return undefined
+  }
   if (path.startsWith("/webhook/wechat")) return parseWeChatEvent(body)
   return undefined
 }
@@ -94,6 +105,33 @@ function parseFeishuEvent(body: unknown): GatewayMessage | undefined {
       id: (message?.chat_id as string) || (eventBody.chat_id as string) || "",
       type: "private",
     },
+    timestamp: Date.now(),
+    raw: body,
+  }
+}
+
+/**
+ * 解析飞书 WS 桥接转发的事件（无 header/event 包装）
+ *
+ * WS 协议的 frame.payload 是直接的事件 body，结构为：
+ * { sender: { sender_id: { ... } }, message: { message_id, chat_id, content } }
+ */
+function parseFeishuBridgeEvent(body: Record<string, unknown>): GatewayMessage | undefined {
+  const message = body.message as Record<string, unknown> | undefined
+  if (!message) return undefined
+
+  const chatId = (message.chat_id as string) || ""
+
+  return {
+    id: (message.message_id as string) || `msg_${Date.now()}`,
+    platform: "feishu",
+    type: "text",
+    content: extractFeishuText(message),
+    sender: {
+      id: ((body.sender as Record<string, unknown>)?.sender_id as Record<string, string>)?.open_id || "",
+      name: (body.sender as Record<string, unknown>)?.sender_type as string || "unknown",
+    },
+    chat: { id: chatId, type: "private" },
     timestamp: Date.now(),
     raw: body,
   }
