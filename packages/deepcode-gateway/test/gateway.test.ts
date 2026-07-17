@@ -1,7 +1,7 @@
 import { describe, it, expect } from "bun:test"
 import type { GatewayMessage, OutboundMessage } from "../src/message"
 import { GatewayError } from "../src/error"
-import { getOrCreateSession, clearSessionMap } from "../src/session-bridge"
+import { getOrCreateSession, clearSessionMap, setSessionId } from "../src/session-bridge"
 
 describe("消息模型", () => {
   it("GatewayMessage 应有全部必要字段", () => {
@@ -29,10 +29,17 @@ describe("错误类型", () => {
 describe("Session 桥接", () => {
   it("同一 chatId 返回相同 Session", () => {
     clearSessionMap()
+    setSessionId("chat_1", "ses_111")
     expect(getOrCreateSession("chat_1")).toBe(getOrCreateSession("chat_1"))
   })
   it("不同 chatId 返回不同 Session", () => {
     clearSessionMap()
+    setSessionId("chat_a", "ses_aaa")
+    setSessionId("chat_b", "ses_bbb")
     expect(getOrCreateSession("chat_a")).not.toBe(getOrCreateSession("chat_b"))
+  })
+  it("首次消息返回 null（尚未创建 session）", () => {
+    clearSessionMap()
+    expect(getOrCreateSession("chat_new")).toBeNull()
   })
 })
