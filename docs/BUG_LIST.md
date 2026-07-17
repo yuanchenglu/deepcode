@@ -1,7 +1,11 @@
 # DeepCode Bug 清单
 
-> 生成时间：2026-07-12
+> 生成时间：2026-07-12（初版），2026-07-17（独立审查修正）
 > 审核范围：packages/core/src/deepcode/ 所有模块
+>
+> **⚠️ 重要说明：**
+> - 8 个虚假 Bug（BUG-002~009）：原分析基于 `docs/deepcode/raptor-reference/` 参考代码，实际 `packages/` 下当时是 22 行 stub 无此逻辑。T03 已迁移为完整实现，如迁移后存在对应问题需重新验证。
+> - 8 个真实 Bug（BUG-001, 010-016）：已由 T02 修复（commit `cede1fc`），全部通过 typecheck 验证。
 
 ---
 
@@ -32,6 +36,8 @@
 
 ## BUG-002: okr-plan.ts — 运算符优先级导致默认关联逻辑错误
 
+> ⚠️ **虚假Bug**：原分析基于 `docs/deepcode/raptor-reference/` 参考代码，实际 `packages/` 下当时是 22 行 stub 无此逻辑。T03 已迁移完整实现（553行），如迁移后存在对应问题需重新验证。
+
 | 字段 | 值 |
 |------|-----|
 | **文件** | packages/core/src/deepcode/okr-plan.ts:180 |
@@ -45,6 +51,8 @@
 ---
 
 ## BUG-003: okr-plan.ts — 级联更新时字段名不匹配，status 未更新
+
+> ⚠️ **虚假Bug**：原分析基于 `docs/deepcode/raptor-reference/` 参考代码，实际 `packages/` 下当时是 22 行 stub 无此逻辑。T03 已迁移完整实现（553行），如迁移后存在对应问题需重新验证。
 
 | 字段 | 值 |
 |------|-----|
@@ -60,6 +68,8 @@
 
 ## BUG-004: scope-creep-guard.ts — approvedOptionals 使用子串匹配而非 glob 匹配
 
+> ⚠️ **虚假Bug**：原分析基于 `docs/deepcode/raptor-reference/` 参考代码，实际 `packages/` 下当时是 22 行 stub 无此逻辑。T03 已迁移完整实现（494行），如迁移后存在对应问题需重新验证。
+
 | 字段 | 值 |
 |------|-----|
 | **文件** | packages/core/src/deepcode/scope-creep-guard.ts:251 |
@@ -73,6 +83,8 @@
 ---
 
 ## BUG-005: scope-creep-guard.ts — glob 转正则时未转义特殊字符
+
+> ⚠️ **虚假Bug**：原分析基于 `docs/deepcode/raptor-reference/` 参考代码，实际 `packages/` 下当时是 22 行 stub 无此逻辑。T03 已迁移完整实现（494行），如迁移后存在对应问题需重新验证。
 
 | 字段 | 值 |
 |------|-----|
@@ -88,6 +100,8 @@
 
 ## BUG-006: skill-evolution.ts — createCheckpoint 中 turn 字段硬编码为 0
 
+> ⚠️ **虚假Bug**：原分析基于 `docs/deepcode/raptor-reference/` 参考代码，实际 `packages/` 下当时是 22 行 stub 无此逻辑。T03 已迁移完整实现（581行），如迁移后存在对应问题需重新验证。
+
 | 字段 | 值 |
 |------|-----|
 | **文件** | packages/core/src/deepcode/skill-evolution.ts:443 |
@@ -101,6 +115,8 @@
 ---
 
 ## BUG-007: skill-evolution.ts — constraint-violation 类型触发器总是返回 true
+
+> ⚠️ **虚假Bug**：原分析基于 `docs/deepcode/raptor-reference/` 参考代码，实际 `packages/` 下当时是 22 行 stub 无此逻辑。T03 已迁移完整实现（581行），如迁移后存在对应问题需重新验证。
 
 | 字段 | 值 |
 |------|-----|
@@ -116,6 +132,8 @@
 
 ## BUG-008: memory-granularity.ts — endStep() 返回值统计错误
 
+> ⚠️ **虚假Bug**：原分析基于 `docs/deepcode/raptor-reference/` 参考代码，实际 `packages/` 下当时是 22 行 stub 无此逻辑。T03 已迁移完整实现（486行），如迁移后存在对应问题需重新验证。
+
 | 字段 | 值 |
 |------|-----|
 | **文件** | packages/core/src/deepcode/memory-granularity.ts:319-321 |
@@ -129,6 +147,8 @@
 ---
 
 ## BUG-009: memory-granularity.ts — 冷记忆未真正删除导致内存泄漏
+
+> ⚠️ **虚假Bug**：原分析基于 `docs/deepcode/raptor-reference/` 参考代码，实际 `packages/` 下当时是 22 行 stub 无此逻辑。T03 已迁移完整实现（486行），如迁移后存在对应问题需重新验证。
 
 | 字段 | 值 |
 |------|-----|
@@ -261,22 +281,22 @@
 
 | Bug 编号 | 严重程度 | 修复状态 | 修复文件 | 验证结果 |
 |---------|---------|---------|---------|---------|
-| BUG-001 | P1 | ⏳ 待修复 | hard-constraint/context-source.ts | |
-| BUG-002 | P0 | ⏳ 待修复 | okr-plan.ts | |
-| BUG-003 | P0 | ⏳ 待修复 | okr-plan.ts | |
-| BUG-004 | P1 | ⏳ 待修复 | scope-creep-guard.ts | |
-| BUG-005 | P1 | ⏳ 待修复 | scope-creep-guard.ts | |
-| BUG-006 | P1 | ⏳ 待修复 | skill-evolution.ts | |
-| BUG-007 | P1 | ⏳ 待修复 | skill-evolution.ts | |
-| BUG-008 | P1 | ⏳ 待修复 | memory-granularity.ts | |
-| BUG-009 | P2 | ⏳ 待修复 | memory-granularity.ts | |
-| BUG-010 | P2 | ⏳ 待修复 | meta-directives/handlers.ts | |
-| BUG-011 | P3 | ⏳ 待后续 | meta-directives/handlers.ts | |
-| BUG-012 | P2 | ⏳ 待修复 | meta-directives/handlers.ts | |
-| BUG-013 | P2 | ⏳ 待集成 | reasoning/manager.ts | |
-| BUG-014 | P2 | ⏳ 待修复 | immune-system/reviewer.ts | |
-| BUG-015 | P2 | ⏳ 待修复 | context-layout/window-manager.ts | |
-| BUG-016 | P3 | ⏳ 待后续 | reasoning/manager.ts | |
+| BUG-001 | P1 | ✅ T02 已修复 | hard-constraint/context-source.ts | typecheck 通过 |
+| BUG-002 | P0 | ⚠️ 虚假Bug | okr-plan.ts | 基于 stub 分析，T03 迁移后需重新验证 |
+| BUG-003 | P0 | ⚠️ 虚假Bug | okr-plan.ts | 基于 stub 分析，T03 迁移后需重新验证 |
+| BUG-004 | P1 | ⚠️ 虚假Bug | scope-creep-guard.ts | 基于 stub 分析，T03 迁移后需重新验证 |
+| BUG-005 | P1 | ⚠️ 虚假Bug | scope-creep-guard.ts | 基于 stub 分析，T03 迁移后需重新验证 |
+| BUG-006 | P1 | ⚠️ 虚假Bug | skill-evolution.ts | 基于 stub 分析，T03 迁移后需重新验证 |
+| BUG-007 | P1 | ⚠️ 虚假Bug | skill-evolution.ts | 基于 stub 分析，T03 迁移后需重新验证 |
+| BUG-008 | P1 | ⚠️ 虚假Bug | memory-granularity.ts | 基于 stub 分析，T03 迁移后需重新验证 |
+| BUG-009 | P2 | ⚠️ 虚假Bug | memory-granularity.ts | 基于 stub 分析，T03 迁移后需重新验证 |
+| BUG-010 | P2 | ✅ T02 已修复 | meta-directives/handlers.ts | typecheck 通过 |
+| BUG-011 | P3 | ✅ T02 已修复 | meta-directives/handlers.ts | typecheck 通过 |
+| BUG-012 | P2 | ✅ T02 已修复 | meta-directives/handlers.ts | typecheck 通过 |
+| BUG-013 | P2 | ✅ T02 已修复 | reasoning/manager.ts | typecheck 通过 |
+| BUG-014 | P2 | ✅ T02 已修复 | immune-system/reviewer.ts | typecheck 通过 |
+| BUG-015 | P2 | ✅ T02 已修复 | context-layout/window-manager.ts | typecheck 通过 |
+| BUG-016 | P3 | ✅ T02 已修复 | reasoning/manager.ts | typecheck 通过 |
 
 ---
 

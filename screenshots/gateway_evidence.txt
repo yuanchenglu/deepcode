@@ -1,0 +1,52 @@
+DeepCode 网关截图证据（文本格式）
+=====================================
+
+环境限制无法生成 PNG 截图，以 curl 文本输出为证据。
+
+采集时间：2026-07-17
+网关端口：3099
+启动方式：bun run _tmp_start.ts（临时启动脚本，调用 startServer(3099, router)）
+
+=====================================
+1. 健康检查 GET /health
+=====================================
+
+请求：curl -s http://localhost:3099/health
+
+响应：
+{"status":"ok","gateway":"running","port":3099}
+
+HTTP 状态码：200
+说明：网关 HTTP Server 正常运行，返回 JSON 格式的健康状态。
+
+=====================================
+2. 飞书 Webhook Challenge 验证 POST /webhook/feishu
+=====================================
+
+请求：curl -s -X POST http://localhost:3099/webhook/feishu \
+  -H 'Content-Type: application/json' \
+  -d '{"type":"url_verification","challenge":"test_challenge_2026"}'
+
+响应：
+{"challenge":"test_challenge_2026"}
+
+HTTP 状态码：200
+说明：飞书 URL 验证回调正常工作，正确返回了 challenge 值。
+这是飞书开放平台在配置 Webhook 时发送的验证请求，网关正确响应表示
+Webhook 路由功能正常。
+
+=====================================
+验证结论
+=====================================
+
+✅ 网关 HTTP Server 启动正常（端口 3099）
+✅ 健康检查端点 /health 返回正确
+✅ 飞书 Webhook 端点 /webhook/feishu 的 challenge 验证正常
+✅ 纯 TypeScript 实现（无 Python 桥接，无 @larksuiteoapi/node-sdk 依赖）
+
+网关代码文件：
+- packages/deepcode-gateway/src/server.ts — HTTP Server（Bun.serve）
+- packages/deepcode-gateway/src/feishu/adapter.ts — 飞书适配器（FeishuWSClient）
+- packages/deepcode-gateway/src/feishu/ws-client.ts — 纯 TS WebSocket 客户端
+- packages/deepcode-gateway/src/feishu/api.ts — REST API（token + sendMessage）
+- packages/deepcode-gateway/src/router.ts — Webhook 路由
