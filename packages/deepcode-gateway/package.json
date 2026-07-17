@@ -12,8 +12,7 @@
   },
   "dependencies": {
     "effect": "catalog:",
-    "@opencode-ai/plugin": "workspace:*",
-    "@larksuiteoapi/node-sdk": "^1.36.0"
+    "@opencode-ai/plugin": "workspace:*"
   },
   "devDependencies": {
     "@tsconfig/bun": "catalog:",
