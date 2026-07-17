@@ -30,8 +30,8 @@
  * @module
  */
 
-// Effect 框架
-import { Effect, Layer } from "effect"
+// Effect 框架（Schema 用于 SystemContext codec）
+import { Effect, Layer, Schema } from "effect"
 // OpenCode 内部 API
 import { makeLocationNode } from "../../effect/app-node"
 import { SystemContext } from "../../system-context/index"
@@ -106,11 +106,9 @@ const layer = Layer.effectDiscard(
 /**
  * 构造 String codec
  *
- * 封装 Schema.String 的 JSON codec 创建，用于 SystemContext Source。
- * 这是一个小 helper，避免在顶层 import Schema 后直接调用导致类型问题。
+ * 使用顶部静态 import 的 Schema.String 创建 JSON codec，用于 SystemContext Source。
  */
 function makeStringCodec() {
-  const { Schema } = require("effect")
   return Schema.toCodecJson(Schema.String)
 }
 

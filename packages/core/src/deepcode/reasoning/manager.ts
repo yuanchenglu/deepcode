@@ -26,17 +26,23 @@
  *
  * 三阶段生命周期：
  *
- * 1. 当前工具调用轮次（Turn N）：
+ * 1. 当前工具调用轮次（Turn N, turnOffset=0）：
  *    - 完整 reasoning_content 回传给 API（维持思考链）
  *    - 完整 reasoning 持久化到 DB（供用户查看/归档）
+ *    - 策略：full
  *
- * 2. 下一轮（Turn N+1）：
+ * 2. 下一轮（Turn N+1, turnOffset=1）：
  *    - reasoning 替换为结构化摘要（1-3 句话，~50-80 tokens）
  *    - 摘要格式：[推理摘要] 分析了 X → 决定执行 Y
+ *    - 策略：summary
  *
- * 3. 历史轮次（Turn N+2 及以后）：
+ * 3. 历史轮次（Turn N+2 及以后, turnOffset>=2）：
  *    - reasoning 完全剥离（节省上下文空间）
  *    - 关键决策已在 tool_call/assistant 文本中体现
+ *    - 策略：stripped
+ *
+ * 特殊规则：工具调用轮次且 keepFullForToolCalls=true 时，
+ * 即使是历史轮次也保留完整 reasoning（API 协议要求回传）。
  *
  * reasoning_effort 档位分配：
  * - Flash 模型：low（Flash 不擅长深度思考）
@@ -47,7 +53,7 @@
  * @module
  */
 
-import { Context, Effect, Layer } from "effect"
+import { Context, Effect, Layer, Ref } from "effect"
 import { makeLocationNode } from "../../effect/app-node"
 
 /**
@@ -59,6 +65,14 @@ import { makeLocationNode } from "../../effect/app-node"
  */
 export type ReasoningEffort = "none" | "low" | "high" | "max"
 
+/**
+ * Reasoning 管理的三阶段策略
+ * - full:     完整保留 reasoning 内容（当前轮）
+ * - summary:  替换为结构化摘要（下一轮）
+ * - stripped: 完全剥离（历史轮次）
+ */
+export type ReasoningPolicy = "full" | "summary" | "stripped"
+
 /** Reasoning 管理配置 */
 export interface ReasoningConfig {
   /** 是否从历史中剥离 reasoning */
@@ -69,7 +83,13 @@ export interface ReasoningConfig {
   keepFullForToolCalls: boolean
 }
 
-const DEFAULT_CONFIG: ReasoningConfig = {
+/**
+ * 默认配置常量（供初始化参考和外部覆盖时作为 fallback）
+ *
+ * 注意：运行时配置存储在 Layer 内的 Ref 中，
+ * 通过 setConfig 方法可动态修改（如通过 opencode.json 配置）。
+ */
+export const DEFAULT_CONFIG: ReasoningConfig = {
   stripFromHistory: true,
   maxSummaryChars: 300,  // ~80 tokens（中文约1.5字/token）
   keepFullForToolCalls: true,
@@ -90,12 +110,34 @@ export interface Interface {
   ) => Effect.Effect<ReasoningEffort>
 
   /**
-   * 判断某条历史消息的 reasoning 是否应该剥离
+   * 获取某条历史消息的 reasoning 处理策略（三阶段）
    *
+   * 替代旧版 shouldStrip 的布尔判断，提供更精细的三阶段控制：
+   * - turnOffset === 0（当前轮）→ "full"（完整保留）
+   * - turnOffset === 1（下一轮）→ "summary"（替换为摘要）
+   * - turnOffset >= 2（历史轮）→ "stripped"（完全剥离）
+   * - 工具调用轮次且 keepFullForToolCalls → "full"（API 协议要求）
+   *
+   * @param turnOffset     - 距当前轮的偏移量（0=当前轮）
+   * @param isToolCallTurn - 该轮次是否包含工具调用
+   * @returns reasoning 处理策略
+   */
+  readonly getReasoningPolicy: (
+    turnOffset: number,
+    isToolCallTurn: boolean,
+  ) => ReasoningPolicy
+
+  /**
+   * 判断某条历史消息的 reasoning 是否应该剥离（兼容方法）
+   *
+   * 等价于 getReasoningPolicy(...) === "stripped"，
+   * 保留供旧调用方使用。
+   *
+   * @param turnOffset     - 距当前轮的偏移量（0=当前轮）
    * @param isToolCallTurn - 该轮次是否包含工具调用
    * @returns true = 剥离，false = 保留
    */
-  readonly shouldStrip: (isToolCallTurn: boolean) => boolean
+  readonly shouldStrip: (turnOffset: number, isToolCallTurn: boolean) => boolean
 
   /**
    * 将完整 reasoning 文本压缩为摘要
@@ -107,6 +149,16 @@ export interface Interface {
    * @returns 摘要文本（空输入返回空字符串）
    */
   readonly summarize: (reasoningText: string) => string
+
+  /**
+   * 动态更新 reasoning 配置
+   *
+   * 使用 Partial 合并，未指定的字段保持原值。
+   * 允许运行时通过 opencode.json 等外部配置覆盖默认值。
+   *
+   * @param partial - 需要更新的配置字段
+   */
+  readonly setConfig: (partial: Partial<ReasoningConfig>) => Effect.Effect<void>
 }
 
 /** DI token */
@@ -164,8 +216,16 @@ function summarizeReasoning(text: string, maxChars: number = 300): string {
 /** Layer 实现 */
 const layer = Layer.effect(
   Service,
-  Effect.succeed(
-    Service.of({
+  Effect.gen(function* () {
+    // 运行时可修改的配置 Ref（替代原来的模块级常量）
+    // 初始值为 DEFAULT_CONFIG，可通过 setConfig 动态覆盖
+    const configRef = yield* Ref.make<ReasoningConfig>({ ...DEFAULT_CONFIG })
+    // 同步缓存：供 getReasoningPolicy/shouldStrip/summarize 等同步方法读取
+    // Effect v4 的 Ref 没有 unsafeGet，同步方法无法 yield* Ref.get，
+    // 因此用闭包变量缓存当前配置值，setConfig 时同步更新
+    let configCache: ReasoningConfig = { ...DEFAULT_CONFIG }
+
+    return Service.of({
       /**
        * getEffort：根据意图和档位推理 effort
        *
@@ -193,23 +253,70 @@ const layer = Layer.effect(
       ),
 
       /**
-       * shouldStrip：判断是否剥离
+       * getReasoningPolicy：三阶段 reasoning 处理策略
        *
-       * 策略：
-       * - 如果禁用剥离 → 不剥离
-       * - 工具调用轮次 → 保留完整 reasoning（API 协议要求回传）
-       * - 其他轮次 → 剥离（后续替换为摘要或完全移除）
+       * 返回值含义：
+       * - "full"     → 完整保留 reasoning（当前轮 / 工具调用轮）
+       * - "summary"  → 替换为结构化摘要（下一轮）
+       * - "stripped" → 完全剥离（历史轮次）
+       *
+       * 特殊规则：工具调用轮次且 keepFullForToolCalls=true 时，
+       * 即使是历史轮次也返回 "full"（API 协议要求回传 reasoning_content）。
        */
-      shouldStrip: (isToolCallTurn: boolean) => {
-        if (!DEFAULT_CONFIG.stripFromHistory) return false
-        if (DEFAULT_CONFIG.keepFullForToolCalls && isToolCallTurn) return false
+      getReasoningPolicy: (turnOffset: number, isToolCallTurn: boolean) => {
+        // 从同步缓存读取配置（getReasoningPolicy 是同步函数）
+        const config = configCache
+        if (config.keepFullForToolCalls && isToolCallTurn) return "full"
+        // 当前轮：完整保留
+        if (turnOffset === 0) return "full"
+        // 下一轮：替换为摘要
+        if (turnOffset === 1) return "summary"
+        // 历史轮次：完全剥离
+        return "stripped"
+      },
+
+      /**
+       * shouldStrip：兼容方法，等价于 getReasoningPolicy === "stripped"
+       *
+       * 保留供旧调用方使用，新代码应直接调用 getReasoningPolicy。
+       */
+      shouldStrip: (turnOffset: number, isToolCallTurn: boolean) => {
+        // 从同步缓存读取配置
+        const config = configCache
+        // 如果禁用剥离，一律不剥离
+        if (!config.stripFromHistory) return false
+        // 工具调用轮次且配置保留 → 不剥离
+        if (config.keepFullForToolCalls && isToolCallTurn) return false
+        // 当前轮和下一轮不剥离（下一轮替换为摘要，不算剥离）
+        if (turnOffset <= 1) return false
+        // 历史轮次：剥离
         return true
       },
 
-      /** summarize：生成摘要 */
-      summarize: (text: string) => summarizeReasoning(text, DEFAULT_CONFIG.maxSummaryChars),
-    }),
-  ),
+      /** summarize：生成摘要（从缓存读取 maxSummaryChars 配置） */
+      summarize: (text: string) => {
+        const config = configCache
+        return summarizeReasoning(text, config.maxSummaryChars)
+      },
+
+      /**
+       * setConfig：动态更新配置
+       *
+       * 使用 Ref.update 合并 partial 配置，未指定的字段保持原值。
+       * 同时同步更新 configCache，确保同步方法能读取到最新配置。
+       * 允许运行时通过 opencode.json 等外部配置覆盖默认值。
+       */
+      setConfig: Effect.fn("DeepCodeReasoningManager.setConfig")(
+        (partial: Partial<ReasoningConfig>) =>
+          Ref.update(configRef, (cfg) => {
+            const updated = { ...cfg, ...partial }
+            // 同步更新缓存，供 getReasoningPolicy/shouldStrip/summarize 读取
+            configCache = updated
+            return updated
+          }),
+      ),
+    })
+  }),
 )
 
 /** LocationNode 导出 */

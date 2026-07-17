@@ -121,7 +121,7 @@ export interface BudgetConfig {
 /** Flash 档位预算配置 */
 const FLASH_BUDGET: BudgetConfig = {
   anchorMaxTokens: 128,
-  activeMaxTokens: 256, // ~60% of (512-128)
+  activeMaxTokens: 256, // (512-128)=384, 取 256 留 128 给 anchor+output
   compressedSoftLimit: 512,
   outputReserveTokens: 64, // 预留 64 tokens 给输出，确保指令不被挤出窗口
 }
@@ -129,7 +129,7 @@ const FLASH_BUDGET: BudgetConfig = {
 /** Pro 档位预算配置 */
 const PRO_BUDGET: BudgetConfig = {
   anchorMaxTokens: 256,
-  activeMaxTokens: 640, // ~60% of (1024-128) ≈ 537, 取 640 留余量
+  activeMaxTokens: 640, // (1024-128)=896, 取 640 留 256 给 anchor+output
   compressedSoftLimit: 1024,
   outputReserveTokens: 128, // Pro 输出更长
 }

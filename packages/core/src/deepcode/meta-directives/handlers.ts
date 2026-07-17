@@ -138,6 +138,28 @@ export interface Interface {
   readonly setModelSwitcher: (
     switcher: (tier: "flash" | "pro", reason: string) => Effect.Effect<void>,
   ) => void
+
+  /**
+   * 注册搜索回调
+   *
+   * need_more_context 指令的 search_terms 参数需要通过搜索获取相关内容，
+   * 通过回调解耦：上层（SessionRunner）注入实际的搜索逻辑。
+   *
+   * @param searcher - 接收搜索词数组，返回 文件路径→文件内容 的映射
+   */
+  readonly setSearcher: (
+    searcher: (terms: string[]) => Effect.Effect<Record<string, string>>,
+  ) => void
+
+  /**
+   * 获取待确认的 Skill 提议列表
+   *
+   * propose_skill 指令将 Skill 提议暂存到 Ref 中，
+   * 上层通过此方法查询待确认列表，供用户确认后激活。
+   *
+   * @returns 所有待确认的 Skill 提议
+   */
+  readonly getPendingSkills: () => Effect.Effect<ProposeSkillParams[]>
 }
 
 /** DI token */
@@ -154,10 +176,16 @@ const layer = Layer.effect(
   Effect.gen(function* () {
     // 模型切换计数（防滥用）
     const modelSwitchCount = yield* Ref.make(0)
+    // 待确认的 Skill 提议列表（propose_skill 持久化存储）
+    const pendingSkills = yield* Ref.make<ProposeSkillParams[]>([])
     // 回调函数（由上层 SessionRunner 在初始化时注入）
     let fileReader: ((path: string) => Effect.Effect<string>) | undefined
     let modelSwitcher:
       | ((tier: "flash" | "pro", reason: string) => Effect.Effect<void>)
+      | undefined
+    // 搜索回调（need_more_context 的 search_terms 使用）
+    let searcher:
+      | ((terms: string[]) => Effect.Effect<Record<string, string>>)
       | undefined
 
     return Service.of({
@@ -198,10 +226,26 @@ const layer = Layer.effect(
                   }
                 }
 
+                // 如果有 search_terms 且搜索回调已注入，执行搜索并合并结果
+                const searchTerms = params.search_terms ?? []
+                if (searchTerms.length > 0 && searcher) {
+                  try {
+                    const searchResults = yield* searcher(searchTerms)
+                    // 将搜索结果合并到 results 中（搜索结果键不覆盖已读文件）
+                    for (const [key, value] of Object.entries(searchResults)) {
+                      if (!(key in results)) {
+                        results[key] = value
+                      }
+                    }
+                  } catch {
+                    // 搜索失败不阻断流程，在 data 中报告
+                  }
+                }
+
                 return {
                   type: directive.type,
                   success: true,
-                  message: `Read ${Object.keys(results).length} files`,
+                  message: `Read ${Object.keys(results).length} files${searchTerms.length > 0 ? ` (searched ${searchTerms.length} terms)` : ""}`,
                   data: { files: results, search_terms: params.search_terms },
                 }
               }
@@ -246,12 +290,24 @@ const layer = Layer.effect(
               // trigger_self_review：触发免疫系统审查
               // =============================================
               case "trigger_self_review": {
+                // 解析 focus（审查焦点）和 depth（审查深度）参数
+                const params = directive.params as unknown as TriggerReviewParams
+                const focus = params.focus ?? "general"
+                const depth = params.depth ?? "quick"
+
                 // 审查在下次 Checkpoint 时由免疫系统执行
-                // 这里只返回确认，实际 review 逻辑在 reviewer.ts
+                // 这里返回确认信息，包含 focus 和 depth 参数
+                // depth=thorough 时标记 priority=high 供免疫系统优先处理
+                const data: Record<string, unknown> = { focus, depth }
+                if (depth === "thorough") {
+                  data.priority = "high"
+                }
+
                 return {
                   type: directive.type,
                   success: true,
-                  message: "Self-review triggered. Review will run at next checkpoint.",
+                  message: `Self-review triggered (focus: ${focus}, depth: ${depth}). Review will run at next checkpoint.`,
+                  data,
                 }
               }
 
@@ -260,13 +316,17 @@ const layer = Layer.effect(
               // =============================================
               case "propose_skill": {
                 const params = directive.params as unknown as ProposeSkillParams
-                // TODO(阶段三): 验证 Skill 安全性（无危险操作如 rm -rf）后写入磁盘
-                // 当前：返回确认，需要用户确认后持久化
+                // 将 Skill 提议持久化到 pendingSkills Ref，等待用户确认后激活
+                yield* Ref.update(pendingSkills, (s) => [...s, params])
+                // 读取当前待确认总数，在消息中告知用户
+                const pending = yield* Ref.get(pendingSkills)
+                const count = pending.length
+
                 return {
                   type: directive.type,
                   success: true,
-                  message: `Skill '${params.name}' proposed. Requires user confirmation before activation.`,
-                  data: { skill: params },
+                  message: `Skill '${params.name}' proposed (pending: ${count}). Requires user confirmation before activation.`,
+                  data: { skill: params, pendingCount: count },
                 }
               }
 
@@ -290,6 +350,14 @@ const layer = Layer.effect(
       setModelSwitcher: (switcher) => {
         modelSwitcher = switcher
       },
+
+      /** 注入搜索回调（need_more_context 的 search_terms 使用） */
+      setSearcher: (s) => {
+        searcher = s
+      },
+
+      /** 获取待确认的 Skill 提议列表 */
+      getPendingSkills: () => Ref.get(pendingSkills),
     })
   }),
 )

@@ -234,9 +234,14 @@ const layer = Layer.effect(
 
             // 记录审查历史
             yield* Ref.update(history, (h) => [...h, result])
-            // 添加新 Skill
+            // 添加新 Skill（按 name 去重，避免同一约束多次违规产生重复 Skill）
             if (newSkills.length > 0) {
-              yield* Ref.update(skills, (s) => [...s, ...newSkills])
+              const existing = yield* Ref.get(skills)
+              // 用 Set 收集已有 Skill 名称，O(1) 查重
+              const existingNames = new Set(existing.map((s) => s.name))
+              // 过滤掉与已有 Skill 同名的提议
+              const deduped = newSkills.filter((s) => !existingNames.has(s.name))
+              yield* Ref.update(skills, (s) => [...s, ...deduped])
             }
 
             return result
