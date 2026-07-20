@@ -51,6 +51,11 @@ import * as DeepCodeOKRPlan from "../../deepcode/okr-plan"
 import * as DeepCodeReviewAntiDrift from "../../deepcode/review-anti-drift"
 import * as DeepCodeScopeCreepGuard from "../../deepcode/scope-creep-guard"
 import * as DeepCodeMemoryGranularity from "../../deepcode/memory-granularity"
+// === T05: FileSystem / FileSystemSearch — MetaDirectives 真实回调依赖 ===
+// 注意：FileSystem.node / FileSystemSearch.node 不加入 deps（测试环境无 /project 目录会导致 Layer 初始化失败）
+// 改用 Node.js fs 模块 + location.directory 直接实现文件读取和搜索
+import { readFileSync, readdirSync } from "fs"
+import path from "path"
 
 /**
  * Runs one durable coding-agent Session until it settles.
@@ -149,16 +154,74 @@ const layer = Layer.effect(
     const memoryGranularity = yield* DeepCodeMemoryGranularity.Service
 
     // ============================================================
-    // MetaDirectives 回调注入（T01 替代方案）
-    // setFileReader：简化版，暂返回空字符串（真实文件读取需 FileSystem.Service，推迟 T05）
+    // MetaDirectives 回调注入（T05：真实实现）
+    // setFileReader：用 Node.js fs 模块读取文件内容（相对于 location.directory）
     // setModelSwitcher：调用 modelRouter.setOverride 影响下一轮模型选择
-    // setSearcher：占位回调，返回空结果（真实搜索需 FileSystemSearch.Service，推迟 T05）
+    // setSearcher：用 Node.js fs 模块遍历目录搜索匹配文件，读取 top-3 内容
+    // 注意：不使用 FileSystem.Service（加入 deps 会导致测试环境的 Layer 初始化失败）
     // ============================================================
-    metaDirectives.setFileReader((_path: string) => Effect.succeed(""))
+    metaDirectives.setFileReader((filePath: string) =>
+      Effect.sync(() => {
+        try {
+          const fullPath = path.resolve(location.directory, filePath)
+          if (!fullPath.startsWith(location.directory)) return "" // 安全：防止路径逃逸
+          return readFileSync(fullPath, "utf-8")
+        } catch {
+          return ""
+        }
+      }),
+    )
     metaDirectives.setModelSwitcher((tier: "flash" | "pro", _reason: string) =>
       modelRouter.setOverride(tier),
     )
-    metaDirectives.setSearcher((_terms: string[]) => Effect.succeed({}))
+    metaDirectives.setSearcher((terms: string[]) =>
+      Effect.gen(function* () {
+        const results: Record<string, string> = {}
+        for (const term of terms) {
+          // 简化搜索：遍历目录树，按文件名模糊匹配，取 top-3
+          const matches = yield* Effect.sync(() => {
+            try {
+              const found: string[] = []
+              const walkDir = (dir: string, depth: number) => {
+                if (depth > 3 || found.length >= 3) return // 限制深度和数量
+                let entries
+                try {
+                  entries = readdirSync(dir, { withFileTypes: true })
+                } catch {
+                  return // 目录不可读则跳过
+                }
+                for (const entry of entries) {
+                  const entryName = String(entry.name)
+                  if (entryName.startsWith(".") || entryName === "node_modules") continue
+                  const fullPath = path.join(dir, entryName)
+                  if (entry.isDirectory()) {
+                    walkDir(fullPath, depth + 1)
+                  } else if (entryName.toLowerCase().includes(term.toLowerCase())) {
+                    found.push(path.relative(location.directory, fullPath))
+                    if (found.length >= 3) return
+                  }
+                }
+              }
+              walkDir(location.directory, 0)
+              return found
+            } catch {
+              return [] as string[]
+            }
+          })
+          for (const matchPath of matches) {
+            const content = yield* Effect.sync(() => {
+              try {
+                return readFileSync(path.resolve(location.directory, matchPath), "utf-8")
+              } catch {
+                return ""
+              }
+            })
+            results[matchPath] = content
+          }
+        }
+        return results
+      }),
+    )
     const compaction = SessionCompaction.make({ events, llm, config: yield* config.entries() })
     const getSession = Effect.fn("SessionRunner.getSession")(function* (sessionID: SessionSchema.ID) {
       const session = yield* store.get(sessionID)
@@ -745,5 +808,8 @@ export const node = makeLocationNode({
     DeepCodeScopeCreepGuard.node,
     DeepCodeMemoryGranularity.node,
     // P1 暂缓：DeepCodeOKRPlan.node（需要 Plan tool 配合）
+    // T05: FileSystem.node / FileSystemSearch.node 不加入 deps
+    //   原因：测试环境 Location.directory="/project" 不存在，FileSystem 层初始化会失败
+    //   替代方案：MetaDirectives 回调直接用 Node.js fs 模块 + location.directory
   ],
 })
