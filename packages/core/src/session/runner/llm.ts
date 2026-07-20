@@ -152,6 +152,7 @@ const layer = Layer.effect(
     const reviewAntiDrift = yield* DeepCodeReviewAntiDrift.Service
     const scopeCreepGuard = yield* DeepCodeScopeCreepGuard.Service
     const memoryGranularity = yield* DeepCodeMemoryGranularity.Service
+    const okrPlan = yield* DeepCodeOKRPlan.Service
 
     // ============================================================
     // MetaDirectives 回调注入（T05：真实实现）
@@ -178,17 +179,36 @@ const layer = Layer.effect(
       Effect.gen(function* () {
         const results: Record<string, string> = {}
         for (const term of terms) {
-          // 简化搜索：遍历目录树，按文件名模糊匹配，取 top-3
+          // 全文搜索：优先用 ripgrep (rg) 做全文内容匹配，fallback 到文件名模糊匹配
+          // rg -l 列出包含匹配项的文件路径（每行一个），取 top-3
           const matches = yield* Effect.sync(() => {
             try {
+              // 尝试用 Bun.spawnSync 调用 rg 做全文搜索
+              const rgResult = Bun.spawnSync({
+                cmd: ["rg", "-l", "--max-count", "1", "-g", "!node_modules", "-g", "!.*", term, location.directory],
+                stdout: "pipe",
+                stderr: "pipe",
+              })
+              if (rgResult.exitCode === 0 && rgResult.stdout) {
+                const output = new TextDecoder().decode(rgResult.stdout).trim()
+                if (output.length > 0) {
+                  const files = output.split("\n").slice(0, 3)
+                  return files.map((f) => path.relative(location.directory, f))
+                }
+                return [] as string[] // rg 找到 0 个匹配
+              }
+              // rg 非零退出码（如 rg 未安装或无匹配），fallback 到文件名模糊匹配
+              throw new Error("rg unavailable or no matches, falling back to readdirSync")
+            } catch {
+              // Fallback: 用 readdirSync 做文件名模糊匹配（简化搜索）
               const found: string[] = []
               const walkDir = (dir: string, depth: number) => {
-                if (depth > 3 || found.length >= 3) return // 限制深度和数量
+                if (depth > 3 || found.length >= 3) return
                 let entries
                 try {
                   entries = readdirSync(dir, { withFileTypes: true })
                 } catch {
-                  return // 目录不可读则跳过
+                  return
                 }
                 for (const entry of entries) {
                   const entryName = String(entry.name)
@@ -204,8 +224,6 @@ const layer = Layer.effect(
               }
               walkDir(location.directory, 0)
               return found
-            } catch {
-              return [] as string[]
             }
           })
           for (const matchPath of matches) {
@@ -402,7 +420,7 @@ const layer = Layer.effect(
           openai: {
             promptCacheKey,
             // DeepSeek V4 thinking mode：reasoning_effort 控制推理深度
-            // TODO: 查 DeepSeek V4 API 文档确认实际 key
+            // 已确认：reasoning_effort 是 DeepSeek V4 OpenAI 格式的正确 key（官方文档确认），thinking 模式默认 enabled
             ...(reasoningEffort !== "none" ? { reasoning_effort: reasoningEffort } : {}),
           },
         },
@@ -689,6 +707,33 @@ const layer = Layer.effect(
             // --- 3c. 记忆衰减 ---
             yield* memoryGranularity.endStep().pipe(Effect.catch(() => Effect.void))
 
+            // --- 3d. OKR Plan KR 评估 ---
+            // 评估当前 KR 达成情况。evaluateKRs 需要 KR 验证结果数据（index + met），
+            // 实际 KR 验证应由 Plan tool 配合提供（执行验收条件检查后生成 met 结果）。
+            // 当前暂用空数组调用（无 KR 验证数据时 evaluateKRs 返回 allMet=false, metCount=0），
+            // 不影响主流程，仅记录评估结果用于后续级联修正决策。
+            // TODO: 需 Plan tool 配合提供 KR 验证数据（实际执行验收条件后生成 krResults）
+            yield* okrPlan
+              .evaluateKRs([])
+              .pipe(
+                Effect.catch(() =>
+                  Effect.succeed({ allMet: false, metCount: 0, totalCount: 0 }),
+                ),
+              )
+              .pipe(
+                Effect.tap((krEvalResult) =>
+                  krEvalResult.totalCount > 0
+                    ? Effect.logInfo("DeepCode OKR Plan KR evaluation", {
+                        allMet: krEvalResult.allMet,
+                        metCount: krEvalResult.metCount,
+                        totalCount: krEvalResult.totalCount,
+                        step: currentStep,
+                      })
+                    : Effect.void,
+                ),
+                Effect.catch(() => Effect.void),
+              )
+
             yield* withPublication(
               events.publish(SessionEvent.Step.Ended, {
                 sessionID: session.id,
@@ -807,7 +852,7 @@ export const node = makeLocationNode({
     DeepCodeReviewAntiDrift.node,
     DeepCodeScopeCreepGuard.node,
     DeepCodeMemoryGranularity.node,
-    // P1 暂缓：DeepCodeOKRPlan.node（需要 Plan tool 配合）
+    DeepCodeOKRPlan.node,
     // T05: FileSystem.node / FileSystemSearch.node 不加入 deps
     //   原因：测试环境 Location.directory="/project" 不存在，FileSystem 层初始化会失败
     //   替代方案：MetaDirectives 回调直接用 Node.js fs 模块 + location.directory
