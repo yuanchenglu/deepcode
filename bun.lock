@@ -380,7 +380,7 @@
       "name": "@deepcode/gateway",
       "version": "0.1.0",
       "dependencies": {
-        "@larksuiteoapi/node-sdk": "^1.36.0",
+        "@larksuiteoapi/node-sdk": "^1.40.0",
         "@opencode-ai/plugin": "workspace:*",
         "effect": "catalog:",
       },

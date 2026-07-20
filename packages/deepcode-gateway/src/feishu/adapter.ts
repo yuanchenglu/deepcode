@@ -1,11 +1,9 @@
 /**
  * DeepCode 消息网关 — 飞书平台适配器
  *
- * 使用纯 TypeScript WebSocket 客户端（FeishuWSClient）建立长连接，
+ * 使用 @larksuiteoapi/node-sdk 的 WSClient 建立长连接，
  * 通过飞书事件订阅接收 im.message.receive_v1 消息。
  * 发消息走 REST API（getTenantAccessToken + sendMessage）。
- *
- * 不再依赖 Node SDK，WS 连接由 ws-client.ts 纯 TS 实现。
  *
  * @module
  */
@@ -17,7 +15,7 @@ import { GatewayError } from "../error"
 import type { FeishuConfig } from "../config"
 import { getTenantAccessToken, sendMessage } from "./api"
 import { getMessageQueue } from "../lifecycle"
-// 纯 TypeScript 飞书 WebSocket 客户端（替代 Node SDK）
+// 飞书 WebSocket 客户端（基于官方 @larksuiteoapi/node-sdk 的 WSClient）
 import { FeishuWSClient } from "./ws-client"
 
 export class FeishuAdapter implements PlatformAdapter {
@@ -41,7 +39,7 @@ export class FeishuAdapter implements PlatformAdapter {
    * 2. 获取共享消息队列（由 lifecycle.startGateway 创建）
    * 3. 创建 FeishuWSClient 并注册事件回调
    * 4. 回调从 WS 事件中提取消息文本，推入共享消息队列
-   * 5. 启动 WebSocket 长连接（FeishuWSClient 内部处理认证、心跳、重连）
+   * 5. 启动 WebSocket 长连接（FeishuWSClient 内部由 SDK 处理认证、心跳、重连）
    */
   start(): Effect.Effect<void, GatewayError> {
     const self = this
@@ -55,16 +53,16 @@ export class FeishuAdapter implements PlatformAdapter {
         return yield* Effect.fail(new GatewayError("INTERNAL_ERROR", "消息队列未初始化"))
       }
 
-      // 创建纯 TS WebSocket 客户端（替代 Node SDK 的 WSClient）
+      // 创建飞书长链接客户端（基于官方 Node SDK 的 WSClient）
       const wsClient = new FeishuWSClient(self.cfg)
 
-      // 注册事件回调：收到 EVENT 帧时解析并推入消息队列
-      wsClient.setEventHandler((eventBody) => {
-        // eventBody 是飞书事件体（包含 header + event）
-        self.handleEvent(eventBody as Record<string, unknown>, mq)
+      // 注册事件回调：SDK 收到 im.message.receive_v1 事件时调用
+      // SDK 传入的 data 是事件体的 event 字段内容，即 { sender, message } 结构
+      wsClient.setEventHandler((data) => {
+        self.handleEvent(data as Record<string, unknown>, mq)
       })
 
-      // 启动长连接（FeishuWSClient 内部处理认证、心跳、重连）
+      // 启动长连接（SDK 内部处理认证、心跳、重连、protobuf 编解码）
       yield* Effect.tryPromise({
         try: () => wsClient.start(),
         catch: (err) => new GatewayError("NETWORK_ERROR", `飞书长连接启动失败: ${(err as Error).message}`),
@@ -79,7 +77,7 @@ export class FeishuAdapter implements PlatformAdapter {
   stop(): Effect.Effect<void> {
     const self = this
     return Effect.sync(() => {
-      // FeishuWSClient.stop() 关闭连接并清除所有定时器
+      // FeishuWSClient.stop() 释放 WSClient 引用
       self.wsClient?.stop()
       self.wsClient = null
       console.log("[FeishuAdapter] 飞书长连接已停止")
@@ -117,16 +115,16 @@ export class FeishuAdapter implements PlatformAdapter {
   /**
    * 处理飞书事件：解析为 GatewayMessage 并推入消息队列
    *
-   * WS 事件体结构与 webhook body 一致：
-   * { header: { event_type }, event: { sender, message, chat_id } }
+   * SDK 的 EventDispatcher 传入的 data 结构为 { sender, message }，
+   * 即事件体中的 event 字段内容（不含 header，因为 SDK 已按事件类型分发）。
    *
-   * @param data   - 飞书事件体（frame.event）
+   * @param data   - SDK 传入的事件数据 { sender, message }
    * @param queue  - 共享消息队列
    */
   private async handleEvent(data: Record<string, unknown>, queue: Queue.Queue<GatewayMessage>): Promise<void> {
     try {
-      const msg = parseFeishuEvent(data)
-      if (!msg) return // 非 im.message.receive_v1，忽略
+      const msg = parseFeishuMessage(data)
+      if (!msg) return // 无法解析的消息，忽略
 
       // 推入共享消息队列（Effect.runFork 在非 Effect 上下文中驱动 Effect）
       Effect.runFork(Queue.offer(queue, msg))
@@ -146,48 +144,61 @@ export class FeishuAdapter implements PlatformAdapter {
 }
 
 /**
- * 解析飞书事件为统一 GatewayMessage
+ * 解析飞书 SDK 事件数据为统一 GatewayMessage
  *
- * 与 router.ts 中的 parseFeishuEvent 逻辑一致，
- * 接收 WS 事件体（包含 header + event 字段）。
+ * SDK 的 EventDispatcher.register('im.message.receive_v1', handler) 中，
+ * handler 接收的 data 是事件体的 event 字段内容，结构为：
+ * {
+ *   sender: { sender_id: { open_id, user_id, union_id }, sender_type, tenant_key },
+ *   message: { message_id, chat_id, chat_type, message_type, content, ... }
+ * }
  *
- * @param data - 飞书事件体
- * @returns 解析后的 GatewayMessage；非消息事件返回 undefined
+ * 注意：与 router.ts 中的 parseFeishuEvent 不同（后者接收完整 webhook body
+ * 含 header + event）。本函数只处理 SDK 传入的 event 字段内容。
+ *
+ * @param data - SDK 传入的事件数据 { sender, message }
+ * @returns 解析后的 GatewayMessage；无法解析返回 undefined
  */
-function parseFeishuEvent(data: Record<string, unknown>): GatewayMessage | undefined {
-  const header = data.header as Record<string, unknown> | undefined
-  const eventBody = data.event as Record<string, unknown> | undefined
-  // 只处理 im.message.receive_v1 事件
-  if (header?.event_type !== "im.message.receive_v1" || !eventBody) return undefined
+function parseFeishuMessage(data: Record<string, unknown>): GatewayMessage | undefined {
+  const sender = data.sender as Record<string, unknown> | undefined
+  const message = data.message as Record<string, unknown> | undefined
 
-  const sender = eventBody.sender as Record<string, unknown> | undefined
-  const message = eventBody.message as Record<string, unknown> | undefined
+  // 必须有 message 字段才算有效消息
+  if (!message) return undefined
 
   // 从 message.content JSON 中提取纯文本
+  // content 格式如 {"text":"消息内容"}
   let content = ""
-  if (message) {
-    const rawContent = message.content as string | undefined
-    if (rawContent) {
-      try {
-        const parsed = JSON.parse(rawContent) as Record<string, unknown>
-        content = (parsed.text as string) || ""
-      } catch {
-        // 非 JSON 格式，直接使用原始内容
-        content = rawContent
-      }
+  const rawContent = message.content as string | undefined
+  if (rawContent) {
+    try {
+      const parsed = JSON.parse(rawContent) as Record<string, unknown>
+      content = (parsed.text as string) || ""
+    } catch {
+      // 非 JSON 格式，直接使用原始内容
+      content = rawContent
     }
   }
 
+  // 判断会话类型：p2p=私聊, group=群聊
+  const chatType = (message.chat_type as string) === "group" ? "group" : "private"
+
+  // 提取发送者 ID（open_id 优先）
+  const senderId = ((sender?.sender_id as Record<string, string>)?.open_id) || ""
+
   return {
-    id: (message?.message_id as string) || `feishu_${Date.now()}`,
+    id: (message.message_id as string) || `feishu_${Date.now()}`,
     platform: "feishu",
     type: "text",
     content,
     sender: {
-      id: ((sender?.sender_id as Record<string, string>)?.open_id) || "",
+      id: senderId,
       name: (sender?.sender_type as string) || "unknown",
     },
-    chat: { id: (eventBody.chat_id as string) || "", type: "private" },
+    chat: {
+      id: (message.chat_id as string) || "",
+      type: chatType,
+    },
     timestamp: Date.now(),
     raw: data,
   }

@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "type": "module",
   "private": true,
-  "scripts": { "typecheck": "tsgo --noEmit" },
+  "scripts": {
+    "typecheck": "tsgo --noEmit"
+  },
   "exports": {
     ".": "./src/index.ts",
     "./message": "./src/message.ts",
@@ -11,8 +13,9 @@
     "./config": "./src/config.ts"
   },
   "dependencies": {
-    "effect": "catalog:",
-    "@opencode-ai/plugin": "workspace:*"
+    "@larksuiteoapi/node-sdk": "^1.40.0",
+    "@opencode-ai/plugin": "workspace:*",
+    "effect": "catalog:"
   },
   "devDependencies": {
     "@tsconfig/bun": "catalog:",
