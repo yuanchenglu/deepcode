@@ -178,26 +178,30 @@ const layer = Layer.effect(
     metaDirectives.setSearcher((terms: string[]) =>
       Effect.gen(function* () {
         const results: Record<string, string> = {}
+        // 用 Bun.which 获取 rg 的绝对路径，避免依赖 PATH 环境变量
+        const rgPath = Bun.which("rg")
         for (const term of terms) {
           // 全文搜索：优先用 ripgrep (rg) 做全文内容匹配，fallback 到文件名模糊匹配
           // rg -l 列出包含匹配项的文件路径（每行一个），取 top-3
           const matches = yield* Effect.sync(() => {
             try {
-              // 尝试用 Bun.spawnSync 调用 rg 做全文搜索
-              const rgResult = Bun.spawnSync({
-                cmd: ["rg", "-l", "--max-count", "1", "-g", "!node_modules", "-g", "!.*", term, location.directory],
-                stdout: "pipe",
-                stderr: "pipe",
-              })
-              if (rgResult.exitCode === 0 && rgResult.stdout) {
-                const output = new TextDecoder().decode(rgResult.stdout).trim()
-                if (output.length > 0) {
-                  const files = output.split("\n").slice(0, 3)
-                  return files.map((f) => path.relative(location.directory, f))
+              // 用 Bun.which 获取 rg 路径后再执行全文搜索
+              if (rgPath) {
+                const rgResult = Bun.spawnSync({
+                  cmd: [rgPath, "-l", "--max-count", "1", "-g", "!node_modules", "-g", "!.*", term, location.directory],
+                  stdout: "pipe",
+                  stderr: "pipe",
+                })
+                if (rgResult.exitCode === 0 && rgResult.stdout) {
+                  const output = new TextDecoder().decode(rgResult.stdout).trim()
+                  if (output.length > 0) {
+                    const files = output.split("\n").slice(0, 3)
+                    return files.map((f) => path.relative(location.directory, f))
+                  }
+                  return [] as string[] // rg 找到 0 个匹配
                 }
-                return [] as string[] // rg 找到 0 个匹配
               }
-              // rg 非零退出码（如 rg 未安装或无匹配），fallback 到文件名模糊匹配
+              // rg 未安装或无匹配，fallback 到文件名模糊匹配
               throw new Error("rg unavailable or no matches, falling back to readdirSync")
             } catch {
               // Fallback: 用 readdirSync 做文件名模糊匹配（简化搜索）
@@ -708,27 +712,33 @@ const layer = Layer.effect(
             yield* memoryGranularity.endStep().pipe(Effect.catch(() => Effect.void))
 
             // --- 3d. OKR Plan KR 评估 ---
-            // 评估当前 KR 达成情况。evaluateKRs 需要 KR 验证结果数据（index + met），
-            // 实际 KR 验证应由 Plan tool 配合提供（执行验收条件检查后生成 met 结果）。
-            // 当前暂用空数组调用（无 KR 验证数据时 evaluateKRs 返回 allMet=false, metCount=0），
-            // 不影响主流程，仅记录评估结果用于后续级联修正决策。
-            // TODO: 需 Plan tool 配合提供 KR 验证数据（实际执行验收条件后生成 krResults）
+            // 从当前 Plan 的实际执行状态派生 KR 验证结果
+            // 已完成步骤（status="done" 或 "verified"）关联的 KR 视为已达成
+            const plan = yield* okrPlan.getPlan().pipe(
+              Effect.catch(() => Effect.succeed(null)),
+            )
+            const krResults = plan
+              ? plan.objective.keyResults.map((kr) => {
+                  const hasDoneStep = plan.steps.some(
+                    (s) =>
+                      (s.status === "done" || s.status === "verified") &&
+                      s.okr.includes(kr.index),
+                  )
+                  return { index: kr.index, met: hasDoneStep }
+                })
+              : []
+
             yield* okrPlan
-              .evaluateKRs([])
+              .evaluateKRs(krResults)
               .pipe(
                 Effect.catch(() =>
                   Effect.succeed({ allMet: false, metCount: 0, totalCount: 0 }),
                 ),
-              )
-              .pipe(
-                Effect.tap((krEvalResult) =>
-                  krEvalResult.totalCount > 0
-                    ? Effect.logInfo("DeepCode OKR Plan KR evaluation", {
-                        allMet: krEvalResult.allMet,
-                        metCount: krEvalResult.metCount,
-                        totalCount: krEvalResult.totalCount,
-                        step: currentStep,
-                      })
+                Effect.flatMap((result) =>
+                  result.totalCount > 0
+                    ? Effect.logInfo(
+                        `[DeepCode/OKRPlan] KR 评估: ${result.metCount}/${result.totalCount} 已达成${result.allMet ? " (全部达成)" : ""}`,
+                      )
                     : Effect.void,
                 ),
                 Effect.catch(() => Effect.void),
