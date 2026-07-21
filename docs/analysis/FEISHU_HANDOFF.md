@@ -89,8 +89,8 @@ private async handleEvent(data: Record<string, unknown>, queue: Queue.Queue<Gate
 - `packages/deepcode-gateway/src/message.ts` — GatewayMessage类型定义
 
 ## 飞书App配置
-- appId: `cli_aabbc8199ab89bea`
-- appSecret: `jWRvEYldsgJKoymiTKxnRfZr5CBZHgsm`
+- appId: `<your-feishu-app-id>`
+- appSecret: `<your-feishu-app-secret>`
 - 后台已配置长连接模式 + im.message.receive_v1事件订阅
 - 网关端口: 3099
 
@@ -103,8 +103,8 @@ import { startGateway, registerAdapter } from "./src/lifecycle"
 import { FeishuAdapter } from "./src/feishu/adapter"
 registerAdapter(new FeishuAdapter({
   enabled: true,
-  appId: "cli_aabbc8199ab89bea",
-  appSecret: "jWRvEYldsgJKoymiTKxnRfZr5CBZHgsm",
+  appId: "<your-feishu-app-id>",
+  appSecret: "<your-feishu-app-secret>",
   webhook: "/webhook/feishu",
   port: 3099,
 } as any))

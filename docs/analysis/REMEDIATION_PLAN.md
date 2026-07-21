@@ -129,7 +129,7 @@
 
 ### 1.2 P0-2：Raptor 5 模块 Effect v4 迁移重写
 
-**来源**: `/Users/bluth/Code/fangzhouzhongce/第32期_bluth/3产物/P5RYWH_raptor_quick/packages/core/src/deepcode/` 下 5 个文件
+**来源**: `<fangzhou-benchmark-output>/第32期/3产物/P5RYWH_raptor_quick/packages/core/src/deepcode/` 下 5 个文件
 
 **目标**: 替换 `packages/core/src/deepcode/` 下 5 个 22 行 stub 文件
 
@@ -229,8 +229,8 @@ export function setSessionId(chatId: string, sessionId: string): void {
 ### 1.4 P0-4：飞书 WS 纯 TS 方案 cherry-pick
 
 **来源**:
-- basalt: `/Users/bluth/Code/fangzhouzhongce/第34期_bluth/3产物/G6MX33_basalt_quick/packages/deepcode-gateway/src/adapters/feishu-ws.ts`（真机验证通过）
-- cipher: `/Users/bluth/Code/fangzhouzhongce/第34期_bluth/3产物/G6MX33_cipher_quick/packages/deepcode-gateway/src/ws/feishu-ws-client.ts`（协议常量 + aesCbcDecrypt）
+- basalt: `<fangzhou-benchmark-output>/第34期/3产物/G6MX33_basalt_quick/packages/deepcode-gateway/src/adapters/feishu-ws.ts`（真机验证通过）
+- cipher: `<fangzhou-benchmark-output>/第34期/3产物/G6MX33_cipher_quick/packages/deepcode-gateway/src/ws/feishu-ws-client.ts`（协议常量 + aesCbcDecrypt）
 
 **目标**: 替代当前 `packages/deepcode-gateway/src/feishu/adapter.ts` 中的 Python 桥接方案
 
@@ -302,8 +302,8 @@ packages/deepcode-gateway/src/feishu/
             "port": 3099,
             "feishu": {
               "enabled": true,
-              "appId": "cli_aabbc8199ab89bea",
-              "appSecret": "jWRvEYldsgJKoymiTKxnRfZr5CBZHgsm"
+              "appId": "<your-feishu-app-id>",
+              "appSecret": "<your-feishu-app-secret>"
             }
           }
         }
@@ -523,11 +523,11 @@ fix(deepcode): fix 8 real bugs (BUG-001,010-016) in Saber modules | 修复Saber�
 7. 每个 module 迁移后单独 typecheck 验证
 
 **产物源文件路径**:
-- `/Users/bluth/Code/fangzhouzhongce/第32期_bluth/3产物/P5RYWH_raptor_quick/packages/core/src/deepcode/okr-plan.ts`
-- `/Users/bluth/Code/fangzhouzhongce/第32期_bluth/3产物/P5RYWH_raptor_quick/packages/core/src/deepcode/review-anti-drift.ts`
-- `/Users/bluth/Code/fangzhouzhongce/第32期_bluth/3产物/P5RYWH_raptor_quick/packages/core/src/deepcode/scope-creep-guard.ts`
-- `/Users/bluth/Code/fangzhouzhongce/第32期_bluth/3产物/P5RYWH_raptor_quick/packages/core/src/deepcode/skill-evolution.ts`
-- `/Users/bluth/Code/fangzhouzhongce/第32期_bluth/3产物/P5RYWH_raptor_quick/packages/core/src/deepcode/memory-granularity.ts`
+- `<fangzhou-benchmark-output>/第32期/3产物/P5RYWH_raptor_quick/packages/core/src/deepcode/okr-plan.ts`
+- `<fangzhou-benchmark-output>/第32期/3产物/P5RYWH_raptor_quick/packages/core/src/deepcode/review-anti-drift.ts`
+- `<fangzhou-benchmark-output>/第32期/3产物/P5RYWH_raptor_quick/packages/core/src/deepcode/scope-creep-guard.ts`
+- `<fangzhou-benchmark-output>/第32期/3产物/P5RYWH_raptor_quick/packages/core/src/deepcode/skill-evolution.ts`
+- `<fangzhou-benchmark-output>/第32期/3产物/P5RYWH_raptor_quick/packages/core/src/deepcode/memory-granularity.ts`
 
 **涉及文件**:
 - `packages/core/src/deepcode/okr-plan.ts`
@@ -632,7 +632,7 @@ feat(gateway): replace Python bridge with pure TypeScript Feishu WebSocket clien
    - Raptor 5 模块：✅→⚠️（stub→已迁移，但未接入主流程）
 
 3. **补充 `docs/BUG_LIST.md`**:
-   - 对比 cipher 产物的 BUG_LIST（`/Users/bluth/Code/fangzhouzhongce/第34期_bluth/3产物/G6MX33_cipher_quick/` 下的 BUG_LIST）
+   - 对比 cipher 产物的 BUG_LIST（`<fangzhou-benchmark-output>/第34期/3产物/G6MX33_cipher_quick/` 下的 BUG_LIST）
    - 补充 cipher 发现但 dynamo 漏掉的 Bug
    - 标注 8 个虚假 Bug（BUG-002~009）为"基于 stub 分析的虚假 Bug"
 
@@ -853,7 +853,7 @@ graph TD
 
 ### 7.5 网关截图环境（需主理人确认）
 
-**问题**: 截图需要启动网关，但网关启动需要飞书 App 配置有效。当前 `appId: cli_aabbc8199ab89bea` 和 `appSecret` 是否仍然有效？
+**问题**: 截图需要启动网关，但网关启动需要飞书 App 配置有效。当前 `appId` 和 `appSecret` 是否仍然有效？
 
 **建议**: 如果 App 凭据已失效，截图可以只做 `/health` 端点（不需要飞书连接）。`/webhook/feishu` 的 challenge 验证也可以在无飞书连接的情况下测试（只是 HTTP 路由验证）。
 
