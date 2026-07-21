@@ -145,7 +145,7 @@ basalt 方案是一个**完全错误的实现**——API 端点、帧协议、�
 import * as Lark from '@larksuiteoapi/node-sdk';
 
 const baseConfig = {
-  appId: 'cli_aabbc8199ab89bea',
+  appId: '<your-feishu-app-id>',
   appSecret: 'your-app-secret',
 };
 
@@ -501,7 +501,7 @@ wsClient.setEventHandler((data) => {
 实现前需要确认以下飞书后台配置（小路确认或主理人确认）：
 
 ```
-□ 应用类型：企业自建应用（cli_aabbc8199ab89bea）
+□ 应用类型：企业自建应用（<your-feishu-app-id>）
 □ 事件订阅方式：使用长连接接收事件
 □ 已订阅事件：im.message.receive_v1
 □ 权限已开通：im:message, im:message:send_as_bot
@@ -530,7 +530,7 @@ wsClient.setEventHandler((data) => {
 ### 7.3 假设
 
 1. 飞书后台已配置长连接模式（小路已确认）
-2. 飞书 App 是企业自建应用（cli_aabbc8199ab89bea）
+2. 飞书 App 是企业自建应用（<your-feishu-app-id>）
 3. 网关代码在 `packages/deepcode-gateway/src/`
 4. "不引入 Python 依赖"是强制约束（但如果方案 A 和 B 都不可行，可提议放宽）
 5. 网关使用 Bun 运行时（`Bun.serve()` + `Bun.spawn()`）
