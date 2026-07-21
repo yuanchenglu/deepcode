@@ -1,0 +1,192 @@
+%% DeepCode 深接入 — 类图
+%% 展示 llm.ts Layer.effect 中注入的 Service 及其关系
+
+classDiagram
+    direction TB
+
+    class SessionRunnerService {
+        <<Context.Service>>
+        +run(input: {sessionID, force}) Effect~void~
+    }
+
+    class IntentRouterService {
+        <<Context.Service "@opencode/v2/DeepCodeIntentRouter">>
+        +classify(message: string, hasOpenSpec?: boolean) Effect~IntentClassification~
+        +getStrategy(intent: IntentType) IntentStrategy
+        +getCurrent() Effect~IntentClassification | undefined~
+        +setCurrent(classification: IntentClassification) Effect~void~
+    }
+
+    class ModelRouterService {
+        <<Context.Service "@opencode/v2/DeepCodeModelRouter">>
+        +decide(context: RoutingContext) Effect~ModelTier~
+        +recordFailure() Effect~void~
+        +getHistory() Effect~RouteDecision[]~
+        +setOverride(tier: ModelTier) Effect~void~
+        +clearOverride() Effect~void~
+    }
+
+    class ReasoningManagerService {
+        <<Context.Service "@opencode/v2/DeepCodeReasoningManager">>
+        +getEffort(intent: string | undefined, tier: ModelTier) Effect~ReasoningEffort~
+        +getReasoningPolicy(turnOffset: number, isToolCallTurn: boolean) ReasoningPolicy
+        +shouldStrip(turnOffset: number, isToolCallTurn: boolean) boolean
+        +summarize(reasoningText: string) string
+        +setConfig(partial: Partial~ReasoningConfig~) Effect~void~
+    }
+
+    class WindowManagerService {
+        <<Context.Service "@opencode/v2/DeepCodeWindowManager">>
+        +setZoneTokens(zone: ContextZone, tokens: number) Effect~void~
+        +setZoneText(zone: ContextZone, text: string) Effect~void~
+        +addTokens(zone: ContextZone, additionalTokens: number) Effect~void~
+        +getWindowStatus(tier: ModelTier) Effect~WindowStatus~
+        +reset() Effect~void~
+        +compressHistory(keepInAnchor: number) Effect~void~
+    }
+
+    class MetaDirectivesService {
+        <<Context.Service "@opencode/v2/DeepCodeMetaDirectives">>
+        +handle(directive: MetaDirective) Effect~DirectiveResponse~
+        +setFileReader(reader: (path: string) => Effect~string~) void
+        +setModelSwitcher(switcher: (tier, reason) => Effect~void~) void
+        +setSearcher(searcher: (terms: string[]) => Effect~Record~string,string~~) void
+        +getPendingSkills() Effect~ProposeSkillParams[]~
+    }
+
+    class ImmuneSystemService {
+        <<Context.Service "@opencode/v2/DeepCodeImmuneSystem">>
+        +reviewCheckpoint(checkpointId: string, constraints: HardConstraint[], artifacts: string[]) Effect~ReviewResult~
+        +getReviewHistory() Effect~ReviewResult[]~
+        +getImmuneSkills() Effect~ImmuneSkill[]~
+    }
+
+    class ConstraintStoreService {
+        <<Context.Service "@opencode/v2/DeepCodeConstraintStore">>
+        +extractAndAdd(message: string) Effect~HardConstraint[]~
+        +getAll() Effect~HardConstraint[]~
+        +add(constraints: HardConstraint[]) Effect~void~
+    }
+
+    class ReviewAntiDriftService {
+        <<Context.Service "@opencode/v2/DeepCodeReviewAntiDrift">>
+        +computeTier(K: number, P: number) ReviewTier
+        +recordToolCall(constraintCount: number) Effect~RecordToolCallResult~
+        +buildReviewPrompt(tier: ReviewTier, currentStep?: string) string
+        +recordReview(result: ReviewResult) Effect~void~
+    }
+
+    class ScopeCreepGuardService {
+        <<Context.Service "@opencode/v2/DeepCodeScopeCreepGuard">>
+        +setInitialScope(allowedFiles: string[], readonlyFiles?: string[]) Effect~void~
+        +checkToolAccess(toolName: string, filePath: string) Effect~ToolAccessResult~
+        +classifyDependency(path: string, type: DependencyType, reason: string, userApproved: boolean) Effect~void~
+    }
+
+    class MemoryGranularityService {
+        <<Context.Service "@opencode/v2/DeepCodeMemoryGranularity">>
+        +setMode(intentType: string) Effect~SetModeResult~
+        +addWorking(type, content, tags?, lifetimeTurns?, relatedKR?) Effect~void~
+        +endStep() Effect~EndStepResult~
+        +extractForCompaction(maxTokens?: number) Effect~string~
+        +getStats() Effect~MemoryStats~
+        +reset() Effect~void~
+    }
+
+    class OKRPlanService {
+        <<Context.Service "@opencode/v2/DeepCodeOKRPlan">>
+        +createPlan(objective, krs, steps) Effect~Plan~
+        +getPlan() Effect~Plan | null~
+        +updateStep(stepId, update) Effect~Plan | null~
+        +advanceToNext() Effect~PlanStep | null~
+        +evaluateKRs(krResults) Effect~KREvaluationResult~
+        +renderPlan() Effect~string~
+        +reset() Effect~void~
+    }
+
+    %% 数据类型
+    class IntentClassification {
+        +intent: IntentType
+        +confidence: number
+        +reason: string
+    }
+
+    class IntentStrategy {
+        +requiresClarification: boolean
+        +planGranularity: string
+        +reviewStrictness: string
+        +checkpointFrequency: string
+        +reasoningEffort: string
+        +interviewDepth: string
+    }
+
+    class WindowStatus {
+        +snapshot: TokenSnapshot
+        +tier: ModelTier
+        +activeOverflow: boolean
+        +compressionNeeded: boolean
+        +recommendedMaxOutputTokens: number
+        +criticalInWindow: boolean
+        +budget: BudgetConfig
+    }
+
+    class HardConstraint {
+        +id: string
+        +type: ConstraintType
+        +pattern: string
+        +scope: string
+        +source: "user" | "system" | "derived"
+        +confidence: number
+    }
+
+    class ReviewResult {
+        +checkpointId: string
+        +timestamp: number
+        +violations: Violation[]
+        +suggestedSkills: ImmuneSkill[]
+        +passed: boolean
+    }
+
+    class ToolAccessResult {
+        +allowed: boolean
+        +reason: string
+        +needsApproval: boolean
+        +dependencyType: DependencyType
+    }
+
+    class RecordToolCallResult {
+        +shouldReview: boolean
+        +tier: ReviewTier
+    }
+
+    class DirectiveResponse {
+        +type: MetaDirectiveType
+        +success: boolean
+        +message: string
+        +data: unknown
+    }
+
+    %% 关系：SessionRunner 依赖（yield*）的 DeepCode Service
+    SessionRunnerService ..> IntentRouterService : Hook 1: classify
+    SessionRunnerService ..> ModelRouterService : Hook 1: decide
+    SessionRunnerService ..> ReasoningManagerService : Hook 1: getEffort
+    SessionRunnerService ..> WindowManagerService : Hook 1: getWindowStatus
+    SessionRunnerService ..> ConstraintStoreService : Hook 1: extractAndAdd
+    SessionRunnerService ..> MetaDirectivesService : Hook 2: handle
+    SessionRunnerService ..> ScopeCreepGuardService : Hook 2: checkToolAccess
+    SessionRunnerService ..> ImmuneSystemService : Hook 3: reviewCheckpoint
+    SessionRunnerService ..> ReviewAntiDriftService : Hook 3: recordToolCall
+    SessionRunnerService ..> MemoryGranularityService : Hook 3: endStep
+
+    %% Service 返回的数据类型
+    IntentRouterService ..> IntentClassification : returns
+    IntentRouterService ..> IntentStrategy : returns
+    WindowManagerService ..> WindowStatus : returns
+    ConstraintStoreService ..> HardConstraint : returns
+    ImmuneSystemService ..> ReviewResult : returns
+    ScopeCreepGuardService ..> ToolAccessResult : returns
+    ReviewAntiDriftService ..> RecordToolCallResult : returns
+    MetaDirectivesService ..> DirectiveResponse : returns
+
+    %% 回调关系
+    MetaDirectivesService ..> ModelRouterService : setModelSwitcher callback → setOverride

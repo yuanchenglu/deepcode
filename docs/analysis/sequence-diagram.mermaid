@@ -1,0 +1,118 @@
+%% DeepCode 深接入 — 主流程序列图
+%% 展示 runTurnAttempt 中 3 个 Hook 点的调用序列
+
+sequenceDiagram
+    participant SR as SessionRunner<br/>(llm.ts)
+    participant IR as IntentRouter
+    participant MR as ModelRouter
+    participant RM as ReasoningManager
+    participant WM as WindowManager
+    participant CS as ConstraintStore
+    participant MD as MetaDirectives
+    participant SC as ScopeCreepGuard
+    participant IS as ImmuneSystem
+    participant RAD as ReviewAntiDrift
+    participant MG as MemoryGranularity
+    participant LLM as LLMClient
+
+    Note over SR: runTurnAttempt(sessionID, promotion, step)
+
+    SR->>SR: getSession(sessionID)
+    SR->>SR: agents.select(session.agent)
+    SR->>SR: models.resolve(session) → model
+
+    Note over SR: ===== Hook 点 1: Turn 开始决策链 =====
+
+    SR->>SR: entries = SessionHistory.entriesForRunner()
+    SR->>SR: context = entries.map(e => e.message)
+    SR->>SR: extractMessageText(lastUserMessage)
+
+    SR->>CS: extractAndAdd(userMessageText)
+    CS-->>SR: HardConstraint[]
+    Note right of CS: catchAll → 不阻断
+
+    SR->>IR: classify(userMessageText)
+    IR-->>SR: IntentClassification{intent, confidence}
+    SR->>IR: setCurrent(classification)
+    SR->>IR: getStrategy(intent) → strategy
+
+    SR->>MR: decide({turn, intent, isCheckpoint, isPlanning})
+    MR-->>SR: ModelTier ("flash" | "pro")
+    Note right of MR: 仅记录决策，不改变当前轮模型
+
+    SR->>RM: getEffort(intent, tier)
+    RM-->>SR: ReasoningEffort ("none"|"low"|"high"|"max")
+
+    SR->>WM: getWindowStatus(tier)
+    WM-->>SR: WindowStatus{recommendedMaxOutputTokens, activeOverflow}
+
+    SR->>SR: request = LLM.request({model, providerOptions:{reasoning_effort}, ...})
+
+    Note over SR: ===== Provider Turn (Stream) =====
+
+    SR->>LLM: llm.stream(request)
+    LLM-->>SR: Stream<LLMEvent>
+
+    loop Stream.runForEach(event)
+        SR->>SR: publish(event)
+
+        alt event.type === "tool-call"
+            Note over SR: ===== Hook 点 2: Tool call 拦截 =====
+
+            alt event.name is MetaDirective
+                SR->>MD: handle({type: event.name, params: event.input})
+                MD-->>SR: DirectiveResponse{success, message}
+                SR->>SR: publish(toolResult(directiveResponse))
+                Note right of SR: return → 跳过正常工具执行
+            else event.name is WriteTool
+                SR->>SC: checkToolAccess(toolName, filePath)
+                SC-->>SR: ToolAccessResult{allowed, reason}
+
+                alt !allowed
+                    SR->>SR: publish(toolResult(denied))
+                    Note right of SR: return → 阻止工具执行
+                else allowed
+                    SR->>SR: toolMaterialization.settle(...)
+                end
+            else Normal Tool
+                SR->>SR: toolMaterialization.settle(...)
+            end
+        end
+    end
+
+    SR->>SR: stepSettlement = publisher.stepSettlement()
+
+    Note over SR: ===== Hook 点 3: Turn 结束审查链 =====
+
+    alt stepSettlement && !providerError
+        SR->>SR: endSnapshot = snapshots.capture()
+        SR->>SR: files = snapshots.files({from, to})
+
+        SR->>CS: getAll()
+        CS-->>SR: HardConstraint[]
+
+        alt strategy.reviewStrictness !== "none" && constraints.length > 0
+            SR->>IS: reviewCheckpoint(`step-${currentStep}`, constraints, artifacts)
+            IS-->>SR: ReviewResult{passed, violations, suggestedSkills}
+            Note right of IS: catchAll → {passed: true}
+
+            alt !reviewResult.passed
+                SR->>SR: Effect.logWarning("violations detected")
+            end
+        end
+
+        SR->>RAD: recordToolCall(constraints.length)
+        RAD-->>SR: RecordToolCallResult{shouldReview, tier}
+
+        alt antiDriftResult.shouldReview
+            SR->>SR: Effect.logInfo("suggests review")
+        end
+
+        SR->>MG: endStep()
+        MG-->>SR: EndStepResult{promoted, expired}
+        Note right of MG: catchAll → void
+
+        SR->>SR: events.publish(SessionEvent.Step.Ended, {...})
+    end
+
+    SR-->>SR: {needsContinuation, step}

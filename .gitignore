@@ -32,3 +32,11 @@ UPCOMING_CHANGELOG.md
 logs/
 *.bun-build
 tsconfig.tsbuildinfo
+input/
+artifacts/
+.workbuddy/
+.hermes/
+install
+sst-env.d.ts
+sst.config.ts
+*.safetensors
