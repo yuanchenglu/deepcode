@@ -88,7 +88,7 @@ describe("E2E-Anthropic: 消息 → 工具 → 结果", () => {
     const secondBody = calls[1]!.bodyJson as Record<string, unknown>
     const secondMessages = secondBody.messages as Array<{ role: string; content: unknown[] }>
     const hasToolResult = secondMessages.some(
-      (m) => Array.isArray(m.content) && m.content.some((b: { type?: string }) => b.type === "tool_result"),
+      (m) => Array.isArray(m.content) && m.content.some((b) => typeof b === "object" && b !== null && (b as Record<string, unknown>).type === "tool_result"),
     )
     expect(hasToolResult).toBe(true)
   })
