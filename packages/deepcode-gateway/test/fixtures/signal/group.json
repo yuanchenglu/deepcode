@@ -1,0 +1,12 @@
+{
+  "envelope": {
+    "source": "+15551234567",
+    "sourceNumber": "+15551234567",
+    "sourceName": "Bob",
+    "dataMessage": {
+      "timestamp": 1700000001000,
+      "message": "group message",
+      "groupInfo": { "groupId": "Z3JvdXBpZGV4bXBsZQ==" }
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "type": "event_callback",
+  "event": {
+    "type": "message",
+    "subtype": "bot_message",
+    "bot_id": "B_SELF",
+    "text": "self reply",
+    "channel": "C1",
+    "ts": "1700000000.000200"
+  }
+}

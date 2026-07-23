@@ -1,0 +1,6 @@
+{
+  "envelope": {
+    "source": "+15551234567",
+    "typingMessage": { "action": "STARTED", "timestamp": 1700000000000 }
+  }
+}

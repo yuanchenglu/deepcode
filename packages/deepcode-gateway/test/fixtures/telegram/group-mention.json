@@ -1,0 +1,10 @@
+{
+  "update_id": 102,
+  "message": {
+    "message_id": 202,
+    "from": { "id": 999, "username": "carol" },
+    "chat": { "id": -5001, "type": "group", "title": "devs" },
+    "date": 1700000002,
+    "text": "@deepcode_bot 帮我 review"
+  }
+}
