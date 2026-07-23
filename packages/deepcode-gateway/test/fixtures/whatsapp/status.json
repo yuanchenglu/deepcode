@@ -1,0 +1,18 @@
+{
+  "object": "whatsapp_business_account",
+  "entry": [
+    {
+      "changes": [
+        {
+          "value": {
+            "metadata": { "phone_number_id": "123" },
+            "statuses": [
+              { "id": "wamid_xyz", "status": "delivered", "timestamp": "1700000001" }
+            ]
+          },
+          "field": "messages"
+        }
+      ]
+    }
+  ]
+}

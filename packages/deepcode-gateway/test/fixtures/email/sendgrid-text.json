@@ -1,0 +1,6 @@
+{
+  "from": "Alice <alice@example.com>",
+  "to": "gateway@deepcode.local",
+  "subject": "email subject",
+  "text": "email body content"
+}

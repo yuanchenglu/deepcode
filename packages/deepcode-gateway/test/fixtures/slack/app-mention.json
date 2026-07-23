@@ -1,0 +1,16 @@
+{
+  "token": "TK",
+  "team_id": "T1",
+  "api_app_id": "A1",
+  "event": {
+    "client_msg_id": "c-1",
+    "type": "app_mention",
+    "text": "<@U123> 你好",
+    "user": "U789",
+    "channel": "CCHANNEL",
+    "ts": "1700000000.000100"
+  },
+  "type": "event_callback",
+  "event_id": "Ev1",
+  "event_time": 1700000000
+}

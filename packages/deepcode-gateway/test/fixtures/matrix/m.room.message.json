@@ -1,0 +1,20 @@
+{
+  "events": [
+    {
+      "type": "m.room.message",
+      "sender": "@alice:matrix.org",
+      "room_id": "!abc:matrix.org",
+      "event_id": "$event1",
+      "origin_server_ts": 1700000000000,
+      "content": { "msgtype": "m.text", "body": "matrix hello" }
+    },
+    {
+      "type": "m.room.message",
+      "sender": "@bob:matrix.org",
+      "room_id": "!abc:matrix.org",
+      "event_id": "$event2",
+      "origin_server_ts": 1700000001000,
+      "content": { "msgtype": "m.text", "body": "second" }
+    }
+  ]
+}

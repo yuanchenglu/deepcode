@@ -1,0 +1,10 @@
+{
+  "msgtype": "text",
+  "text": { "content": "单聊消息" },
+  "senderId": "dt_user2",
+  "senderNick": "李四",
+  "conversationId": "cid2",
+  "conversationType": "1",
+  "msgId": "dt_msg_2",
+  "createAt": 1700000001000
+}

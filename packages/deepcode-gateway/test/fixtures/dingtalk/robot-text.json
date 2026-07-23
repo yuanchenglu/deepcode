@@ -1,0 +1,10 @@
+{
+  "msgtype": "text",
+  "text": { "content": "钉钉你好" },
+  "senderId": "dt_user1",
+  "senderNick": "张三",
+  "conversationId": "cid1",
+  "conversationType": "2",
+  "msgId": "dt_msg_1",
+  "createAt": 1700000000000
+}

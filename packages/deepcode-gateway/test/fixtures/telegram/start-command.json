@@ -1,0 +1,11 @@
+{
+  "update_id": 101,
+  "message": {
+    "message_id": 201,
+    "from": { "id": 12345, "first_name": "Bob" },
+    "chat": { "id": -1002, "type": "private" },
+    "date": 1700000001,
+    "text": "/start give me access",
+    "entities": [{ "offset": 0, "length": 6, "type": "bot_command" }]
+  }
+}

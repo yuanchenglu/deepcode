@@ -4,7 +4,7 @@
  * @module
  */
 
-export type PlatformType = "feishu" | "wechat" | "terminal"
+export type PlatformType = "feishu" | "wechat" | "terminal" | "wecom" | "qq" | "telegram" | "slack" | "signal" | "whatsapp" | "dingtalk" | "matrix" | "email"
 export type MessageType = "text" | "image" | "file" | "event"
 export type ChatType = "private" | "group"
 
@@ -17,6 +17,7 @@ export interface GatewayMessage {
   readonly chat: { readonly id: string; readonly type: ChatType }
   readonly timestamp: number
   readonly raw?: unknown
+  readonly sourceAdapter?: PlatformType
 }
 
 export type OutboundType = "text" | "image" | "card"

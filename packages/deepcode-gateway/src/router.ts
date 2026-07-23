@@ -1,10 +1,18 @@
 import { Effect, Queue } from "effect"
 import type { GatewayMessage } from "./message"
 import { GatewayError } from "./error"
+import type { PlatformType } from "./message"
+import { parseUpdate as parseTelegramUpdate } from "./telegram/parser"
+import { parseEvent as parseSlackEvent } from "./slack/parser"
+import { parseEnvelope as parseSignalEnvelope } from "./signal/parser"
+import { parseWebhook as parseWhatsAppWebhook } from "./whatsapp/parser"
+import { parse as parseDingTalk } from "./dingtalk/parser"
+import { parseTransaction as parseMatrixTxn } from "./matrix/parser"
+import { parseInbound as parseEmailInbound } from "./email/parser"
 
 export interface RouteRegistration {
   readonly path: string
-  readonly platform: "feishu" | "wechat"
+  readonly platform: PlatformType
 }
 
 export class Router {
@@ -79,6 +87,23 @@ function parseEvent(path: string, body: unknown): GatewayMessage | undefined {
     return undefined
   }
   if (path.startsWith("/webhook/wechat")) return parseWeChatEvent(body)
+
+  // 新增 9 个平台路由
+  if (!body || typeof body !== "object") return undefined
+  const obj = body as Record<string, unknown>
+
+  if (path.startsWith("/webhook/wecom")) return undefined // XML body handled by adapter
+  if (path.startsWith("/webhook/qq")) return parseQQ(obj)
+  if (path.startsWith("/webhook/telegram")) return parseTelegramUpdate(obj)
+  if (path.startsWith("/webhook/slack")) return parseSlackEvent(obj)
+  if (path.startsWith("/webhook/signal")) return parseSignalEnvelope(obj)
+  if (path.startsWith("/webhook/whatsapp")) return parseWhatsAppWebhook(obj)
+  if (path.startsWith("/webhook/dingtalk")) return parseDingTalk(obj)
+  if (path.startsWith("/webhook/matrix")) {
+    const msgs = parseMatrixTxn(obj)
+    return msgs.length > 0 ? msgs[0] : undefined
+  }
+  if (path.startsWith("/webhook/email")) return undefined // handled by adapter
   return undefined
 }
 
@@ -146,6 +171,26 @@ function extractFeishuText(message: Record<string, unknown> | undefined): string
     return (p.text as string) || ""
   } catch {
     return c
+  }
+}
+
+function parseQQ(body: Record<string, unknown>): GatewayMessage | undefined {
+  // QQ Dispatch 通过 WS 处理，HTTP webhook 用于群消息扩展（预留）
+  const d = (body.d ?? body) as Record<string, unknown>
+  const t = body.t as string | undefined
+  if (!t || !t.includes("MESSAGE")) return undefined
+  const author = d.author as Record<string, unknown> | undefined
+  const channelId = (d.channel_id as string) || ""
+  return {
+    id: (d.id as string) || `qq_${Date.now()}`,
+    platform: "qq",
+    type: "text",
+    content: (d.content as string) || "",
+    sender: { id: (author?.id as string) || "", name: (author?.username as string) || "qq" },
+    chat: { id: channelId, type: "group" },
+    timestamp: Date.now(),
+    raw: body,
+    sourceAdapter: "qq",
   }
 }
 
