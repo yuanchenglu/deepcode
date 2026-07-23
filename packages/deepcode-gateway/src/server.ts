@@ -8,21 +8,45 @@
  */
 
 import { Effect } from "effect"
+import type { PlatformAdapter } from "./adapter"
 import type { Router } from "./router"
 
 /** 保存 HTTP Server 实例引用，用于关闭 */
 let serverInstance: ReturnType<typeof Bun.serve> | null = null
 
 /**
- * 启动 HTTP Server
- *
- * 在指定端口启动非阻塞的 Bun.serve()，处理：
- * - GET / 或 GET /health → 健康检查
- * - POST /webhook/feishu → 飞书事件（含 challenge url_verification）
- * - POST /webhook/wechat  → 微信/企业微信事件
- * - 其他路径 → 405 或 404
+ * 从路径中提取平台名称
+ * 如 /webhook/feishu → feishu，/webhook/wecom → wecom
  */
-export function startServer(port: number, router: Router): Effect.Effect<void> {
+function extractPlatformName(path: string): string | null {
+  if (!path.startsWith("/webhook/")) return null
+  return path.slice("/webhook/".length)
+}
+
+/**
+ * 尝试将请求委托给平台适配器的 handleWebhook
+ * 返回 true 表示已处理（调用方应返回），false 表示未命中
+ */
+async function tryHandleWebhook(
+  req: Request,
+  path: string,
+  adapters: Map<string, PlatformAdapter> | undefined,
+): Promise<Response | null> {
+  if (!adapters) return null
+  const platformName = extractPlatformName(path)
+  if (!platformName) return null
+  const adapter = adapters.get(platformName)
+  if (!adapter?.handleWebhook) return null
+  const result = adapter.handleWebhook(req)
+  if (result instanceof Promise) return await result
+  return await Effect.runPromise(result)
+}
+
+export function startServer(
+  port: number,
+  router: Router,
+  adapters?: Map<string, PlatformAdapter>,
+): Effect.Effect<void> {
   return Effect.sync(() => {
     serverInstance = Bun.serve({
       port,
@@ -32,10 +56,16 @@ export function startServer(port: number, router: Router): Effect.Effect<void> {
         const path = url.pathname
         const method = req.method
 
-        // 健康检查
         if (method === "GET") {
+          // 健康检查
           if (path === "/" || path === "/health") {
             return Response.json({ status: "ok", gateway: "running", port }, { status: 200 })
+          }
+          // 平台 Webhook URL 验证（Telegram/WhatsApp 等需要 GET 验证）
+          if (adapters && extractPlatformName(path)) {
+            const result = tryHandleWebhook(req, path, adapters)
+            // GET handler is sync, but Bun.serve accepts Promise<Response>
+            return result as Promise<Response>
           }
           return Response.json({ error: "not found" }, { status: 404 })
         }
@@ -47,6 +77,10 @@ export function startServer(port: number, router: Router): Effect.Effect<void> {
         // POST：异步处理 webhook 事件
         return (async (): Promise<Response> => {
           try {
+            // XML/表单格式平台（wecom/dingtalk 等）由适配器直接处理原始请求
+            const handleWebhookResult = await tryHandleWebhook(req, path, adapters)
+            if (handleWebhookResult) return handleWebhookResult
+
             const bodyText = await req.text()
             let body: unknown
             try {

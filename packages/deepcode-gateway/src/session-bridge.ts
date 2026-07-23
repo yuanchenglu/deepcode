@@ -14,7 +14,7 @@
 
 import { Effect, Queue, Stream } from "effect"
 import type { PlatformAdapter } from "./adapter"
-import type { GatewayMessage, OutboundMessage } from "./message"
+import type { GatewayMessage, OutboundMessage, PlatformType } from "./message"
 
 /** 会话映射：平台 chatId → OpenCode sessionId */
 const sessionMap = new Map<string, string>()
@@ -68,6 +68,7 @@ export function processMessage(
   msg: GatewayMessage,
   adapter: PlatformAdapter,
   workdir: string,
+  adapters?: Map<PlatformType, PlatformAdapter>,
 ): Effect.Effect<void> {
   // 用 Effect.ignoreLogged 兜底错误，不中断消费循环
   return Effect.gen(function* () {
