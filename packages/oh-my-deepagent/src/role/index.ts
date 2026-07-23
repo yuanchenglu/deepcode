@@ -4,34 +4,34 @@
 
 export { RoleRegistry } from "./role-registry"
 export { defineRole, renderSystemPrompt } from "./role-definition"
-export { codingAgent, codingAgentMini } from "./coding-agent"
-export { builderAgent } from "./builder-agent"
-export { knowledgeAgent } from "./knowledge-agent"
-export { plannerAgent } from "./planner-agent"
-export { systemAgent } from "./system-agent"
-export { coordinatorAgent } from "./coordinator-agent"
-export { searchAgent } from "./search-agent"
+export { coding, codingMini } from "./coding-agent"
+export { builder } from "./builder-agent"
+export { knowledge } from "./knowledge-agent"
+export { planner } from "./planner-agent"
+export { system } from "./system-agent"
+export { coordinator } from "./coordinator-agent"
+export { search } from "./search-agent"
 
 import type { RoleDefinition } from "../types"
 import { RoleRegistry } from "./role-registry"
-import { codingAgent, codingAgentMini } from "./coding-agent"
-import { builderAgent } from "./builder-agent"
-import { knowledgeAgent } from "./knowledge-agent"
-import { plannerAgent } from "./planner-agent"
-import { systemAgent } from "./system-agent"
-import { coordinatorAgent } from "./coordinator-agent"
-import { searchAgent } from "./search-agent"
+import { coding, codingMini } from "./coding-agent"
+import { builder } from "./builder-agent"
+import { knowledge } from "./knowledge-agent"
+import { planner } from "./planner-agent"
+import { system } from "./system-agent"
+import { coordinator } from "./coordinator-agent"
+import { search } from "./search-agent"
 
 /** 默认 5+1 个角色，调用方可一次性注册到 RoleRegistry。 */
 export const defaultRoles: Record<string, RoleDefinition> = {
-  codingAgent,
-  codingAgentMini,
-  builderAgent,
-  knowledgeAgent,
-  plannerAgent,
-  systemAgent,
-  coordinatorAgent,
-  searchAgent,
+  coding,
+  codingMini,
+  builder,
+  knowledge,
+  planner,
+  system,
+  coordinator,
+  search,
 }
 
 /** 便捷函数：创建一个已注册全部默认角色的 RoleRegistry。 */

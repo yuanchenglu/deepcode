@@ -7,7 +7,7 @@
 import type { RoleDefinition } from "../types"
 import { defineRole } from "./role-definition"
 
-export const codingAgent: RoleDefinition = defineRole({
+export const coding: RoleDefinition = defineRole({
   id: "coding-agent",
   displayName: "Coding Agent",
   systemPrompt: [
@@ -22,7 +22,7 @@ export const codingAgent: RoleDefinition = defineRole({
 })
 
 /** 轻量编码子 Agent，可用于并行子任务。 */
-export const codingAgentMini: RoleDefinition = defineRole({
+export const codingMini: RoleDefinition = defineRole({
   id: "coding-agent-mini",
   displayName: "Coding Agent Mini",
   systemPrompt: [

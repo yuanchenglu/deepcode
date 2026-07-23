@@ -9,7 +9,7 @@ import {
   ToolRegistry,
   MemoryStore,
   MockLLMProvider,
-  codingAgent,
+  coding,
   echoTool,
   HTTPTransport,
   ErrorCodes,
@@ -21,7 +21,7 @@ function makeTransport(script: ConstructorParameters<typeof MockLLMProvider>[0])
   registry.register(echoTool)
   const memory = new MemoryStore()
   const llm = new MockLLMProvider(script)
-  const runtime = new AgentRuntime({ role: codingAgent, llm, registry, memory })
+  const runtime = new AgentRuntime({ role: coding, llm, registry, memory })
   const transport = new HTTPTransport({ runtime, port: 0 }) // port=0 让系统分配
   return { transport, runtime, memory }
 }
@@ -90,7 +90,7 @@ describe("HTTPTransport.handleChat", () => {
     const memory = new MemoryStore()
     const llm = new MockLLMProvider([])
     llm.chat = async () => { throw new Error("LLM exploded") }
-    const runtime = new AgentRuntime({ role: codingAgent, llm, registry, memory })
+    const runtime = new AgentRuntime({ role: coding, llm, registry, memory })
     const transport = new HTTPTransport({ runtime })
     const result = await transport.handleChat({ sessionId: "s1", content: "hi" })
     expect("error" in result).toBe(true)

@@ -5,7 +5,7 @@
  */
 import { defineRole } from "./role-definition"
 
-export const searchAgent = defineRole({
+export const search = defineRole({
   name: "search-agent",
   description: "Search agent that locates code, files, and patterns in a repository.",
   systemPrompt: [

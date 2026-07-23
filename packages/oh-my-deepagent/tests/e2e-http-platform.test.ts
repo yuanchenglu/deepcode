@@ -9,7 +9,7 @@ import {
   ToolRegistry,
   MemoryStore,
   MockLLMProvider,
-  codingAgent,
+  coding,
   echoTool,
   HTTPTransport,
   calculatorTool,
@@ -21,7 +21,7 @@ function startHTTPServer(script: ConstructorParameters<typeof MockLLMProvider>[0
   registry.register(calculatorTool)
   const memory = new MemoryStore()
   const llm = new MockLLMProvider(script)
-  const runtime = new AgentRuntime({ role: codingAgent, llm, registry, memory })
+  const runtime = new AgentRuntime({ role: coding, llm, registry, memory })
   const transport = new HTTPTransport({ runtime, port: 0, host: "127.0.0.1" })
   return transport
 }

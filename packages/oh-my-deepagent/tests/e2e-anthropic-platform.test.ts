@@ -8,7 +8,7 @@ import {
   MemoryStore,
   AnthropicCompatibleProvider,
   calculatorTool,
-  codingAgent,
+coding,
 } from "../src/index"
 import { createMockFetch } from "./mocks/fetch-mock"
 import { anthropicScriptCalculator, anthropicTextResponse } from "./mocks/mock-responses"
@@ -25,7 +25,7 @@ describe("E2E-Anthropic: 消息 → 工具 → 结果", () => {
     const registry = new ToolRegistry()
     registry.register(calculatorTool)
     const memory = new MemoryStore()
-    const agent = new AgentRuntime({ role: codingAgent, llm: provider, registry, memory })
+    const agent = new AgentRuntime({ role: coding, llm: provider, registry, memory })
 
     const result = await agent.chat("帮我算 1+2*3")
     expect(result.text).toBe("结果是 7")
@@ -54,7 +54,7 @@ describe("E2E-Anthropic: 消息 → 工具 → 结果", () => {
     })
     const registry = new ToolRegistry()
     const memory = new MemoryStore()
-    const agent = new AgentRuntime({ role: codingAgent, llm: provider, registry, memory })
+    const agent = new AgentRuntime({ role: coding, llm: provider, registry, memory })
     const result = await agent.chat("hi")
     expect(result.text).toBe("你好，我是 Claude")
   })
@@ -65,7 +65,7 @@ describe("E2E-Anthropic: 消息 → 工具 → 结果", () => {
       baseUrl: "https://api.anthropic.com", apiKey: "k", model: "m", fetch,
     })
     const agent = new AgentRuntime({
-      role: { ...codingAgent, systemPrompt: "你是一个计算器助手" },
+      role: { ...coding, systemPrompt: "你是一个计算器助手" },
       llm: provider,
       registry: new ToolRegistry(),
       memory: new MemoryStore(),
@@ -82,7 +82,7 @@ describe("E2E-Anthropic: 消息 → 工具 → 结果", () => {
     })
     const registry = new ToolRegistry()
     registry.register(calculatorTool)
-    const agent = new AgentRuntime({ role: codingAgent, llm: provider, registry, memory: new MemoryStore() })
+    const agent = new AgentRuntime({ role: coding, llm: provider, registry, memory: new MemoryStore() })
     await agent.chat("算 1+2*3")
     // 第二次请求（工具结果后）应包含 tool_result block
     const secondBody = calls[1]!.bodyJson as Record<string, unknown>
@@ -105,7 +105,7 @@ describe("E2E-Anthropic: 错误恢复", () => {
       baseUrl: "https://x", apiKey: "k", model: "m", fetch, maxRetries: 2,
     })
     const agent = new AgentRuntime({
-      role: codingAgent, llm: provider,
+      role: coding, llm: provider,
       registry: new ToolRegistry(), memory: new MemoryStore(),
     })
     const result = await agent.chat("hi")

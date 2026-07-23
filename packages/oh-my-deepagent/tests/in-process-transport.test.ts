@@ -7,7 +7,7 @@ import {
   ToolRegistry,
   MemoryStore,
   MockLLMProvider,
-  codingAgent,
+  coding,
   echoTool,
   InProcessTransport,
 } from "../src/index"
@@ -17,7 +17,7 @@ function makeTransport(script: ConstructorParameters<typeof MockLLMProvider>[0])
   registry.register(echoTool)
   const memory = new MemoryStore()
   const llm = new MockLLMProvider(script)
-  const runtime = new AgentRuntime({ role: codingAgent, llm, registry, memory })
+  const runtime = new AgentRuntime({ role: coding, llm, registry, memory })
   const transport = new InProcessTransport({ runtime })
   return { transport, memory, llm }
 }

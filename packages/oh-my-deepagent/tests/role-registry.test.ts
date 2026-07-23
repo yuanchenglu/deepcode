@@ -8,12 +8,12 @@ import {
   renderSystemPrompt,
   createDefaultRoleRegistry,
   defaultRoles,
-  codingAgent,
-  builderAgent,
-  knowledgeAgent,
-  plannerAgent,
-  systemAgent,
-  codingAgentMini,
+  coding,
+  builder,
+  knowledge,
+  planner,
+  system,
+  codingMini,
 } from "../src/role"
 import { AlreadyRegisteredError, RoleNotFoundError } from "../src/errors"
 
@@ -65,7 +65,7 @@ describe("默认角色", () => {
   })
 
   test("每个默认角色 id 与 displayName 都符合命名规范", () => {
-    for (const role of [codingAgent, codingAgentMini, builderAgent, knowledgeAgent, plannerAgent, systemAgent]) {
+    for (const role of [coding, codingMini, builder, knowledge, planner, system]) {
       expect(role.id).toMatch(/^[a-z][a-z0-9-]+$/)
       expect(role.displayName.length).toBeGreaterThan(0)
       expect(role.systemPrompt.length).toBeGreaterThan(10)
@@ -74,7 +74,7 @@ describe("默认角色", () => {
 
   test("defaultRoles 包含全部 6 个", () => {
     expect(Object.keys(defaultRoles).sort()).toEqual(
-      ["codingAgent", "codingAgentMini", "builderAgent", "knowledgeAgent", "plannerAgent", "systemAgent"].sort(),
+      ["coding", "codingMini", "builder", "knowledge", "planner", "system"].sort(),
     )
   })
 

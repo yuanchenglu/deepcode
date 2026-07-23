@@ -10,7 +10,7 @@ import {
   ToolRegistry,
   MemoryStore,
   MockLLMProvider,
-  codingAgent,
+  coding,
   echoTool,
   CLITransport,
 } from "../src/index"
@@ -20,7 +20,7 @@ function makeRuntime(script: ConstructorParameters<typeof MockLLMProvider>[0]) {
   registry.register(echoTool)
   const memory = new MemoryStore()
   const llm = new MockLLMProvider(script)
-  return new AgentRuntime({ role: codingAgent, llm, registry, memory })
+  return new AgentRuntime({ role: coding, llm, registry, memory })
 }
 
 function makeInput(lines: string[]): Readable {

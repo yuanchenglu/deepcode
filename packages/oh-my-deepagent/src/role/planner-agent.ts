@@ -7,7 +7,7 @@
 import type { RoleDefinition } from "../types"
 import { defineRole } from "./role-definition"
 
-export const plannerAgent: RoleDefinition = defineRole({
+export const planner: RoleDefinition = defineRole({
   id: "planner-agent",
   displayName: "Planner Agent",
   systemPrompt: [

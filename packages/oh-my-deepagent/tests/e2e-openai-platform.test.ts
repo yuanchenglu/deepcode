@@ -10,7 +10,7 @@ import {
   MemoryStore,
   OpenAICompatibleProvider,
   calculatorTool,
-  codingAgent,
+  coding,
 } from "../src/index"
 import { createMockFetch } from "./mocks/fetch-mock"
 import { openaiScriptCalculator, openaiTextResponse, openaiToolCallResponse } from "./mocks/mock-responses"
@@ -27,7 +27,7 @@ describe("E2E-OpenAI: 消息 → 工具 → 结果", () => {
     const registry = new ToolRegistry()
     registry.register(calculatorTool)
     const memory = new MemoryStore()
-    const agent = new AgentRuntime({ role: codingAgent, llm: provider, registry, memory })
+    const agent = new AgentRuntime({ role: coding, llm: provider, registry, memory })
 
     const result = await agent.chat("帮我算 1+2*3")
 
@@ -59,7 +59,7 @@ describe("E2E-OpenAI: 消息 → 工具 → 结果", () => {
     })
     const registry = new ToolRegistry()
     const memory = new MemoryStore()
-    const agent = new AgentRuntime({ role: codingAgent, llm: provider, registry, memory })
+    const agent = new AgentRuntime({ role: coding, llm: provider, registry, memory })
 
     const result = await agent.chat("你好")
     expect(result.text).toBe("你好！有什么可以帮你的？")
@@ -78,7 +78,7 @@ describe("E2E-OpenAI: 消息 → 工具 → 结果", () => {
     const registry = new ToolRegistry()
     registry.register(calculatorTool)
     const memory = new MemoryStore()
-    const agent = new AgentRuntime({ role: codingAgent, llm: provider, registry, memory })
+    const agent = new AgentRuntime({ role: coding, llm: provider, registry, memory })
 
     await agent.chat("你好")
     await agent.chat("算 2+3")
@@ -106,7 +106,7 @@ describe("E2E-OpenAI: 错误恢复", () => {
     })
     const registry = new ToolRegistry()
     const memory = new MemoryStore()
-    const agent = new AgentRuntime({ role: codingAgent, llm: provider, registry, memory })
+    const agent = new AgentRuntime({ role: coding, llm: provider, registry, memory })
     const result = await agent.chat("hi")
     expect(result.text).toBe("recovered")
     expect(callCount).toBe(2)

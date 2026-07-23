@@ -15,7 +15,7 @@ import {
   SkillManager,
   Planner,
   PlanExecutor,
-  codingAgent,
+  coding,
   calculatorTool,
   stepsFromDescriptions,
   defaultRoles,
@@ -40,7 +40,7 @@ describe("E2E-1: 消息 → 工具 → 结果", () => {
       // 第二轮：根据工具结果回复
       { content: "结果是 7" },
     ])
-    const agent = new AgentRuntime({ role: codingAgent, llm, registry, memory })
+    const agent = new AgentRuntime({ role: coding, llm, registry, memory })
     const r = await agent.chat("帮我算 1+2*3")
 
     // 验收点 1：返回结果
@@ -87,7 +87,7 @@ describe("E2E-2: 技能加载/卸载 + Agent 调用技能提供的工具", () =>
       { content: "", toolCalls: [{ id: "c1", name: "add", arguments: { a: 2, b: 3 } }] },
       { content: "2+3=5" },
     ])
-    const agent = new AgentRuntime({ role: codingAgent, llm, registry, memory, skillManager: mgr })
+    const agent = new AgentRuntime({ role: coding, llm, registry, memory, skillManager: mgr })
     const r = await agent.chat("2 加 3 等于几")
     expect(r.text).toBe("2+3=5")
     expect(r.toolCalls).toBe(1)
@@ -130,7 +130,7 @@ describe("E2E-4: 会话记忆持久化（重启 MemoryStore 后历史仍在）",
       const m = new MemoryStore({ persistence: p })
       const llm = new MockLLMProvider([{ content: "pong" }])
       const registry = new ToolRegistry()
-      const agent = new AgentRuntime({ role: codingAgent, llm, registry, memory: m })
+      const agent = new AgentRuntime({ role: coding, llm, registry, memory: m })
       await agent.chat("ping")
       await m.flush("default")
     }

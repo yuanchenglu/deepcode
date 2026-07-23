@@ -7,7 +7,7 @@ import {
   ToolRegistry,
   MemoryStore,
   MockLLMProvider,
-  codingAgent,
+  coding,
   echoTool,
   calculatorTool,
   createNowTool,
@@ -25,7 +25,7 @@ function makeRuntime(opts: {
   const memory = new MemoryStore()
   const llm = new MockLLMProvider(opts.script ?? [], { fallback: opts.fallback })
   const agent = new AgentRuntime({
-    role: codingAgent,
+    role: coding,
     llm,
     registry,
     memory,

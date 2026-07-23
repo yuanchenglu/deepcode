@@ -9,7 +9,7 @@ import {
   ToolRegistry,
   MemoryStore,
   MockLLMProvider,
-  codingAgent,
+  coding,
   echoTool,
   CLITransport,
 } from "../src/index"
@@ -19,7 +19,7 @@ function makeCLI(script: ConstructorParameters<typeof MockLLMProvider>[0]) {
   registry.register(echoTool)
   const memory = new MemoryStore()
   const llm = new MockLLMProvider(script)
-  const runtime = new AgentRuntime({ role: codingAgent, llm, registry, memory })
+  const runtime = new AgentRuntime({ role: coding, llm, registry, memory })
   return { runtime, memory, llm }
 }
 
@@ -126,7 +126,7 @@ describe("CLITransport.handleLine", () => {
     const memory = new MemoryStore()
     const llm = new MockLLMProvider([])
     llm.chat = async () => { throw new Error("LLM exploded") }
-    const runtime = new AgentRuntime({ role: codingAgent, llm, registry, memory })
+    const runtime = new AgentRuntime({ role: coding, llm, registry, memory })
     const cli = new CLITransport({ runtime })
     const res = await cli.handleLine("hi")
     expect(res.output).toContain("[error]")

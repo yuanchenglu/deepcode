@@ -5,7 +5,7 @@
  */
 import { defineRole } from "./role-definition"
 
-export const coordinatorAgent = defineRole({
+export const coordinator = defineRole({
   name: "coordinator-agent",
   description: "Coordination agent that decomposes complex tasks and dispatches sub-tasks.",
   systemPrompt: [
