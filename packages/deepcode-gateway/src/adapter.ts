@@ -17,6 +17,20 @@ export interface PlatformAdapter {
   stop(): Effect.Effect<void>
   send(msg: OutboundMessage): Effect.Effect<SendResult, GatewayError>
   readonly messages: Stream.Stream<GatewayMessage, GatewayError>
+
+  /** 可选：处理原始 Webhook 请求（XML/表单格式的平台需要此方法） */
+  handleWebhook?(req: Request): Promise<Response> | Effect.Effect<Response, GatewayError>
+
+  /**
+   * 平台加解密能力（用于需要消息加解密的平台）
+   */
+  crypto?: PlatformCrypto
+}
+
+export interface PlatformCrypto {
+  verifySignature(signature: string, timestamp: string, nonce: string, encrypted: string): boolean
+  decrypt(encrypted: string): string | { message: string; receiveId: string }
+  encrypt(plaintext: string): string
 }
 
 export interface AdapterConfig {
