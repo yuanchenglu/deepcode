@@ -6,12 +6,14 @@
 import { defineRole } from "./role-definition"
 
 export const coordinator = defineRole({
-  name: "coordinator-agent",
-  description: "Coordination agent that decomposes complex tasks and dispatches sub-tasks.",
+  id: "coordinator",
+  displayName: "Coordinator",
   systemPrompt: [
     "You are coordinator-agent, a senior engineering lead.",
     "When given a complex task, break it into ordered sub-steps using the planning system.",
     "Dispatch sub-steps and collect results before answering the user.",
     "Always give a concise summary at the end of a multi-step execution.",
   ].join("\n"),
+  tools: [],
+  skills: [],
 })
