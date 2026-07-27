@@ -1,284 +1,242 @@
 # DeepCode 产品需求文档（PRD）
 
-> 版本：2.0
-> 状态：开源准备基线
-> 产品阶段：Research Alpha → Open-source Beta
-> 第一目标：发布一个真实可安装、可执行、可验证、默认安全的 DeepSeek-native Coding Agent
-
----
+> 版本：2.1
+> 状态：Phase 0 范围冻结
+> 产品阶段：Research Alpha → Open-source v0.1
+> 第一目标：发布一个可安装、可执行、可验证、默认安全，内置多角色 Agent 并支持 Gateway 的 DeepSeek-native Coding Agent
 
 ## 1. 文档目的
 
-本 PRD 取代以“14 个 Harness 模块是否存在”为核心的旧需求表达。产品完成度必须以用户闭环和可验证行为衡量。
+本 PRD 定义 v0.1 正式产品范围。产品完成度以用户闭环、主链路 Applied Behavior、自动化测试和运行证据衡量，不能以 Package、Role 或 Adapter 文件数量衡量。
 
-状态定义：
+状态：
 
-| 状态 | 定义 |
-|---|---|
-| 已验证 | 当前 Commit 有可重复执行证据 |
-| 已实现未验证 | 代码存在，但当前基线无运行证据 |
-| 部分实现 | 接口/模块/记录存在，但没有形成闭环 |
-| 未实现 | 不存在或未接入主执行路径 |
+- 已验证。
+- 已实现未验证。
+- 部分实现。
+- 未实现。
 
----
+成熟度：
 
-## 2. 背景
+- Stable。
+- Beta。
+- Experimental。
 
-DeepCode 基于 OpenCode 二次开发，试图将 DeepSeek 的长上下文、Reasoning、OpenAI-compatible API 和缓存能力转化为 Coding Agent 产品优势。
+完整范围以 [08_V0.1_SCOPE.md](./08_V0.1_SCOPE.md) 为准。
 
-项目目前已拥有：
+## 2. 产品定义
 
-- 完整 OpenCode Monorepo 底座。
-- DeepSeek/OpenAI-compatible Protocol 支持。
-- 14 个 DeepCode Harness 模块。
-- Gateway 多平台 Adapter。
-- oh-my-deepagent 及 13 个角色。
-- 大量设计、研究和审计文档。
+DeepCode 是一款针对 DeepSeek 深度优化、内置 13 个 Agent 角色、支持本地和消息平台双入口的开源 Coding Agent。
 
-但仍存在：
+```text
+DeepCode Runtime
++ Built-in DeepAgent
++ DeepCode Gateway
++ DeepSeek-native Harness
+= DeepCode v0.1
+```
 
-- 产品主张与运行链路失配。
-- 关键协议字段未真正生效。
-- 模型路由仅记录不应用。
-- Gateway 安全边界不足。
-- 测试和发布不可复现。
+## 3. 核心架构约束
 
-因此 v0.1 不继续扩功能，而是完成产品闭环。
+### PRD-ADR-001 唯一 Runtime
 
----
+CLI、TUI、Gateway 和 Built-in DeepAgent 必须共享：
 
-## 3. 产品愿景
+- Session。
+- Provider。
+- Context。
+- Harness。
+- Tool Executor。
+- Permission。
+- History / Evidence。
 
-> 让 DeepSeek 在真实软件工程任务中，通过可观察、可控制、可验证的 Harness 发挥稳定能力。
+禁止维护第二套生产 Agent Loop。
 
-长期愿景：
+### PRD-ADR-002 内置 Agent
 
-- 模型能力和 Harness 策略共同演进。
-- 用户能够理解 Agent 的关键决策。
-- 长任务不因上下文增长、权限混乱或目标漂移而失控。
-- 开源社区能够独立复现所有核心主张。
+- `oh-my-deepagent` 作为 DeepCode 内部 Package 维护。
+- 不独立发布产品、CLI 或生产 Runtime。
+- 13 个现有角色全部预装。
 
----
+### PRD-ADR-003 Gateway 正式进入 v0.1
 
-## 4. v0.1 目标与非目标
+- Gateway Core 目标 Stable。
+- 飞书 Adapter 目标 Stable。
+- 其他 Adapter 分级发布。
 
-### 4.1 目标
+## 4. 用户画像
 
-1. 全新环境可安装并启动 DeepCode。
-2. 可连接 DeepSeek OpenAI-compatible API。
-3. 可完成一个真实仓库中的读取、修改、测试任务。
-4. Session、Reasoning、Tool Call 和权限链路正确。
-5. 至少两项 DeepCode Harness 差异化能力真实生效：
-   - Model Routing。
-   - Hard Constraints 或 Reasoning Lifecycle。
-6. 公开主张全部具有追踪证据。
-7. 默认不暴露未经鉴权的远程 Agent 入口。
-8. 贡献者可通过单命令运行核心测试。
+### Persona A：本地 DeepSeek 开发者
 
-### 4.2 非目标
+需要在真实仓库中完成代码任务，控制权限并获得测试证据。
 
-- 11 个 Gateway 平台全部 Stable。
-- 13 个角色全部产品化。
-- 自动创建并启用 Skill。
-- 企业级多租户、SSO、审计后台。
+### Persona B：消息平台用户
+
+需要在飞书等平台中发起、继续和查看受控的 DeepCode 任务。
+
+### Persona C：高级 Agent 用户
+
+需要选择预装专业角色完成规划、实现、审查、研究、调试或其他专业任务。
+
+### Persona D：开源贡献者 / Harness 研究者
+
+需要理解真实主链路、运行测试并扩展 Role、Skill、Adapter 和 Harness。
+
+## 5. v0.1 目标
+
+1. 全新环境可安装并启动。
+2. 正确连接 DeepSeek OpenAI-compatible API。
+3. 完成真实仓库读取、修改、Shell 和测试任务。
+4. Session、Reasoning、Tool Call、Permission 和 Compaction 正确。
+5. 13 个角色全部预装，使用统一 Runtime。
+6. Build、Plan、Review 和关键高级角色完成 Runtime E2E。
+7. Gateway Core 达到 Stable。
+8. 飞书 Adapter 达到 Stable。
+9. 至少两个其他 Adapter 达到 Beta，或通过显式 ADR 调整。
+10. Model Routing、Hard Constraints、Reasoning、Scope、Review 真实生效。
+11. 公开主张全部具有追踪证据。
+12. 贡献者可通过单命令运行质量门。
+
+## 6. v0.1 非目标
+
 - 云端托管和商业计费。
+- 企业多租户、SSO 和管理后台。
 - 分布式 Session Runtime。
-- 兼容所有 DeepSeek 第三方代理服务。
+- 无监督并行 Multi-Agent 高风险写入。
+- 自动创建并启用全局 Role/Skill。
+- 所有 Adapter 同时达到 Stable。
+- Desktop 专属产品重设计。
 
----
+## 7. 核心用户故事
 
-## 5. 用户画像
+### US-001 安装和配置
 
-### Persona A：DeepSeek 开发者
+用户能够在干净环境安装 DeepCode，配置 DeepSeek，并在十分钟内完成首次对话。
 
-- 熟悉 CLI、Git、API Key。
-- 使用 DeepSeek 完成代码工作。
-- 关注成本、质量、长上下文和可控性。
+### US-002 本地代码任务
 
-需求：
+用户能够读取代码、批准修改、运行测试并获得证据。
 
-- 简单配置 DeepSeek。
-- 清楚当前模型和推理设置。
-- Agent 修改前后有证据。
-- 不随意扩大修改范围。
+### US-003 选择角色
 
-### Persona B：Agent 工程师/研究者
+用户能够选择任一预装角色，无需安装独立 Agent 项目。
 
-- 研究 Context Engineering、Tool Use、Harness。
-- 需要明确的模块接口和可复现实验。
+### US-004 Plan-Build-Review
 
-需求：
+用户能够在同一个 Session 中由 Plan 规划、Build 执行、Review 审查。
 
-- 能看到 Harness Decision。
-- 能替换策略并运行测试。
-- 文档与源码一致。
+### US-005 复杂模型路由
 
-### Persona C：开源贡献者
+复杂任务使用配置中的强模型，简单任务使用快速模型，并展示实际 Model ID。
 
-- 第一次进入大型 Monorepo。
-- 希望快速理解项目、复现问题和提交 PR。
+### US-006 权限和范围
 
-需求：
+deny 永远不可绕过；角色、Skill、Workflow 和 Gateway 均使用同一安全链。
 
-- 清晰的架构和贡献指南。
-- 单命令环境检查和测试。
-- 明确的模块成熟度与边界。
+### US-007 飞书任务
 
----
+已授权用户能够在飞书中选择 Workspace 和 Role，继续同一 Session 并收到结果。
 
-## 6. 核心用户故事
+### US-008 Gateway 多平台
 
-### US-001 首次安装
+贡献者能够通过统一 Adapter Contract 扩展平台，而不复制 Runtime。
 
-作为开发者，我希望通过 npm/bun 或 Release Binary 安装 DeepCode，并在 10 分钟内完成首次模型对话。
+### US-009 可验证 Harness
 
-### US-002 配置 DeepSeek
+用户能够查看 Role、Model、Reasoning、Scope、Permission 和 Review 的 decided/applied 结果。
 
-作为开发者，我希望仅配置 API Key、Base URL 和 Model，即可验证连接，无需理解内部 Provider Schema。
+## 8. 安装与启动需求
 
-### US-003 完成代码修改
+### FR-INSTALL-001 正式安装方式
 
-作为开发者，我希望 DeepCode 读取代码、提出最小修改、执行变更并运行验证，最终告诉我改了什么、为什么和测试结果。
+至少选择一种并验证：
 
-### US-004 复杂任务路由
-
-作为开发者，我希望复杂重构自动使用更强模型，而简单读取优先使用更快模型，并能看到实际使用的 Model ID。
-
-### US-005 长会话稳定
-
-作为开发者，我希望长任务中约束、计划和 Tool Call 仍然正确，不因压缩或 reasoning 回放导致协议错误。
-
-### US-006 权限控制
-
-作为开发者，我希望读操作可以自动进行，而写文件和 Shell 根据我的规则 ask/allow/deny，deny 永远不能被绕过。
-
-### US-007 查看 Harness 决策
-
-作为研究者，我希望查看意图、模型、reasoning、Scope 和 Review 的决策与原因。
-
-### US-008 安全远程接入
-
-作为高级用户，我希望可选启用飞书 Gateway，但只有合法签名、授权用户和指定 Workspace 能触发 Agent。
-
-### US-009 贡献代码
-
-作为贡献者，我希望 clone 后通过一个命令完成依赖检查、类型检查和测试，并明确失败原因。
-
----
-
-## 7. 核心流程需求
-
-## 7.1 安装与启动
-
-### FR-INSTALL-001 支持的安装方式
-
-至少提供一种正式支持、可验证的安装方式：
-
-- npm package，或
-- bun package，或
+- npm / bun Package；或
 - GitHub Release Binary。
-
-不能在 README 同时宣传未验证的安装方式。
 
 验收：
 
-- 在干净 Linux/macOS 环境安装成功。
-- `deepcode --version` 返回版本。
-- `deepcode --help` 正常。
-- 卸载不残留项目文件。
+- macOS 和 Linux 干净环境安装成功。
+- `deepcode --version` 和 `deepcode --help` 正常。
+- 安装包包含 Runtime、Built-in DeepAgent、Gateway Core 和发布范围内 Adapter。
+- 不单独安装 oh-my-deepagent。
 
-### FR-INSTALL-002 环境诊断
+### FR-INSTALL-002 Doctor
 
-提供 `deepcode doctor`：
+提供环境诊断：
 
 - Runtime 版本。
-- Git 状态。
-- 配置路径。
-- Provider 配置是否完整。
-- 可选依赖是否存在。
-- 网络连接测试。
-- 不打印 Secret。
+- Workspace / Git。
+- Provider 配置和连接。
+- Role Registry 完整性。
+- Gateway 配置和 Adapter Health。
+- Secret 不进入输出。
 
-### FR-INSTALL-003 配置引导
+### FR-INSTALL-003 首次引导
 
-首次启动缺少 Provider 时：
+- Provider 最小配置。
+- 默认 Role Build。
+- Gateway 默认关闭。
+- 可选进入 Gateway 配置向导。
 
-- 展示最小配置提示。
-- 支持环境变量。
-- 支持用户配置与 Workspace 配置。
-- 提供连接测试。
+## 9. Workspace 与 Session
 
----
+### FR-SESSION-001 Workspace
 
-## 7.2 Workspace 与 Session
+- 默认当前目录。
+- 检测 Git 状态。
+- 不覆盖用户未提交内容。
+- Gateway 只能使用 Allowlist Workspace。
 
-### FR-SESSION-001 Workspace 识别
+### FR-SESSION-002 唯一 Session
 
-- 默认使用当前目录。
-- 检测 Git Repository。
-- 展示当前分支、未提交变更。
-- 不自动覆盖用户未提交文件。
-
-### FR-SESSION-002 Session 创建与恢复
-
-- 新任务创建 Session。
-- 可恢复历史 Session。
+- 本地、Gateway 和角色切换均使用同一 Session Service。
 - Session 绑定 Workspace。
 - 不同 Workspace 不串话。
+- Gateway Identity 可映射到 Session，但不创建另一种 Session 类型。
 
-### FR-SESSION-003 多轮上下文
+### FR-SESSION-003 历史协议
 
-- User/Assistant/Reasoning/Tool Call/Tool Result 顺序完整。
-- Tool Call ID 与 Result ID 对应。
-- Provider-required Metadata 在同模型回放时保留。
-- 跨模型时移除不兼容 Metadata。
+- User / Assistant / Reasoning / Tool Call / Tool Result 顺序完整。
+- Tool Call ID 对应。
+- 同模型保留必要 Metadata。
+- 跨模型移除不兼容 Metadata。
 
-### FR-SESSION-004 中断与恢复
+### FR-SESSION-004 中断和恢复
 
-- 用户可取消 Provider Stream。
-- 运行中 Tool 能收到 AbortSignal。
-- 中断后的 pending/running Tool 被标记失败。
+- Provider、Tool、Gateway 请求可取消。
+- Pending Tool 正确 Settlement。
 - Resume 不重复执行已完成副作用。
 
-### FR-SESSION-005 最大步数
+### FR-SESSION-005 最大步数和资源边界
 
-- Agent Step 有上限。
-- 达到上限后禁止继续 Tool Call。
-- 给出清晰终止原因。
+- Agent Step 上限。
+- Tool 重复调用上限。
+- Queue、History、Pending 状态有容量或持久化策略。
 
----
+## 10. DeepSeek Provider
 
-## 7.3 DeepSeek Provider 与协议
+### FR-PROVIDER-001 配置
 
-### FR-PROVIDER-001 OpenAI-compatible 配置
-
-配置项：
-
-- API Key。
+- API Key Env。
 - Base URL。
 - Model ID。
-- Context Limit。
-- Output Limit。
+- Context / Output Limit。
 - Reasoning Capability。
+- fast / strong Model Policy（可选）。
 
-### FR-PROVIDER-002 Request Body
+### FR-PROVIDER-002 Wire Body
 
-正确映射：
+内部 camelCase，协议层转换 snake_case，验证：
 
-- `model`
-- `messages`
-- `tools`
-- `tool_choice`
-- `stream`
-- `stream_options.include_usage`
-- `reasoning_effort`
-- `max_tokens`
-- `temperature`
-- `top_p`
+- model。
+- messages。
+- tools / tool_choice。
+- stream / stream_options。
+- reasoning_effort。
+- generation parameters。
 
-内部配置使用统一 camelCase，协议层转换 snake_case。
-
-### FR-PROVIDER-003 Stream Parsing
+### FR-PROVIDER-003 Stream
 
 支持：
 
@@ -286,736 +244,459 @@ DeepCode 基于 OpenCode 二次开发，试图将 DeepSeek 的长上下文、Rea
 - Reasoning Delta。
 - Tool Call Delta。
 - Finish Reason。
-- Usage。
-- Cached Tokens。
-- Reasoning Tokens。
+- Usage / Cache / Reasoning Tokens。
 - Provider Error。
 
-### FR-PROVIDER-004 Tool Call Continuation
+### FR-PROVIDER-004 Tool Continuation
 
-- Assistant Tool Call 进入历史。
-- Tool Result 正确回传。
-- Reasoning Content 按 Provider 协议要求回传。
-- 工具参数流式拼接完整。
+- Tool Call 和 Result 正确回传。
+- Reasoning Content 遵循 Endpoint 要求。
+- Tool 参数流式拼接完整。
 
 ### FR-PROVIDER-005 Contract Test
 
-必须通过录制/Mock Server 验证最终 Wire Body 和 SSE，不允许只测试中间 ProviderOptions。
+必须通过 Mock Server 捕获最终 Wire Body 和 SSE，不允许只测 ProviderOptions。
 
----
+## 11. Built-in DeepAgent
 
-## 7.4 Agent 执行
+### FR-AGENT-001 预装
 
-### FR-AGENT-001 任务理解
+- 13 个仓库现有角色全部随 DeepCode 安装。
+- Phase 1 从 Registry 生成准确角色清单。
+- 角色无需额外下载或安装。
 
-每轮提取：
+### FR-AGENT-002 Role Definition
 
-- 用户目标。
-- 约束。
-- 验收标准。
-- 风险。
-- 是否需要计划。
+每个角色必须定义：
 
-简单任务不强制过度规划。
+- id。
+- displayName。
+- description。
+- systemPrompt。
+- tools。
+- skills。
+- risk。
+- maturity。
+- scenarios。
 
-### FR-AGENT-002 计划
+### FR-AGENT-003 核心和高级角色
 
-复杂任务支持：
+- Build、Plan、Review 一级展示。
+- 其余角色进入高级角色区域。
+- 高级不等于 Experimental；成熟度由测试决定。
 
-- Objective。
-- Key Results。
-- Steps。
-- Dependencies。
-- Acceptance Criteria。
-- Status。
+### FR-AGENT-004 Role 选择和切换
 
-首发只要求计划可创建、更新和展示，不要求自动进化。
+- 默认 Build。
+- 用户可显式选择。
+- Gateway 可在授权范围内选择。
+- 切换发生在同一 Session。
+- 切换生成 decided/applied Event。
+- 失败时保留原 Role。
 
-### FR-AGENT-003 Tool Loop
+### FR-AGENT-005 Tool 白名单
 
-- 每轮可调用多个 Tool。
-- Tool 并发策略可控。
-- Tool 执行前完成安全检查。
-- 结果持久化后才能进入下一轮。
-- 重复相同 Tool Call 应有上限。
-
-### FR-AGENT-004 完成输出
-
-最终输出必须包含：
-
-- 完成内容。
-- 关键文件。
-- 验证命令和结果。
-- 未验证项。
-- 风险和后续事项。
-
-禁止在未运行测试时输出“测试通过”。
-
----
-
-## 7.5 权限与工具安全
-
-### FR-PERM-001 权限规则
-
-动作：
-
-- allow
-- ask
-- deny
-
-优先级：最后匹配规则生效。无匹配默认 ask。
-
-### FR-PERM-002 deny 强保证
-
-- deny Tool 不暴露给模型，或执行时拒绝。
-- Workflow/Gateway/DeepAgent 不能绕过。
-- deny 不能进入 preapproved 列表。
-
-### FR-PERM-003 once/always
-
-- once 只批准当前请求。
-- always 仅批准匹配 Pattern。
-- Session 结束后默认不跨 Session 保存，除非用户显式配置。
-
-### FR-PERM-004 路径边界
-
-- 通过 `realpath + relative` 判断 Workspace 边界。
-- 默认禁止 Workspace 外写入。
-- Symlink 逃逸必须阻止。
-
-### FR-PERM-005 Shell
-
-Shell 不能依赖单一 filePath 做安全判断。
-
-首发要求：
-
-- 高风险命令默认 ask。
-- cwd 固定在 Workspace。
-- 注入 AbortSignal/Timeout。
-- 限制环境变量暴露。
-- 日志不打印 Secret。
-
----
-
-## 7.6 Intent 与 Model Routing
-
-### FR-ROUTE-001 Intent
-
-首发只保留可解释的分类：
-
-- simple
-- medium
-- refactor
-- architecture
-- research
-
-`new/collaboration/spec-driven` 可保留内部兼容，但不作为首发核心承诺。
-
-### FR-ROUTE-002 Model Decision
-
-决策输出必须包含：
-
-```ts
-{
-  providerId,
-  modelId,
-  tier,
-  reason,
-  risk,
-  reasoningEffort
-}
-```
-
-### FR-ROUTE-003 决策应用
-
-- 决策发生在 Model Resolve 前。
-- `model.decided` 与 `model.applied` 可对照。
-- UI 显示真实 Model ID。
-- 决策无法应用时明确降级原因。
-
-### FR-ROUTE-004 Override
-
-- 用户具体 Model 选择优先。
-- Override 可清除。
-- Override 有 Session 生命周期。
-- 模型主动切换默认只作为建议，除非 Policy 允许。
-
-### FR-ROUTE-005 失败升级
-
-只有以下失败计入能力升级：
-
-- 可重试的模型能力失败。
-- 连续工具参数错误。
-- 明确的低质量检查失败。
-
-网络错误、Rate Limit 不应直接升级模型。
-
----
-
-## 7.7 Reasoning 管理
-
-### FR-REASON-001 Effort
-
-- 根据模型真实支持集合选择。
-- 不支持 `max` 的 Endpoint 不发送 `max`。
-- 非 Reasoning 模型不发送该字段。
-
-### FR-REASON-002 存储
-
-- Reasoning 与 Text 分开存储。
-- 用户可选择显示/隐藏。
-- 不作为最终答案的一部分重复输出。
-
-### FR-REASON-003 历史策略
-
-目标策略：
-
-- 当前 Tool Turn：完整保留。
-- 下一轮：Provider 要求优先；允许时摘要。
-- 历史轮：允许时剥离。
-
-策略必须由协议兼容性约束，不能为了省 Token 破坏 Tool Call Continuation。
-
-### FR-REASON-004 跨模型
-
-- 不把私有 Provider Metadata 发送给其他 Provider。
-- 可将必要 reasoning 摘要转成普通 Context，但必须标明历史摘要而非新指令。
-
----
-
-## 7.8 Context 与 Cache
-
-### FR-CONTEXT-001 Stable Baseline
-
-- System Baseline 在 Context Epoch 内字节稳定。
-- 不含时间戳、随机数或易变顺序。
-- Dynamic 内容通过 Update/History 进入。
-
-### FR-CONTEXT-002 Hard Constraints
-
-- 提取显式“禁止/必须/只能”等约束。
-- 用户可查看和删除误提取约束。
-- 约束有来源消息。
-- 约束在压缩后仍保留。
-
-### FR-CONTEXT-003 Compaction
-
-- Context Overflow 前主动压缩。
-- Overflow 后最多恢复一次。
-- Compaction Summary 明确标识为历史上下文，不是新指令。
-- Tool Call/Result 不被截断成无效序列。
-
-### FR-CONTEXT-004 Token Budget
-
-- 使用模型真实 Context/Output Limit。
-- 显示估算值与 Provider 实际 Usage 的差异。
-- 不以未经验证的模型内部 sliding_window 参数作为硬编码产品承诺。
-
-### FR-CONTEXT-005 Cache Metrics
-
-如 Provider 返回：
-
-- cache read tokens
-- cache write tokens
-- non-cached input
-
-则持久化并展示。没有 Provider 证据时不宣称 Cache 命中收益。
-
----
-
-## 7.9 Scope 与 Review
-
-### FR-SCOPE-001 Scope 初始化
-
-复杂任务 Plan 创建后：
-
-- 推断预计修改文件。
-- 展示给用户。
-- 用户确认或按 Permission 自动批准。
-- 空 Scope 不得被误解为“全部禁止”或“全部允许”。
-
-### FR-SCOPE-002 Scope 检查
-
-- edit/write/apply_patch 统一检查。
-- Shell 通过 Sandbox/Policy 检查。
-- 超范围操作返回原因和建议。
-
-### FR-SCOPE-003 Required/Optional/Unrelated
-
-- required：需说明与当前验收的必要关系。
-- optional：必须用户批准。
-- unrelated：记录，不执行。
-
-### FR-REVIEW-001 Checkpoint
-
-Checkpoint 可由以下条件触发：
-
-- Plan Step 完成。
-- 高风险文件修改。
-- 连续失败。
-- 用户/模型请求。
-
-### FR-REVIEW-002 审查结果
-
-输出：
-
-- passed。
-- violations。
-- evidence。
-- action。
-
-Enforcement 违规必须阻止完成或要求修复；Advisory 只提示。
-
-### FR-REVIEW-003 Skill 提议
-
-首发只允许：
-
-- 生成提议。
-- 用户查看。
-- 手动导出。
-
-不允许自动激活或修改全局 Skill。
-
----
-
-## 7.10 Role 与 Skill
-
-### FR-ROLE-001 首发角色
-
-只正式支持：
-
-1. Build：通用编码执行。
-2. Plan：复杂任务规划。
-3. Review：代码审查和验证。
-
-其他角色标记 Experimental。
-
-### FR-ROLE-002 工具白名单
-
-实际暴露 Tool 必须是：
+实际 Tool：
 
 ```text
 Registry
 ∩ Role Tools
-∩ Loaded Skill Tools
-∩ User Permission
-∩ Runtime Capability
+∩ Skill Tools
+∩ Permission
+∩ Workspace / Entry Capability
 ```
 
-### FR-SKILL-001 Skill 加载
+- 白名单外 Tool 不可见。
+- deny 优先。
+- Skill 不扩权。
 
-- 来源明确。
-- 名称唯一。
-- 工具注册冲突拒绝。
-- 卸载清理工具。
-- Skill 内容不得绕过 Permission。
+### FR-AGENT-006 Skill
 
----
+- 引用存在。
+- 依赖和冲突可验证。
+- Context 和 Tool 通过统一 Runtime 应用。
+- Skill Evolution 不自动修改全局 Skill。
 
-## 7.11 Gateway（Experimental）
+### FR-AGENT-007 协作
 
-### FR-GW-001 默认关闭
+正式支持：
 
-- 未配置时不启动。
-- 默认 localhost。
-- UI/日志明确 Experimental。
+- Plan → Build → Review。
+- 同 Session 和 Task。
+- 用户显式切换。
 
-### FR-GW-002 平台范围
+Beta：
 
-v0.1 只允许一个经过端到端验证的平台进入 Experimental Release，建议飞书。
+- Intent 推荐角色。
+- Review 请求 Build 修正。
 
-其他平台：
+### FR-AGENT-008 测试
 
-- Parser/Adapter 可保留源码。
-- README 不宣称生产支持。
-- 不默认注册。
+- 13 个 Role Registry / Prompt / Tool / Skill 单元测试。
+- 每个角色至少一个自动化场景测试。
+- 核心和关键高级角色完成真实 Runtime E2E。
+- 不可用角色不能以 Stable 发布。
 
-### FR-GW-003 入站鉴权
+## 12. Agent Tool Loop
 
-每个平台必须：
+### FR-TOOL-001 统一执行器
 
-- 验证签名/Token。
-- 验证时间窗口。
-- 防重放。
-- 限制 Body Size。
-- 记录拒绝原因但不泄露 Secret。
+所有入口共用：
 
-### FR-GW-004 会话路由
+```text
+Lookup
+→ Role / Skill Filter
+→ Schema
+→ Permission
+→ Workspace / Scope / Sandbox
+→ Execute
+→ Settlement
+→ Evidence
+```
 
-Key 至少包含：
+### FR-TOOL-002 Permission
 
-- platform
-- tenant
-- bot
-- user
-- chat
-- workspace
+- allow / ask / deny。
+- 无规则默认 ask。
+- deny 不能进入 preapproved。
+- once / always Pattern 正确。
 
-### FR-GW-005 正确回包
+### FR-TOOL-003 Workspace
 
-回复必须使用原消息 sourceAdapter，不依赖 Adapter 注册顺序。
-
-### FR-GW-006 执行桥接
-
-目标使用 OpenCode Server/SDK 长期连接，不为每条消息启动 CLI 子进程。
-
-过渡期子进程方案必须：
-
-- 严格 timeout。
-- kill escalation。
-- stdout/stderr 限制。
-- 有界 Queue。
-- 同 Session 保序、不同 Session 可并发。
-
-### FR-GW-007 Workspace Allowlist
-
-远程用户只能操作预配置 Workspace，不能通过消息指定任意系统目录。
-
----
-
-## 8. 非功能需求
-
-## 8.1 安全
-
-### NFR-SEC-001 Secret
-
-- 仓库和历史无有效 Secret。
-- CI Secret Scan。
-- 日志脱敏。
-- 提供 `SECURITY.md`。
-
-### NFR-SEC-002 默认安全
-
-- Gateway 默认关闭。
-- 写/Shell 默认 ask。
+- realpath + relative。
+- Symlink 防逃逸。
 - Workspace 外写默认 deny。
-- 插件和 Skill 不可绕过 Permission。
 
-### NFR-SEC-003 供应链
+### FR-TOOL-004 Shell
 
-- Lockfile 固定。
-- 依赖漏洞扫描。
-- Patch 列表有 Owner/原因/上游链接。
-- Release 有 checksum。
+- cwd 固定。
+- 高风险默认 ask。
+- Timeout / Abort。
+- 环境变量最小暴露。
+- 输出限制和脱敏。
 
-## 8.2 可靠性
+## 13. Model Routing 与 Reasoning
 
-### NFR-REL-001 取消
+### FR-ROUTE-001 Model Decision
 
-Provider、Tool、Subprocess 在用户取消后有界时间内终止。
+输出 providerId、modelId、tier、reason、risk、reasoningEffort。
 
-### NFR-REL-002 无界状态
+### FR-ROUTE-002 Applied
 
-Queue、History、Pending Skills 等必须有容量或持久化策略。
+- 决策发生在 Resolve 前。
+- model.decided 和 model.applied 可对照。
+- 单模型配置自动退化。
+- Applied Rate 目标 100%。
 
-### NFR-REL-003 错误语义
+### FR-REASON-001 Effort
 
-错误区分：
+- 按模型能力选择。
+- 不支持 `max` 时不发送。
+- 非 Reasoning 模型不发送。
 
-- User Error
-- Config Error
-- Provider Error
-- Permission Error
-- Tool Error
-- Internal Error
+### FR-REASON-002 Lifecycle
 
-## 8.3 性能
+- 当前 Tool Turn 完整。
+- 下一轮在协议允许时摘要。
+- 历史在协议允许时剥离。
+- 不破坏 Tool Continuation。
 
-### NFR-PERF-001 启动
+## 14. Context、Constraints、Scope 和 Review
 
-不联网安装完成后，CLI 启动到可输入界面目标 < 3 秒（常规开发机）。
+### FR-CONTEXT-001 Stable Baseline
 
-### NFR-PERF-002 运行时
+- Epoch 内字节稳定。
+- Dynamic 内容通过 Update / History。
 
-- 不在主 Event Loop 执行大目录同步扫描。
-- 文件读取有大小限制。
-- Tool 输出有截断和外部存储。
+### FR-CONSTRAINT-001 Hard Constraints
 
-### NFR-PERF-003 Context
+- 提取、来源、查看、删除。
+- 压缩后保留。
+- Tool 前检查。
+- 完成前审查。
 
-- 组装复杂度不随全历史无限增长。
-- 压缩前有阈值。
-- Usage 可观测。
+### FR-SCOPE-001 Scope
 
-## 8.4 兼容性
+- Plan 输出 expected files。
+- 用户或 Policy 确认。
+- edit/write/patch 统一检查。
+- Shell 使用 Sandbox / Policy。
 
-首发支持：
+### FR-REVIEW-001 Review
+
+- 输出 passed、violations、evidence、action。
+- Enforcement 违规阻止完成。
+- Advisory 只提示。
+
+## 15. Gateway Core
+
+### FR-GW-001 默认状态
+
+- 默认关闭。
+- 默认 localhost。
+- 公网模式显式开启并通过安全配置检查。
+
+### FR-GW-002 Adapter Contract
+
+每个平台实现：
+
+- start / stop。
+- verifyInbound。
+- parse 多消息。
+- send。
+- health。
+- capabilities。
+
+### FR-GW-003 Auth
+
+- Signature / Token。
+- Timestamp。
+- Replay。
+- Idempotency。
+- Body Limit。
+- Rate Limit。
+- 失败请求不入队、不创建 Session。
+
+### FR-GW-004 Identity / Workspace
+
+- User / Tenant / Bot / Chat / Thread。
+- User Allowlist。
+- Workspace Allowlist。
+- Permission Profile。
+- Allowed Roles。
+
+### FR-GW-005 Session
+
+Key 至少包括：
+
+```text
+platform / tenant / bot / user / chat / thread / workspace
+```
+
+- 同 Session 保序。
+- 不同 Session 受控并发。
+- 无跨平台、跨租户串话。
+
+### FR-GW-006 Runtime Bridge
+
+- 直接调用 `DeepCodeRuntime.prompt()`。
+- 不直接调用 Provider 或 Tool。
+- 不为每条消息启动 CLI 子进程。
+
+### FR-GW-007 Delivery
+
+- sourceAdapter 回包。
+- 分段、重试、速率限制。
+- Delivery Result 和错误可观察。
+
+### FR-GW-008 Permission UX
+
+- 支持交互的平台展示 once / always / reject。
+- 不支持的平台暂停或拒绝高风险操作。
+- 不能自动 allow。
+
+## 16. Gateway 平台需求
+
+### FR-FEISHU-001 Stable
+
+- 官方 WS 或 Webhook 协议。
+- Auth、事件解析、私聊、群聊。
+- Idempotency、多轮 Session。
+- Workspace / User Allowlist。
+- Role 选择。
+- 回包、分段、重连。
+- Mock 和真机 E2E。
+
+### FR-GW-BETA-001 Beta Adapters
+
+企业微信、Telegram、Slack 中至少两个达到 Beta：
+
+- Auth。
+- Replay。
+- Session。
+- Workspace。
+- Outbound。
+- Mock E2E。
+- 无 P0。
+
+### FR-GW-EXP-001 Experimental
+
+其余 Adapter：
+
+- 保留源码。
+- 默认关闭。
+- 限制明确。
+- 未完成矩阵前不宣称正式支持。
+
+## 17. Harness 模块
+
+### v0.1 必须接入
+
+- Intent Router。
+- Model Router。
+- Hard Constraints。
+- Reasoning Manager。
+- Scope Guard。
+- Context Window Manager。
+- Review / Immune。
+
+### 渐进集成
+
+- OKR Plan。
+- Review Anti-drift。
+- Memory Granularity。
+- Meta Directives。
+- Signal Tagger。
+- Skill Evolution。
+
+要求：Service、调用或日志不等于能力完成；必须有 applied 和 evidence。
+
+## 18. 非功能需求
+
+### 安全
+
+- P0 为 0。
+- Secret Scan 全历史。
+- Gateway、Tool、Permission fail-closed。
+- 日志和 Telemetry 脱敏。
+
+### 可靠性
+
+- Provider、Tool、Gateway、Subprocess 可取消。
+- Queue、History、Pending 状态有界。
+- Graceful Shutdown。
+
+### 性能
+
+- CLI 启动目标 < 3 秒。
+- 不在主 Event Loop 做大目录同步扫描。
+- 文件和 Tool 输出有大小限制。
+- Gateway 并发有上限。
+
+### 兼容性
 
 - macOS arm64/x64。
 - Linux x64/arm64。
-- Windows 若上游构建已稳定，否则标记 Experimental。
+- Windows 根据上游稳定性标 Beta 或 Experimental。
 
-Runtime 版本必须固定并在安装文档中说明。
+### 隐私
 
-## 8.5 可维护性
+- 代码只发送到用户配置 Provider。
+- Gateway 日志不默认保存完整消息正文。
+- Telemetry 不含 Prompt、源码和 Secret。
 
-- 核心模块有 Owner。
-- 单文件不持续堆积所有 Hook。
-- 公共 API 有 Type Test。
-- 新功能必须进入追踪矩阵。
+## 19. UX 需求
 
-## 8.6 可观察性
+本地用户能看到：
 
-- 结构化日志。
-- Session/Turn/Tool Correlation ID。
-- Harness Decision Event。
-- Provider Usage。
-- 默认不上传 Telemetry，需用户选择。
+- Workspace。
+- Role。
+- Provider / Model。
+- reasoning effort。
+- Tool / Permission。
+- Usage / Evidence。
 
-## 8.7 隐私
+Gateway 用户能看到：
 
-- 本地代码不默认上传到除用户配置 Provider 之外的服务。
-- Telemetry 不包含 Prompt、源码和 Secret。
-- Gateway 日志不默认保存消息正文。
+- Workspace 和 Session。
+- 当前 Role。
+- 任务状态。
+- 权限请求。
+- 结果摘要和完整证据入口。
 
----
-
-## 9. 配置需求
-
-最小配置示例：
-
-```jsonc
-{
-  "provider": {
-    "deepseek": {
-      "apiKeyEnv": "DEEPSEEK_API_KEY",
-      "baseURL": "https://api.example.com/v1",
-      "models": {
-        "deepseek-model": {
-          "context": 128000,
-          "output": 8192,
-          "reasoning": true
-        }
-      }
-    }
-  },
-  "model": "deepseek/deepseek-model",
-  "permission": {
-    "read": "allow",
-    "edit": "ask",
-    "bash": "ask"
-  },
-  "gateway": {
-    "enabled": false
-  }
-}
-```
-
-要求：
-
-- Schema 验证。
-- Unknown Key 提示。
-- 配置错误包含路径。
-- Secret 仅引用环境变量或安全存储。
-
----
-
-## 10. UX 需求
-
-### 10.1 每轮状态
-
-用户应能看到：
-
-- Agent/Role。
-- Provider/Model ID。
-- Model Tier。
-- Reasoning Effort。
-- Tool。
-- Permission 状态。
-- Token/Usage（可用时）。
-
-### 10.2 权限请求
-
-必须展示：
-
-- Tool 名称。
-- 目标文件/命令。
-- 风险说明。
-- once/always/reject。
-
-### 10.3 错误信息
-
-示例：
-
-不合格：
-
-```text
-Provider failed
-```
-
-合格：
-
-```text
-DeepSeek request rejected: reasoning_effort=max is not supported by this endpoint.
-Model: deepseek/example
-Action: choose high or update the model capability configuration.
-```
-
-### 10.4 完成总结
-
-模板：
-
-```text
-完成：...
-变更：...
-验证：命令 + 结果
-未验证：...
-风险：...
-```
-
----
-
-## 11. 数据与事件需求
-
-### 11.1 Harness Decision
-
-记录：
-
-- 输入摘要。
-- 决策。
-- 原因。
-- 是否 Enforcement。
-- 是否实际应用。
-
-### 11.2 Test Evidence
-
-每个任务可记录：
-
-- command
-- exit code
-- duration
-- stdout summary
-- stderr summary
-- environment
-
-### 11.3 敏感字段
-
-以下禁止进入日志/Telemetry：
-
-- API Key。
-- Authorization Header。
-- Platform Secret。
-- 完整环境变量。
-- 未经用户许可的源码正文。
-
----
-
-## 12. README 主张规范
-
-公开主张必须映射到 `07_REQUIREMENT_TRACEABILITY.md`。
-
-允许：
-
-- “支持 DeepSeek OpenAI-compatible API”，前提是 Contract Test 通过。
-- “实验性飞书 Gateway”，前提是签名和 E2E 通过。
-
-禁止：
-
-- “唯一全栈适配”。
-- “14 个模块保证不乱来”。
-- “支持 11 平台”，如果未完成逐平台鉴权和 E2E。
-- “自动切 Pro”，如果 Applied Rate 不为 100%。
-
----
-
-## 13. 开源仓库需求
+## 20. 开源和发布需求
 
 必须提供：
 
 - README。
-- LICENSE 与上游版权说明。
-- CONTRIBUTING.md。
-- SECURITY.md。
-- CODE_OF_CONDUCT.md。
-- CHANGELOG.md。
-- Architecture/PRD/Test 文档。
-- Issue/PR Template。
-- 发布和升级说明。
-- Upstream Sync 说明。
+- LICENSE / 上游版权。
+- CONTRIBUTING。
+- SECURITY。
+- CODE_OF_CONDUCT。
+- CHANGELOG。
+- SUPPORT。
+- UPSTREAM。
+- Role、Skill、Adapter 扩展指南。
 
-根 `repository` 字段必须指向 DeepCode 仓库。
-
----
-
-## 14. 发布门槛
-
-### 14.1 P0 必须为 0
-
-- 未鉴权远程执行。
-- Secret 泄露。
-- deny 被绕过。
-- 路径逃逸。
-- Session 串话。
-- Provider 协议破坏。
-- 数据损坏。
-
-### 14.2 自动化门禁
-
-必须通过：
+统一质量门：
 
 ```text
 lint
 + typecheck
-+ unit tests
-+ integration tests
-+ provider contract tests
-+ install smoke tests
-+ security scan
++ unit
++ integration
++ provider-contract
++ agent-e2e
++ gateway-core
++ gateway-adapter
++ security
 + build
++ install-smoke
 ```
 
-### 14.3 E2E 场景
+## 21. README 主张规则
 
-1. 干净环境安装。
-2. DeepSeek 文本对话。
-3. 读取仓库。
-4. 修改文件并运行测试。
-5. deny 写入。
-6. 长会话压缩。
-7. Tool Call continuation。
-8. Model Routing applied。
-9. Gateway 签名拒绝/接受（若发布）。
+允许写入 Stable/Beta 的前提：
 
-### 14.4 文档门禁
+```text
+Requirement
++ Main Code Path
++ Applied Behavior
++ Automated Tests
++ Runtime Evidence
++ Security Review
+```
 
-- README 每项主张有证据。
-- 不把“已实现未验证”写成 Stable。
-- 示例无真实凭据和个人路径。
+未验证前禁止：
 
----
+- 11 平台全部稳定。
+- 13 角色全部正式可用。
+- 自动切换模型完成。
+- Harness 保证不乱来。
+- 唯一、完全、全栈适配等绝对化表述。
 
-## 15. 当前实现状态快照
+完成对应证据后可以恢复准确主张。
+
+## 22. v0.1 Go / No-Go
+
+1. 单一生产 Runtime。
+2. 13 个角色全部预装且均有自动化场景；未达 Stable 的明确标 Beta。
+3. 核心和关键高级角色 Runtime E2E 通过。
+4. Gateway Core Stable。
+5. 飞书 Stable。
+6. 至少两个 Beta Adapter，或显式 ADR 调整。
+7. Gateway 不通过 CLI 子进程运行 Agent。
+8. P0 = 0。
+9. Provider Contract 全通过。
+10. Model Routing Applied Rate = 100%。
+11. deny 无绕过。
+12. CI 和安装矩阵全通过。
+13. Claim Evidence Coverage = 100%。
+14. 至少 3 名外部用户完成本地任务。
+15. 至少 3 名外部用户完成飞书任务。
+
+## 23. 当前状态快照
 
 | 能力 | 当前状态 | v0.1 要求 |
 |---|---|---|
-| OpenCode 基础 Runtime | 已实现未验证 | 回归测试通过 |
-| DeepSeek OpenAI-compatible Chat | 部分实现 | Contract Test 通过 |
-| Reasoning Stream Parsing | 已实现未验证 | E2E 通过 |
-| reasoning effort 动态控制 | 部分实现/字段失配 | Wire Body 正确 |
-| Flash/Pro Routing | 部分实现 | 决策真实应用 |
-| Hard Constraint | 部分实现 | 压缩后仍生效 |
-| Reasoning Lifecycle | 部分实现 | 接入 History Projection |
-| Scope Guard | 部分实现且有绕过 | 统一 Tool Guard |
-| Permission | 基础存在，Workflow 有缺陷 | deny 全链路正确 |
-| 14 Harness Modules | 代码存在程度不一 | 只承诺验证过的模块 |
-| oh-my-deepagent | Experimental | 不作为主 Runtime |
-| 11 Platform Gateway | Experimental/不安全 | 默认关闭，最多验证 1 个 |
-| 安装发布 | 未闭环 | 干净环境成功 |
-| CI | 未闭环 | 单一质量门 |
+| OpenCode Runtime | 已实现未验证 | 统一 API 和回归测试 |
+| DeepSeek Protocol | 部分实现 | Contract 全通过 |
+| Model Routing | Partial / Fail | 真正 Applied |
+| Reasoning | Partial | Wire + History E2E |
+| Permission | 基础存在，有缺陷 | 全入口统一且 deny 正确 |
+| 13 Roles | 文件和局部测试存在 | 内置、Tool Policy、场景 E2E |
+| oh-my-deepagent Runtime | 存在重复风险 | 迁移后删除重复 Runtime |
+| Gateway Core | Experimental / Unsafe | Stable |
+| 飞书 | 部分实现 | Stable + 真机 E2E |
+| 其他 Adapter | 程度不一 | 至少两个 Beta，其余分级 |
+| Harness 14 模块 | 接入程度不一 | 核心 Applied，其他准确标级 |
+| 安装 / CI | 未闭环 | 正式发布门禁 |
 
----
+## 24. 相关文档
 
-## 16. 成功标准
-
-v0.1 发布后 30 天内：
-
-- 至少 20 个独立用户完成安装。
-- 安装成功率 ≥ 80%。
-- 至少 50 个真实代码任务。
-- Verified Task Completion Rate ≥ 60%。
-- Permission Bypass = 0。
-- Secret Incident = 0。
-- README Claim Evidence Coverage = 100%。
-- P0 安全问题 = 0。
-
-这些是验证产品是否可用的指标，不以 Star 数、角色数或平台数替代。
+- [08_V0.1_SCOPE.md](./08_V0.1_SCOPE.md)
+- [09_V0.1_PRODUCT_ARCHITECTURE.md](./09_V0.1_PRODUCT_ARCHITECTURE.md)
+- [10_V0.1_TECHNICAL_ARCHITECTURE.md](./10_V0.1_TECHNICAL_ARCHITECTURE.md)
+- [11_V0.1_AGENT_INTEGRATION_PLAN.md](./11_V0.1_AGENT_INTEGRATION_PLAN.md)
+- [12_V0.1_GATEWAY_PLAN.md](./12_V0.1_GATEWAY_PLAN.md)
+- [13_V0.1_MIGRATION_MANIFEST.md](./13_V0.1_MIGRATION_MANIFEST.md)
