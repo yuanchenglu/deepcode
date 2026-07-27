@@ -91,7 +91,18 @@ jobs:
       - name: Run HttpApi exerciser gates
         if: runner.os == 'Linux'
         working-directory: packages/opencode
-        run: bun run test:httpapi
+        run: |
+          set -o pipefail
+          bun run test:httpapi 2>&1 | tee httpapi.log
+
+      - name: Upload HttpApi log
+        if: runner.os == 'Linux' && always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: httpapi-${{ github.run_attempt }}
+          if-no-files-found: error
+          retention-days: 7
+          path: packages/opencode/httpapi.log
 
   e2e:
     name: e2e (${{ matrix.settings.name }})
