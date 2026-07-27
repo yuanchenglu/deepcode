@@ -1,466 +1,298 @@
 # DeepCode v0.1 开源迭代计划
 
-> 版本：2.1
-> 状态：Phase 0 范围与架构冻结完成
-> 目标：不删除 Gateway 或内置 Agent，以统一 Runtime、安全和验证闭环达到正式开源
+> 版本：2.2
+> 状态：Phase 0 范围冻结完成，Runtime 架构已勘误
+> 目标：保留 Gateway 与 oh-my-deepagent 插件价值，以安全、契约和验证闭环达到正式开源
 
 ## 1. 总体原则
 
 ```text
-范围冻结
-→ 准确盘点
-→ 单一 Runtime
-→ Built-in DeepAgent
-→ Gateway Core / Adapters
-→ DeepSeek / Harness
-→ 安全门禁
-→ Test / CI
-→ Install / Release
+事实审计
+→ 安全边界
+→ Host-Plugin Contract
+→ Provider/Harness
+→ Agent Orchestration
+→ Gateway
+→ 测试/安装
+→ Release
 ```
 
-全程冻结：
+此前“先统一为一套 Runtime、再删除第二套 Loop”的顺序已撤销。
 
-- 新增第 14 个角色。
-- 新增当前列表之外的 Gateway 平台。
-- 新增 Harness 模块。
-- 新增云端、计费、多租户和 Desktop 专属产品面。
+正确原则：
 
-允许工作：
+> **单一宿主治理边界，允许多个 Agent 编排循环。**
 
-- 使现有 13 角色达到正式质量。
-- 使现有 Gateway 平台按 Stable/Beta/Experimental 分级。
-- 删除重复 Runtime 和不安全路径。
-- 补主链路、测试、文档和发布工程。
+## 2. 功能冻结
 
-## 2. 版本里程碑
+v0.1 前冻结新增：
 
-| 版本 | 目标 |
-|---|---|
-| `v0.1.0-alpha.1` | 范围冻结、准确盘点、Runtime API、安全 Kill Switch |
-| `v0.1.0-alpha.2` | Built-in DeepAgent 接入，13 Roles 可运行 |
-| `v0.1.0-alpha.3` | Gateway Core、Runtime Bridge、飞书主流程 |
-| `v0.1.0-beta.1` | Provider/Harness 闭环、Agent/Gateway E2E、CI |
-| `v0.1.0-rc.1` | 安全、安装、长运行、外部试用 |
-| `v0.1.0` | 可信开源首发 |
+- 新 Gateway 平台；
+- 新 Role/Skill；
+- 新 Harness 模块；
+- 新产品入口；
+- 云端和企业功能。
 
-## 3. Phase 0：范围与架构冻结
+冻结不等于删除现有 Subagent、Multi-Agent、Gateway 或插件 Runtime 能力。
 
-### 状态
+## 3. Phase 0：范围与架构冻结——已完成并勘误
 
-**已完成文档阶段。**
+完成：
 
-### 已产出
+- Gateway 进入 v0.1。
+- oh-my-deepagent 正式内置。
+- 角色预装目标确认。
+- 文档基线建立。
 
-- `08_V0.1_SCOPE.md`。
-- `09_V0.1_PRODUCT_ARCHITECTURE.md`。
-- `10_V0.1_TECHNICAL_ARCHITECTURE.md`。
-- `11_V0.1_AGENT_INTEGRATION_PLAN.md`。
-- `12_V0.1_GATEWAY_PLAN.md`。
-- `13_V0.1_MIGRATION_MANIFEST.md`。
-- PRD、架构、迭代和追踪矩阵同步修订。
+勘误：
 
-### 已冻结决策
+- 撤销“当前已有第二套生产 Runtime”的既定判断。
+- 撤销“AgentRuntime/runMessageLoop 必须删除”的预设。
+- 改为 Host Runtime Governance + Plugin Orchestration。
 
-1. Gateway 进入 v0.1。
-2. 飞书目标 Stable。
-3. 13 Roles 全部预装。
-4. oh-my-deepagent 不独立发布或维护生产 Runtime。
-5. 所有入口使用唯一 Runtime。
+## 4. Phase 1：来源、调用图与职责审计
 
-### Phase 0 退出条件
+### 目标
 
-- 文档无旧范围冲突。
-- 每个 Package 有目标定位。
-- 删除原则是 migration-first。
+在修改 Runtime 代码前还原真实架构。
 
-## 4. Phase 1：准确盘点与统一 Runtime
+### 工作项
 
-> 版本目标：`v0.1.0-alpha.1`
+#### P1-01 上游架构还原
 
-### P1-01 仓库准确盘点
+- 阅读原始 OpenCode 插件 API。
+- 阅读原始 oh-my-OpenAgent 安装、Hook、Agent、Subagent 和 Tool 机制。
+- 对照改名后的 DeepCode/oh-my-deepagent。
 
-产出机器可核查清单：
+#### P1-02 生产入口调用图
 
-- 13 Role 文件、ID、Tools、Skills。
-- Skill 清单和冲突。
-- oh-my-deepagent 独立 Runtime 入口和调用图。
-- Gateway Adapter、Auth、Parser、Outbound、Tests。
-- Gateway CLI 子进程桥调用图。
-- Runtime、Tool Executor、Permission 的重复实现。
-- 14 Harness 的 registered / called / applied / tested 状态。
+- CLI/TUI 入口。
+- Gateway 入口。
+- Host Session/Provider/Tool 入口。
+- Plugin Role/Agent 入口。
 
-将结果填入 Migration Manifest，禁止根据文档或 Commit Message 猜测。
+#### P1-03 DeepAgent 组件调用图
 
-### P1-02 DeepCode Runtime API
+列出：
 
-定义并实现：
+- AgentRuntime；
+- runMessageLoop；
+- ToolRunner；
+- MemoryStore；
+- Provider；
+- Transport；
+- Role/Skill/Planning；
+- Subagent/Multi-Agent。
 
-- createSession。
-- resumeSession。
-- prompt。
-- cancel。
-- getSession。
-- subscribeEvents。
+#### P1-04 状态权威性
 
-### P1-03 Runtime Event Contract
+生成：
 
-统一：
+- Canonical History；
+- Orchestration State；
+- Parent/Child Task；
+- Scratch/Durable Memory；
+- Gateway Mapping。
 
-- role.decided / applied。
-- model.decided / applied。
-- tool / permission。
-- reasoning / text。
-- evidence / completion / error。
+#### P1-05 分类决策
 
-### P1-04 安全 Kill Switch
+每个组件标记：
 
-在完整安全整改完成前：
+- Host Execution；
+- Plugin Orchestration；
+- Compatibility；
+- Test Runtime；
+- Transitional；
+- Unused；
+- Unknown。
 
-- Gateway 默认关闭。
-- 公网绑定拒绝或要求显式危险确认。
-- 无 Auth Adapter 不注册。
-- 已知 deny 绕过路径标记阻断测试。
+再给出 Keep、Adapt、Bridge、Replace、Remove。
 
-### Phase 1 退出条件
+### 退出条件
 
-- 准确清单完成。
-- Runtime API 有集成测试。
-- CLI 可通过新 Runtime API 完成基础对话。
-- Gateway 和 Agent 可以开始接入，不需复制 Runtime。
+- 不存在依赖猜测的 Runtime 删除项。
+- 所有核心调用方有源码路径。
+- 原始插件关系有文档证据。
+- 后续整改清单经过确认。
 
-## 5. Phase 2：Built-in DeepAgent 正式接入
+## 5. Phase 2：P0 安全封锁
 
-> 版本目标：`v0.1.0-alpha.2`
+### 工作项
 
-### P2-01 Role Registry
+- Secret 轮换、历史清理和 Scan。
+- Permission deny 修复。
+- Workspace realpath/Symlink 安全。
+- Shell Timeout/Abort/环境变量保护。
+- Gateway 默认关闭、本地绑定和入站鉴权。
+- Subagent 权限继承和收缩规则。
 
-- 13 ID 唯一。
-- 默认 Build。
-- 核心 / 高级角色分组。
-- Tool / Skill 引用验证。
-- 成熟度和风险元数据。
+### 退出条件
 
-### P2-02 Context 集成
+- P0 安全问题为 0。
+- Host Loop、Plugin Loop、Gateway 均不能绕过安全契约。
 
-- Role Prompt 进入 Context Projector。
-- 角色切换产生动态 Context Update。
-- role.decided / role.applied。
+## 6. Phase 3：Host-Plugin Contract
 
-### P2-03 Tool / Skill Policy
+### 工作项
 
-实现：
+#### Session/Task
 
-```text
-Registry
-∩ Role Tools
-∩ Skill Tools
-∩ Permission
-∩ Entry Capability
-```
+- Host Session 与 Orchestration ID。
+- Parent/Child Agent Task。
+- Resume/Cancel。
+- History/Memory 边界。
 
-### P2-04 同 Session 切换
+#### Tool
 
-- CLI/TUI 选择和切换。
-- Plan → Build → Review。
-- Gateway 可携带或保存 Role。
-- 不复制 Session。
+- Role/Skill Filter。
+- Permission/Workspace/Sandbox。
+- Tool Result Settlement。
+- Evidence。
 
-### P2-05 测试
+#### Provider
 
-- 13 Role Unit。
-- 13 Role Scenario。
-- 核心和关键高级角色 Runtime E2E。
-- Tool 越权负向测试。
+- Host Provider、Plugin Adapter、Compatibility/Test Provider 的定位。
+- Reasoning、Usage、Abort 和 Error 传播。
 
-### P2-06 删除重复 Agent Runtime
+#### Events
 
-在替代路径和测试通过后删除：
+- role/agent/model/tool/permission/gateway 相关性。
 
-- Message Loop。
-- Session Store。
-- Provider Invocation。
-- Tool Executor。
-- Permission。
-- Memory Runtime。
-- 独立 CLI。
+### 退出条件
 
-### Phase 2 退出条件
+- Contract 有类型、文档和测试。
+- 不要求插件丧失编排能力。
+- 无法归类的 Runtime 代码仍保持 Unknown，不强删。
 
-- 13 Roles 全部预装可选。
-- 不存在第二套生产 Agent Runtime。
-- Role Tool Policy 不可绕过。
-- 核心角色 E2E 通过。
+## 7. Phase 4：DeepSeek Provider 与 Harness
 
-## 6. Phase 3：Gateway Core 重构
+### Provider
 
-> 版本目标：`v0.1.0-alpha.3`
+- Wire Contract。
+- reasoning_effort。
+- Text/Reasoning/Tool SSE。
+- Usage/Cache。
+- Overflow/Abort/Error。
 
-### P3-01 Adapter Contract
+### Harness
 
-- verifyInbound。
-- parse 多消息。
-- send。
-- health。
-- capabilities。
+- Model Routing Applied。
+- Hard Constraints。
+- Reasoning Lifecycle。
+- Scope。
+- Review Enforcement/Advisory。
 
-### P3-02 Core Security Pipeline
-
-- Raw Body。
-- Auth。
-- Timestamp。
-- Replay。
-- Idempotency。
-- Body / Rate Limit。
-
-### P3-03 Identity / Workspace
-
-- 多维 Identity。
-- User Allowlist。
-- Workspace Allowlist。
-- Permission Profile。
-- Allowed Roles。
-
-### P3-04 Session / Queue
-
-- 多维 Session Key。
-- 有界 Queue。
-- 同 Session 保序。
-- 跨 Session 受控并发。
-
-### P3-05 Runtime Bridge
-
-```text
-Gateway
-→ DeepCodeRuntime.prompt()
-→ Runtime Events
-→ Response Aggregator
-→ sourceAdapter.send()
-```
-
-### P3-06 Legacy Path
-
-- Legacy CLI Bridge 默认关闭。
-- 新桥完成并通过 E2E 后删除。
-- 删除第一个 Adapter 回包和 chatId-only Session。
-
-### Phase 3 退出条件
-
-- Gateway Core 自动测试通过。
-- 鉴权先于入队。
-- Gateway 直接调用统一 Runtime。
-- Session 和 Adapter 路由正确。
-
-## 7. Phase 4：平台 Adapter 完整化
-
-### P4-01 飞书 Stable
-
-- 官方 WS / Webhook。
-- Auth、Challenge、Parser。
-- 私聊、群聊。
-- Replay / Idempotency。
-- Workspace / User Policy。
-- Role 选择。
-- 多轮 Session。
-- 回包、分段、重连。
-- Mock + 真机 E2E。
-
-### P4-02 Beta Adapter 选择
-
-从企业微信、Telegram、Slack 选择至少两个，基于 Phase 1 准确盘点评估：
-
-- 当前实现完整度。
-- 安全协议复杂度。
-- Fixture 和测试资产。
-- 真机验证可获得性。
-- 维护成本。
-
-### P4-03 Experimental Adapter
-
-其余平台：
-
-- 保留源码。
-- 接入统一 Contract 或记录迁移计划。
-- 默认关闭。
-- 限制说明。
-
-### Phase 4 退出条件
-
-- 飞书 Stable Matrix 全通过。
-- 至少两个 Beta Adapter，或新增经确认 ADR。
-- 每个平台状态与证据一致。
-
-## 8. Phase 5：DeepSeek Provider 与 Harness 闭环
-
-### P5-01 Provider Contract
-
-- Wire Body。
-- Text / Reasoning / Tool SSE。
-- Usage / Cache。
-- 4xx / Overflow / Abort。
-
-### P5-02 Model Routing
-
-- 决策在 Resolve 前。
-- concrete model applied。
-- 单模型退化。
-- Applied Rate = 100%。
-
-### P5-03 Reasoning
-
-- effort capability。
-- History Projection。
-- Tool Continuation。
-- 跨模型 Metadata。
-
-### P5-04 Constraints / Scope / Review
-
-- Constraint 提取、查看、删除、压缩保留、Enforcement。
-- Scope 初始化。
-- Unified Tool Guard。
-- Review Enforcement / Advisory 区分。
-
-### P5-05 其他 Harness
-
-OKR、Anti-drift、Memory、Meta Directives、Signal、Skill Evolution：
-
-- 按 applied 状态接入。
-- 未完成的不冒充 Stable。
-- 不新增模块。
-
-### Phase 5 退出条件
+### 退出条件
 
 - Provider Contract 全通过。
-- 至少核心 Harness E2E 全通过。
-- README 核心主张有证据。
+- 核心 Harness 有 E2E 证据。
 
-## 9. Phase 6：安全专项
+## 8. Phase 5：Built-in Agent 正式交付
 
-安全整改在各 Phase 同步进行，本阶段负责完成审计和门禁闭环。
+### 工作项
 
-### P6-01 Secret
+- 准确角色和 Skill 清单。
+- 每个角色的 Prompt/Tool/Skill/Risk/Maturity。
+- Plan → Build → Review。
+- Parent/Subagent。
+- Multi-Agent 编排和冲突处理。
+- Gateway Role 选择。
+- 插件独立 Runtime/Compatibility/Test 能力按审计结论处理。
 
-- 凭据轮换。
-- Git 历史清理。
-- Gitleaks / Secret Scan。
-- SECURITY.md。
+### 退出条件
 
-### P6-02 Tool / Permission
+- 预装角色可发现、可选择、可测试。
+- 关键角色和每个角色场景达到既定标准。
+- Agent 编排能力未因架构整改回退。
+- 真实副作用遵守安全契约。
 
-- deny 修复。
-- Workspace / Symlink。
-- Shell Policy。
-- Environment 和日志脱敏。
+## 9. Phase 6：Gateway 正式交付
 
-### P6-03 Gateway
+### Gateway Core
 
-- Auth / Replay / Rate / Body。
-- User / Workspace Allowlist。
-- Permission UX。
-- Audit Events。
+- Auth、Replay、Idempotency。
+- Identity、Workspace、Session Mapping。
+- Queue、Concurrency、Timeout、Shutdown。
+- Host/Plugin 调用链。
+- Source Adapter Delivery。
 
-### P6-04 Supply Chain
+### Feishu Stable
 
-- Dependency / License Scan。
-- Patch Ownership。
-- Release Checksum。
+- 官方鉴权。
+- Parser。
+- 私聊/群聊。
+- 多轮、Role、Subagent。
+- 分段、重连、幂等和真机 E2E。
 
-### Phase 6 退出条件
+### 退出条件
 
-- P0 = 0。
-- 安全测试为 Required Check。
-- 独立安全复审完成。
+- Gateway Core Stable。
+- 飞书 Stable。
+- 无未鉴权执行路径。
 
-## 10. Phase 7：测试与 CI
+## 10. Phase 7：测试、CI、安装和发布
 
-### 根命令
+### 统一质量门
 
 ```bash
 bun run check
 ```
 
-### Required Jobs
+覆盖：
 
-- static。
-- runtime。
-- provider-contract。
-- deepagent。
-- gateway-core。
-- gateway-adapters。
-- security。
-- build-install。
+- Static；
+- Provider Contract；
+- Host Runtime；
+- Plugin Orchestration；
+- Host-Plugin Contract；
+- Gateway；
+- Security；
+- Build/Install。
 
-### Artifacts
+### 开源体验
 
-- JUnit。
-- Coverage。
-- Contract Fixture（脱敏）。
-- Role Scenario Report。
-- Gateway Matrix Report。
-- Install Log。
-- Build Artifact。
+- README。
+- CONTRIBUTING。
+- SECURITY。
+- CHANGELOG。
+- SUPPORT。
+- UPSTREAM。
+- 安装 Smoke Matrix。
 
-### 性能和可靠性
+## 11. 版本里程碑
 
-- CLI 启动。
-- 100 Turn Session。
-- 24 小时 Runtime / Gateway。
-- Queue / Timeout / Abort。
-- 大文件和 Tool Output Limit。
+### v0.1.0-alpha.1
 
-### Phase 7 退出条件
+- Phase 1 审计完成。
+- P0 安全封锁。
 
-- develop 最新 Commit CI 全绿。
-- P0 用例自动化。
-- Test Report 可由 Artifact 生成。
+### v0.1.0-alpha.2
 
-## 11. Phase 8：安装、文档和 Release
+- Host-Plugin Contract。
+- Provider/Harness 闭环。
 
-### 发布物
+### v0.1.0-alpha.3
 
-一个 DeepCode 发布物，内置：
+- Built-in Agent 和编排链路。
+- Gateway Core/飞书。
 
-- Runtime。
-- Built-in DeepAgent / 13 Roles。
-- Harness。
-- Gateway Core。
-- 发布范围内 Adapter。
+### v0.1.0-beta.1
 
-不独立发布 oh-my-deepagent 产品或 Gateway Agent Runtime。
+- 全套 E2E、CI 和安装。
 
-### 文档
+### v0.1.0-rc.1
 
-- 3 分钟开始。
-- Role 指南。
-- Gateway 配置和安全。
-- Adapter 状态矩阵。
-- Architecture / PRD / Test。
-- CONTRIBUTING / SECURITY / SUPPORT / UPSTREAM。
+- 外部试用、长运行和 Claim 审计。
 
-### 外部试用
+## 12. Go/No-Go
 
-- 至少 3 人完成本地真实任务。
-- 至少 3 人完成飞书真实任务。
+Go：
 
-### Go / No-Go
-
-- 单一 Runtime。
-- 13 Roles 预装且测试达标。
-- Gateway Core Stable。
-- 飞书 Stable。
-- Beta Adapter 目标达成或 ADR 调整。
-- P0 = 0。
-- CI / Install 全通过。
-- Claim Evidence Coverage = 100%。
-
-## 12. 工作分解建议
-
-| Workstream | 责任 |
-|---|---|
-| Runtime | Session、Runtime API、Events、Tool Settlement |
-| DeepAgent | Role、Skill、Tool Policy、Role E2E |
-| Gateway | Core、Adapter、Session、Delivery |
-| Protocol / Harness | DeepSeek Contract、Routing、Reasoning、Constraints |
-| Security | Permission、Workspace、Gateway Auth、Secret |
-| Release | CI、Package、Install、Docs、External Test |
-
-小团队可以一人多岗，但每个 Issue 必须有 Owner、Requirement、Test ID 和退出条件。
+- P0=0。
+- 调用图和状态权威性明确。
+- Provider Contract 全绿。
+- Host 和 Plugin 编排 E2E 通过。
+- Gateway Core/飞书通过。
+- 安装和 CI 通过。
+- README Claim Coverage=100%。
+- 无因错误“单 Loop”假设造成的插件能力损失。
