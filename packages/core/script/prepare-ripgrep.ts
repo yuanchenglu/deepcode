@@ -5,3 +5,4 @@ import { RipgrepBinary } from "../src/ripgrep/binary"
 const { runPromise } = makeRuntime(RipgrepBinary.Service, AppNodeBuilder.build(RipgrepBinary.node))
 const filepath = await runPromise((service) => service.filepath)
 console.log(filepath)
+process.exit(0)
