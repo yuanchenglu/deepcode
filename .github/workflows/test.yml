@@ -68,9 +68,20 @@ jobs:
 
       - name: Run unit tests
         timeout-minutes: 20
-        run: GITHUB_ACTIONS=false bun turbo test
+        run: |
+          set -o pipefail
+          GITHUB_ACTIONS=false bun turbo test 2>&1 | tee unit-${{ matrix.settings.name }}.log
         env:
           DEEPCODE_EXPERIMENTAL_DISABLE_FILEWATCHER: ${{ runner.os == 'Windows' && 'true' || 'false' }}
+
+      - name: Upload unit test log
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: unit-${{ matrix.settings.name }}-${{ github.run_attempt }}
+          if-no-files-found: error
+          retention-days: 7
+          path: unit-${{ matrix.settings.name }}.log
 
       - name: Check generated client
         if: runner.os == 'Linux'
