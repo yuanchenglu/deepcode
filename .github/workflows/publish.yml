@@ -2,13 +2,8 @@ name: publish
 run-name: "${{ format('release {0}', inputs.bump) }}"
 
 on:
-  push:
-    branches:
-      - ci
-      - dev
-      - beta
-      - fix/npm-native-binary-install
-      - snapshot-*
+  # Legacy upstream publisher remains manual and inert in this fork until S1-06
+  # replaces its repository guards, artifact names, and release targets.
   workflow_dispatch:
     inputs:
       bump:
