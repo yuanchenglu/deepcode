@@ -294,6 +294,29 @@ it.instance("loads config with defaults when no files exist", () =>
   }),
 )
 
+it.instance.skip("does not load an OpenCode-only project configuration", () =>
+  Effect.gen(function* () {
+    const test = yield* TestInstance
+    yield* writeConfigEffect(test.directory, { username: "opencode-only" }, "opencode.json")
+
+    const config = yield* Config.use.get()
+    expect(config.username).not.toBe("opencode-only")
+  }),
+)
+
+it.instance.skip("loads DeepCode configuration when both products coexist", () =>
+  Effect.gen(function* () {
+    const test = yield* TestInstance
+    yield* Effect.all([
+      writeConfigEffect(test.directory, { username: "opencode-user" }, "opencode.json"),
+      writeConfigEffect(test.directory, { username: "deepcode-user" }, "deepcode.json"),
+    ])
+
+    const config = yield* Config.use.get()
+    expect(config.username).toBe("deepcode-user")
+  }),
+)
+
 it.instance("falls back to generic username when system user info is unavailable", () =>
   Effect.gen(function* () {
     const userInfo = spyOn(os, "userInfo").mockImplementation(() => {
