@@ -1,274 +1,99 @@
 # DeepCode 技术架构
 
-> 版本：2.1
-> 状态：Phase 0 范围冻结
-> 详细冻结版本：[10_V0.1_TECHNICAL_ARCHITECTURE.md](./10_V0.1_TECHNICAL_ARCHITECTURE.md)
+> 版本：2.2
+> 状态：Phase 0 勘误后基线
+> 详细版本：[10_V0.1_TECHNICAL_ARCHITECTURE.md](./10_V0.1_TECHNICAL_ARCHITECTURE.md)
+> Runtime 勘误：[14_PHASE0_ERRATA_AGENT_RUNTIME.md](./14_PHASE0_ERRATA_AGENT_RUNTIME.md)
 
-## 1. 架构原则
+## 1. 核心原则
 
-1. **Single Runtime**：CLI、TUI、Gateway 和 Built-in DeepAgent 使用同一生产 Runtime。
-2. **OpenCode-first**：复用并收敛 OpenCode Session、Provider、Tool、Permission、Compaction 和 UI 能力。
-3. **Protocol correctness first**：DeepSeek 请求、Reasoning、Tool Continuation 和 Usage 必须经过 Contract Test。
-4. **Decision must be applied**：Role、Model、Reasoning、Scope 和 Review 均记录 decided 与 applied。
-5. **Unified Tool Chain**：所有入口只能使用同一个 Tool Executor。
-6. **Enforcement fail-closed**：Permission、Workspace、Webhook、Replay、Secret 等安全控制失败时拒绝。
-7. **Gateway is an entry, not another runtime**。
-8. **Roles are policies, not separate agent processes**。
-9. **Migration before deletion**：重复实现只在替代路径和回归测试完成后删除。
-10. **Open-source reproducibility**：全新环境可安装、测试、构建和验证。
+1. Host 对真实副作用、权限、工作区和正式证据保持治理权。
+2. oh-my-deepagent 可拥有 Role、Subagent 和 Multi-Agent Orchestration Loop。
+3. “存在独立 Runtime 类”不等于“存在第二套生产 Runtime”。
+4. 先做调用图和上游插件契约审计，再做迁移或删除。
+5. Enforcement fail-closed，Advisory 必须可观察。
+6. Provider、Tool、Reasoning 和 Gateway 必须验证 Applied Behavior。
 
-## 2. 目标系统
-
-```mermaid
-flowchart TD
-  CLI[CLI / TUI] --> RUNTIME[DeepCode Runtime API]
-  GATEWAY[Gateway Core] --> RUNTIME
-  AGENT[Built-in DeepAgent] --> RUNTIME
-
-  RUNTIME --> SESSION[Session Service]
-  RUNTIME --> TURN[Turn Orchestrator]
-  TURN --> POLICY[Harness / Role Policy]
-  TURN --> MODEL[Model Resolver]
-  TURN --> CONTEXT[Context Projector]
-  TURN --> TOOL[Unified Tool Executor]
-
-  MODEL --> PROVIDER[DeepSeek Provider]
-  CONTEXT --> PROVIDER
-  TOOL --> PERMISSION[Permission]
-  TOOL --> SCOPE[Workspace / Scope / Sandbox]
-  TOOL --> SETTLE[Settlement / Evidence]
-
-  AGENT --> ROLE[Role Registry]
-  AGENT --> SKILL[Skill Registry]
-  ROLE --> POLICY
-  SKILL --> TOOL
-
-  GATEWAY --> ADAPTER[Platform Adapter]
-  ADAPTER --> AUTH[Auth / Replay / Idempotency]
-  AUTH --> IDENTITY[Identity / Workspace Policy]
-```
-
-## 3. 唯一 Runtime API
-
-内部 API 至少支持：
-
-- createSession
-- resumeSession
-- prompt
-- cancel
-- getSession
-- subscribeEvents
-
-Runtime Input 统一携带：
-
-- workspace
-- entry source
-- identity（Gateway 可选）
-- role
-- model override
-- permission profile
-- abort signal
-
-Runtime Event 统一服务本地 UI 和 Gateway：
-
-- session / role / model
-- reasoning / text
-- tool / permission
-- review / evidence
-- usage / completion / error
-
-## 4. Built-in DeepAgent 边界
-
-`packages/oh-my-deepagent` 目标保留：
-
-- Role Definition / Registry。
-- Skill Definition / Registry。
-- Prompt 和 Agent Policy。
-- Role Selection / Switching。
-- Agent Tests。
-
-迁移到统一 Runtime：
-
-- Session。
-- Message Loop。
-- Provider Invocation。
-- Tool Executor。
-- Permission。
-- Memory / History。
-- Cancellation。
-
-Role Tools 必须执行：
+## 2. 技术边界
 
 ```text
-Registry
-∩ Role Tools
-∩ Skill Tools
-∩ Permission
-∩ Runtime Capability
+CLI/TUI/Gateway
+       ↓
+DeepCode/OpenCode Host
+├── Session / Task Identity
+├── Provider / Context / History
+├── Tool / Permission / Workspace
+├── Harness / Evidence
+└── Plugin Contract
+       ↓
+oh-my-deepagent
+├── Role / Skill
+├── Planning / Delegation
+├── Subagents
+├── Multi-Agent Orchestration
+└── Compatibility/Test Components
 ```
 
-## 5. Gateway 边界
+## 3. Host 与 Plugin 的状态关系
 
-Gateway Core 负责：
+必须区分：
 
-- HTTP / WebSocket 生命周期。
-- Adapter Registry。
-- Auth、Replay、Idempotency、Limits。
-- Message Normalization。
-- Identity、Workspace 和 Role Policy。
-- Session Resolution。
-- Runtime Bridge。
-- Delivery 和 Health。
+- Canonical Session/Task；
+- Plugin Orchestration State；
+- Parent/Child Agent State；
+- Scratch Memory；
+- Durable Memory；
+- Test Fixture Memory。
 
-Gateway 不直接调用 Provider、执行 Tool 或维护 Agent Message Loop。
+插件拥有 MemoryStore 并不天然冲突。只有两个状态源同时对同一事实自称权威、恢复语义不一致时，才属于架构缺陷。
 
-正式路径：
+## 4. Tool 和 Permission
 
-```text
-Gateway Consumer
-→ DeepCodeRuntime.prompt()
-→ Runtime Events
-→ Response Aggregator
-→ sourceAdapter.send()
-```
-
-## 6. Adapter Contract
-
-每个 Adapter 必须实现：
-
-- start / stop。
-- verifyInbound。
-- parse，支持返回多条消息。
-- send。
-- health。
-- capability metadata。
-
-鉴权必须在解析和入队前发生。
-
-## 7. Session 和 Identity
-
-本地 Session 绑定 Workspace。
-
-Gateway Session Key 至少包括：
+插件可以使用 ToolRunner 或 Tool Adapter。生产副作用必须满足：
 
 ```text
-platform / tenant / bot / user / chat / thread / workspace
-```
-
-同 Session 保序，不同 Session 受控并发。
-
-## 8. Unified Tool Executor
-
-```text
-Lookup
-→ Role / Skill Tool Filter
-→ Schema Validation
+Role/Skill Policy
 → Permission
-→ Workspace / Scope / Sandbox
-→ Execute with Abort / Timeout
-→ Output Limit
+→ Workspace/Sandbox
+→ Execute
 → Settlement
 → Evidence
 ```
 
-Workflow、Gateway 和 DeepAgent 不得维护执行特例。
+具体由 Host 直接执行、Plugin Bridge 执行还是 Adapter 执行，需依据原始插件契约和当前调用图决定。
 
-## 9. Provider 和 Context
+## 5. Provider
 
-### Provider
+插件 Provider 可能属于：
 
-- 内部字段 camelCase。
-- Protocol Layer 转换 wire field。
-- Model Capability 限制 reasoning effort。
-- Text、Reasoning、Tool、Usage、Cache、Error 和 Abort Contract Tests。
+- Host Provider Adapter；
+- Compatibility Layer；
+- Subagent Provider；
+- Test Runtime；
+- Transitional Code。
 
-### Context
+在 Contract 和调用方审计前，不预设删除。
 
-- Stable Baseline。
-- Dynamic Role / Skill / Constraint Context。
-- History Projection。
-- Reasoning Lifecycle。
-- Compaction。
-- 跨 Provider Metadata 清理。
+## 6. Gateway
 
-## 10. Harness 应用
+Gateway 负责平台 Auth、Identity、Workspace/Session Mapping、Queue 和 Delivery。Gateway 进入 Host/Plugin 产品链路，但不能复制或绕过 Permission 和 Workspace 语义。
 
-v0.1 优先真实接入：
+## 7. Phase 1 技术交付
 
-- Intent Router。
-- Model Router。
-- Hard Constraints。
-- Reasoning Manager。
-- Scope Guard。
-- Context Window Manager。
-- Review / Immune。
+- 原始 OpenCode/oh-my-OpenAgent 插件契约报告。
+- 当前生产入口调用图。
+- oh-my-deepagent Runtime/Loop/Provider/Tool/Memory/Transport 分类。
+- Host-Plugin Session、Tool、Provider、Memory Contract。
+- Gateway 调用图。
+- Keep/Adapt/Bridge/Replace/Remove 建议。
 
-其余模块继续预装和渐进集成，但不能把日志或 Service 注册冒充为 Applied Behavior。
+## 8. 删除门槛
 
-## 11. 安全边界
+不允许仅以以下理由删除代码：
 
-### Enforcement
+- 类名包含 Runtime；
+- 存在 Message Loop；
+- Host 有类似功能；
+- 希望架构看起来只有一条 Loop。
 
-- Permission deny。
-- Workspace / Symlink。
-- Shell Policy。
-- Gateway Auth / Replay。
-- User / Workspace Allowlist。
-- Secret Redaction。
-
-全部 fail-closed。
-
-### Advisory
-
-- Model Cost Recommendation。
-- Memory Promotion。
-- Anti-drift Suggestion。
-- Skill Proposal。
-
-可降级但必须可观察。
-
-## 12. Package 定位
-
-| Package | v0.1 职责 |
-|---|---|
-| `packages/core` | Runtime、Session、Harness、Permission、Tool Policy |
-| `packages/opencode` | 正式 CLI/TUI 入口 |
-| `packages/llm` | Provider Protocol 和 Contract |
-| `packages/oh-my-deepagent` | 内置 Role/Skill/Policy，不独立运行或发布 |
-| `packages/deepcode-gateway` | Gateway Core 和 Adapter，调用统一 Runtime |
-
-## 13. 迁移顺序
-
-```text
-准确盘点
-→ Runtime API
-→ Agent Role/Skill 集成
-→ Unified Tool / Permission
-→ Gateway Runtime Bridge
-→ Adapter Security / Session
-→ Harness Applied
-→ 删除重复实现
-```
-
-完整清单见 [13_V0.1_MIGRATION_MANIFEST.md](./13_V0.1_MIGRATION_MANIFEST.md)。
-
-## 14. 架构退出条件
-
-1. 只有一个生产 Session Runtime。
-2. 只有一个生产 Provider 调用入口。
-3. 只有一个 Tool Executor 和 Permission Service。
-4. 13 个 Role 通过 Registry 接入同一 Runtime。
-5. Gateway 直接调用 Runtime，不启动 CLI 子进程。
-6. Adapter 鉴权先于入队。
-7. sourceAdapter 回包。
-8. Session 无跨平台、跨租户、跨 Workspace 串话。
-9. Harness 决策有 applied 证据。
-10. 重复实现删除具有替代路径和回归测试。
-
-## 15. 相关文档
-
-- [08_V0.1_SCOPE.md](./08_V0.1_SCOPE.md)
-- [10_V0.1_TECHNICAL_ARCHITECTURE.md](./10_V0.1_TECHNICAL_ARCHITECTURE.md)
-- [11_V0.1_AGENT_INTEGRATION_PLAN.md](./11_V0.1_AGENT_INTEGRATION_PLAN.md)
-- [12_V0.1_GATEWAY_PLAN.md](./12_V0.1_GATEWAY_PLAN.md)
-- [13_V0.1_MIGRATION_MANIFEST.md](./13_V0.1_MIGRATION_MANIFEST.md)
+必须有调用图、原始职责、替代路径和回归测试证据。
