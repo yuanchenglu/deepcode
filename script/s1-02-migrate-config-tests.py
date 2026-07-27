@@ -13,8 +13,8 @@ def replace_exact(path: Path, old: str, new: str, expected: int | None = None) -
 
 core = Path("packages/core/test/config/config.test.ts")
 replace_exact(core, "loads opencode JSON and JSONC files from lowest to highest priority", "loads DeepCode JSON and JSONC files from lowest to highest priority", 1)
-replace_exact(core, "opencode.jsonc", "deepcode.jsonc", 4)
-replace_exact(core, "opencode.json", "deepcode.json", 10)
+replace_exact(core, "opencode.jsonc", "deepcode.jsonc", 5)
+replace_exact(core, "opencode.json", "deepcode.json", 14)
 replace_exact(core, ".opencode", ".deepcode", 9)
 
 location = Path("packages/core/test/location-layer.test.ts")
