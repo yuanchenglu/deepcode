@@ -3,15 +3,18 @@ name: test
 on:
   push:
     branches:
-      - dev
+      - develop
+      - master
   pull_request:
+    branches:
+      - develop
+      - master
   workflow_dispatch:
 
 concurrency:
-  # Keep every run on dev so cancelled checks do not pollute the default branch
-  # commit history. PRs and other branches still share a group and cancel stale runs.
-  group: ${{ case(github.ref == 'refs/heads/dev', format('{0}-{1}', github.workflow, github.run_id), format('{0}-{1}', github.workflow, github.event.pull_request.number || github.ref)) }}
-  cancel-in-progress: true
+  # Keep protected branch pushes immutable; cancel only stale PR runs.
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
