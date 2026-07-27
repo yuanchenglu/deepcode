@@ -10,6 +10,7 @@ import * as ConfigPaths from "@/config/paths"
 import { migrateTuiConfig } from "./tui-migrate"
 import { resolveHostAttentionSoundPaths } from "./tui-host-attention"
 import { Flag } from "@opencode-ai/core/flag/flag"
+import { Product } from "@opencode-ai/core/product"
 import { isRecord } from "@opencode-ai/tui/util/record"
 import { Global } from "@opencode-ai/core/global"
 import { FSUtil } from "@opencode-ai/core/fs-util"
@@ -59,7 +60,6 @@ function normalize(raw: Record<string, unknown>) {
     delete data.tui
     return data
   }
-
   const tui = data.tui
   delete data.tui
   return {
@@ -70,10 +70,8 @@ function normalize(raw: Record<string, unknown>) {
 
 function dropUnknownKeybinds(input: Record<string, unknown>) {
   if (!isRecord(input.keybinds)) return input
-
   const invalid = TuiKeybind.unknownKeys(input.keybinds)
   if (!invalid.length) return input
-
   return {
     ...input,
     keybinds: Object.fromEntries(Object.entries(input.keybinds).filter(([key]) => !invalid.includes(key))),
@@ -104,7 +102,7 @@ const loadState = Effect.fn("TuiConfig.loadState")(function* (ctx: { directory: 
       const data = ConfigParse.jsonc(expanded, configFilepath)
       if (!isRecord(data)) return {} as Info
       // Flatten a nested "tui" key so users who wrote `{ "tui": { ... } }` inside tui.json
-      // (mirroring the old opencode.json shape) still get their settings applied.
+      // (mirroring the old combined config shape) still get their settings applied.
       const normalized = dropUnknownKeybinds(normalize(data))
       const parsed = ConfigParse.schema(Info, normalized, configFilepath)
       const validated = parsed.attention?.sounds
@@ -118,8 +116,6 @@ const loadState = Effect.fn("TuiConfig.loadState")(function* (ctx: { directory: 
         : parsed
       return yield* resolvePlugins(validated, configFilepath)
     }).pipe(
-      // catchCause (not tapErrorCause + orElseSucceed) because JSONC parsing and validation
-      // can sync-throw — those become defects, which orElseSucceed wouldn't catch.
       Effect.catchCause((cause) =>
         Effect.logWarning("skipping invalid tui config", {
           path: configFilepath,
@@ -130,9 +126,6 @@ const loadState = Effect.fn("TuiConfig.loadState")(function* (ctx: { directory: 
 
   const loadFile = (filepath: string): Effect.Effect<Info> =>
     Effect.gen(function* () {
-      // Silent-swallow non-NotFound read errors (perms, EISDIR, IO) → log + skip.
-      // Matches how parse/schema/plugin failures in load() are handled — every
-      // broken-config path degrades gracefully rather than crashing TUI startup.
       const text = yield* afs.readFileStringSafe(filepath).pipe(
         Effect.catchCause((cause) =>
           Effect.logWarning("failed to read tui config", {
@@ -168,8 +161,8 @@ const loadState = Effect.fn("TuiConfig.loadState")(function* (ctx: { directory: 
       acc.plugin_origins = plugins
     })
 
-  // Every config dir we may read from: global config dir, any `.opencode`
-  // folders between cwd and home, and OPENCODE_CONFIG_DIR.
+  // Every config dir we may read from: global config dir, any `.deepcode`
+  // folders between cwd and home, and DEEPCODE_CONFIG_DIR.
   const directories = yield* ConfigPaths.directories(ctx.directory)
   yield* Effect.promise(() => migrateTuiConfig({ directories, cwd: ctx.directory }))
 
@@ -185,7 +178,7 @@ const loadState = Effect.fn("TuiConfig.loadState")(function* (ctx: { directory: 
     yield* mergeFile(acc, file)
   }
 
-  // 2. Explicit OPENCODE_TUI_CONFIG override, if set.
+  // 2. Explicit DEEPCODE_TUI_CONFIG override, if set.
   if (Flag.OPENCODE_TUI_CONFIG) {
     const configFile = Flag.OPENCODE_TUI_CONFIG
     yield* mergeFile(acc, configFile)
@@ -197,13 +190,15 @@ const loadState = Effect.fn("TuiConfig.loadState")(function* (ctx: { directory: 
     yield* mergeFile(acc, file)
   }
 
-  // 4. `.opencode` directories (and OPENCODE_CONFIG_DIR) discovered while
+  // 4. `.deepcode` directories (and DEEPCODE_CONFIG_DIR) discovered while
   // walking up the tree. Also returned below so callers can install plugin
   // dependencies from each location.
-  const dirs = unique(directories).filter((dir) => dir.endsWith(".opencode") || dir === Flag.OPENCODE_CONFIG_DIR)
+  const dirs = unique(directories).filter(
+    (dir) => dir.endsWith(Product.config.directory) || dir === Flag.OPENCODE_CONFIG_DIR,
+  )
 
   for (const dir of dirs) {
-    if (!dir.endsWith(".opencode") && dir !== Flag.OPENCODE_CONFIG_DIR) continue
+    if (!dir.endsWith(Product.config.directory) && dir !== Flag.OPENCODE_CONFIG_DIR) continue
     for (const file of ConfigPaths.fileInDirectory(dir, "tui")) {
       yield* mergeFile(acc, file)
     }
@@ -251,7 +246,6 @@ const layer = Layer.effect(
 
     const get = Effect.fn("TuiConfig.get")(() => Effect.succeed(data.config))
     const pluginOrigins = Effect.fn("TuiConfig.pluginOrigins")(() => Effect.succeed(data.pluginOrigins))
-
     const waitForDependencies = Effect.fn("TuiConfig.waitForDependencies")(() =>
       Effect.forEach(deps, Fiber.join, { concurrency: "unbounded" }).pipe(Effect.ignore(), Effect.asVoid),
     )
