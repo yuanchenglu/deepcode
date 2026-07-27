@@ -18,4 +18,15 @@ jobs:
         uses: ./.github/actions/setup-bun
 
       - name: Run typecheck
-        run: bun typecheck
+        run: |
+          set -o pipefail
+          bun typecheck 2>&1 | tee typecheck.log
+
+      - name: Upload typecheck log
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: typecheck-${{ github.run_attempt }}
+          if-no-files-found: error
+          retention-days: 7
+          path: typecheck.log
