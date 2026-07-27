@@ -5,7 +5,8 @@ def replace_all(path: Path, old: str, new: str) -> None:
     text = path.read_text()
     count = text.count(old)
     if count == 0:
-        raise SystemExit(f"{path}: no occurrences of {old!r}")
+        print(f"{path}: already migrated or pattern absent: {old!r}")
+        return
     path.write_text(text.replace(old, new))
     print(f"{path}: replaced {count} occurrence(s) of {old!r}")
 
