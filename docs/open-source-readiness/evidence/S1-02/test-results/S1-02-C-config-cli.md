@@ -1,8 +1,9 @@
 # S1-02-C 配置发现与 CLI 身份验证
 
 > 日期：2026-07-28
-> 分支：`develop`
-> 状态：实现完成，package/CI 验证待回传
+> 实施分支：`agent/s1-02-c-identity`
+> 实现验证提交：`67c0fbbc8c22ddd4baf5086a1b669dcd452caad1`
+> 状态：`DONE`
 
 ## 实施范围
 
@@ -11,7 +12,17 @@
 - CLI：主配置发现、共享配置路径、help/version、进程环境标记。
 - TUI：`.deepcode` 目录与 TUI 配置发现。
 - MDM：DeepCode 系统目录、测试目录和 managed plist domain。
-- 测试：隔离 preload 与独立共存用例。
+- Server Auth：用户侧 Basic Auth 环境变量和默认用户名切换为 DeepCode。
+- 测试基础设施：公共 `tmpdir({ config })`、HttpApi 隔离目录、配置 fixture 和共存用例统一写入 DeepCode 命名空间。
+
+## 关键修复
+
+1. `Product` 集中定义 `DeepCode`、`deepcode`、`.deepcode`、`deepcode.json(c)`、`DEEPCODE_*` 和 managed domain。
+2. Core、CLI、TUI、MDM 不再发现 OpenCode 本地配置，也不添加兼容 fallback。
+3. CLI 用户可见身份、运行进程标记和运行时选项环境变量切换为 DeepCode。
+4. Server Auth 使用 `DEEPCODE_SERVER_PASSWORD` / `DEEPCODE_SERVER_USERNAME`，默认用户名为 `deepcode`。
+5. 测试 fixture 不再把模拟模型配置写入 `opencode.json`；HttpApi 测试数据、配置和数据库全部进入 DeepCode 隔离目录。
+6. CI 从不可用的 Blacksmith runner 迁移到 GitHub-hosted runner，required check 名称保持 `typecheck` / `test`。
 
 ## 静态契约检查
 
@@ -26,19 +37,47 @@ tsc --noEmit --noResolve --skipLibCheck --target ES2023 --module ESNext --module
 结果：
 
 - 配置发现中未发现 `.opencode`、`opencode.json(c)`；
-- 改动文件中未发现用户侧 `process.env.OPENCODE_*` 直接读写；
-- TypeScript 解析未产生 TS1xxx 语法错误；无依赖 checkout 下仅出现模块/类型解析类诊断，不能替代 package typecheck。
+- 改动的用户边界中未发现用户侧 `process.env.OPENCODE_*` 直接读写；
+- TypeScript 解析未产生 TS1xxx 语法错误；正式 package typecheck 结果见下节。
 
-## 必须回传的 package 验证
+## CI 与 package 验证
+
+### Typecheck
+
+- Workflow run：`30297545744`
+- Job：`typecheck`
+- 结果：`SUCCESS`
+
+执行范围：
 
 ```bash
-cd packages/core && bun typecheck
-cd packages/opencode && bun typecheck
-cd packages/opencode && bun test test/config/deepcode-coexistence.test.ts
-cd packages/opencode && bun test test/config
+bun --cwd packages/core typecheck
+bun --cwd packages/opencode typecheck
 ```
 
-在 GitHub connector 执行环境中没有 Bun 工作区和依赖，以上命令不得伪造为已通过；以远端 CI 或具备完整 checkout 的执行结果为准。
+两个 package 均通过。
+
+### Test
+
+- Workflow run：`30297546205`
+- 实现验证提交：`67c0fbbc8c22ddd4baf5086a1b669dcd452caad1`
+
+已通过：
+
+- Linux 全量 unit test；
+- generated client 一致性检查；
+- Linux app E2E；
+- HttpApi exerciser：`coverage`、`auth`、`effect` 三种模式全部通过；每种模式覆盖 208 个场景，`missing=0`、`extra=0`；
+- HttpApi 日志 artifact：`httpapi-1`，artifact id `8665412702`，digest `sha256:ef8fc7a946a6f6ba1dd8bba8c4294d2ef09b704fed9ab142eb8e422cdc35aecd`。
+
+Windows unit/E2E 属于超出 S1-02-C 最低验收范围的扩展矩阵，仍由最终 PR head 的 `test` required check 统一把关；未通过前不会自动合入 `develop`。
+
+## 共存结论
+
+- 仅存在 `opencode.json(c)` / `.opencode` 时，DeepCode 不加载该配置。
+- DeepCode 与 OpenCode 配置并存时，DeepCode 只读取 `deepcode.json(c)` / `.deepcode`。
+- 测试运行不写入 OpenCode 数据、配置、状态、缓存或数据库命名空间。
+- 本任务未恢复任何 OpenCode 本地配置 fallback。
 
 ## 保留的 OpenCode 字符串分类
 
@@ -51,4 +90,4 @@ cd packages/opencode && bun test test/config
 
 ## 结论
 
-实现满足 S1-02-C 的静态身份与发现契约，但在 package typecheck、配置测试和 CI 回传前保持 `IN_REVIEW`。
+S1-02-C 的身份、配置发现、CLI、Server Auth、测试 fixture 与共存隔离契约已经实现并通过规定的 package typecheck、全量 Linux unit、HttpApi 三模式和 Linux E2E 验证，状态更新为 `DONE`。下一执行点为 S1-02-D；只有本 PR 经最终 required checks 自动 squash 合入 `develop` 后才可领取。
