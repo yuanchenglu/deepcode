@@ -17,10 +17,15 @@ jobs:
       - name: Setup Bun
         uses: ./.github/actions/setup-bun
 
-      - name: Run typecheck
+      - name: Run S1-02 package typechecks
         run: |
-          set -o pipefail
-          bun typecheck 2>&1 | tee typecheck.log
+          set -euo pipefail
+          {
+            echo "== packages/core =="
+            bun --cwd packages/core typecheck
+            echo "== packages/opencode =="
+            bun --cwd packages/opencode typecheck
+          } 2>&1 | tee typecheck.log
 
       - name: Upload typecheck log
         if: always()
