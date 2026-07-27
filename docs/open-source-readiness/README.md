@@ -2,111 +2,99 @@
 
 > 分支：`develop`
 > 基线日期：2026-07-27
-> 当前阶段：Phase 0 范围与架构冻结完成
-> 目标：以“能够真实、可信、可维护地开源”为唯一迭代目标
+> 当前阶段：Phase 0 范围冻结完成，Runtime 架构勘误已生效
+> 目标：真实、可信、可维护地开源 DeepCode
 
 ## 1. 文档权威性
 
-本目录是 DeepCode 当前唯一的开源准备权威文档集。旧版 `docs/REQUIREMENTS.md`、`docs/ARCHITECTURE.md`、`docs/analysis/*` 保留为历史材料，但其中存在“设计计划被误标为已完成”“验收项缺少运行证据”等问题，不能直接作为当前实现状态依据。
+本目录是当前开源准备的权威文档集。旧版 `docs/REQUIREMENTS.md`、`docs/ARCHITECTURE.md` 和 `docs/analysis/*` 仅作为历史材料。
 
-状态统一采用四态：
+Phase 0 曾将 `oh-my-deepagent` 中存在独立可运行代码，过度解释为“当前存在第二套生产 Agent Runtime”。该判断证据不足，已由 [14_PHASE0_ERRATA_AGENT_RUNTIME.md](./14_PHASE0_ERRATA_AGENT_RUNTIME.md) 正式纠正。
 
-- **已验证**：有可重复执行的测试或运行证据。
-- **已实现未验证**：代码存在，但缺少可重复运行证据。
-- **部分实现**：仅完成模块、接口、记录或旁路逻辑，未形成完整产品闭环。
-- **未实现**：没有可用实现，或实现未接入主执行路径。
+后续统一采用：
 
-产品成熟度另采用：
+> **单一宿主执行边界，允许多个可组合的 Agent 编排循环。**
 
-- **Stable**：需求、主链路、Applied Behavior、自动测试、运行证据、安全审查和文档齐全。
-- **Beta**：主流程可用且无 P0，仍缺少部分环境或长期验证。
-- **Experimental**：默认关闭或限制明确，不作为正式支持承诺。
-
-## 2. 已确认的 v0.1 产品决策
-
-1. Gateway 是 v0.1 一级产品能力，Gateway Core 目标 Stable。
-2. 飞书是第一个 Stable Adapter 目标。
-3. `oh-my-deepagent` 正式内置到 DeepCode，13 个角色全部预装。
-4. oh-my-deepagent 不作为独立产品、独立 CLI 或第二套生产 Runtime。
-5. CLI、TUI、Gateway 和 Built-in DeepAgent 共享唯一 Session、Provider、Tool、Permission、Context 和 Harness Runtime。
-6. v0.1 不通过删除 Gateway 或角色降低目标，而通过统一架构、安全修复、成熟度分级和测试门禁完成收敛。
-
-## 3. 文档目录
-
-### 审计与基础文档
-
-| 文档 | 用途 |
-|---|---|
-| [00_CODE_REVIEW.md](./00_CODE_REVIEW.md) | 当前代码审查结论、风险分级和证据 |
-| [01_PRODUCT_ARCHITECTURE.md](./01_PRODUCT_ARCHITECTURE.md) | 产品架构权威入口，引用 Phase 0 决策 |
-| [02_TECHNICAL_ARCHITECTURE.md](./02_TECHNICAL_ARCHITECTURE.md) | 技术架构权威入口，引用唯一 Runtime 架构 |
-| [03_PRD.md](./03_PRD.md) | 完整产品需求、验收标准、非功能需求和发布门槛 |
-| [04_TEST_PLAN_AND_CASES.md](./04_TEST_PLAN_AND_CASES.md) | 测试策略、环境、分层测试和完整用例 |
-| [05_FUNCTIONAL_TEST_REPORT.md](./05_FUNCTIONAL_TEST_REPORT.md) | 当前功能验证报告及未验证项说明 |
-| [06_ITERATION_PLAN.md](./06_ITERATION_PLAN.md) | 修订后的 v0.1 执行阶段和里程碑 |
-| [07_REQUIREMENT_TRACEABILITY.md](./07_REQUIREMENT_TRACEABILITY.md) | 产品主张到代码、测试、证据的追踪矩阵 |
-
-### Phase 0 冻结文档
-
-| 文档 | 用途 |
-|---|---|
-| [08_V0.1_SCOPE.md](./08_V0.1_SCOPE.md) | 已确认的 v0.1 范围、成熟度、删除原则和 Go/No-Go |
-| [09_V0.1_PRODUCT_ARCHITECTURE.md](./09_V0.1_PRODUCT_ARCHITECTURE.md) | Runtime、Built-in DeepAgent、Gateway 的统一产品架构 |
-| [10_V0.1_TECHNICAL_ARCHITECTURE.md](./10_V0.1_TECHNICAL_ARCHITECTURE.md) | 唯一 Runtime API、Tool 链、Agent 与 Gateway 技术边界 |
-| [11_V0.1_AGENT_INTEGRATION_PLAN.md](./11_V0.1_AGENT_INTEGRATION_PLAN.md) | 13 角色正式预装及 oh-my-deepagent 合并计划 |
-| [12_V0.1_GATEWAY_PLAN.md](./12_V0.1_GATEWAY_PLAN.md) | Gateway Core、飞书 Stable 和 Adapter 分级计划 |
-| [13_V0.1_MIGRATION_MANIFEST.md](./13_V0.1_MIGRATION_MANIFEST.md) | 保留、集成、替换、迁移后删除和归档清单 |
-
-## 4. 当前产品判断
-
-DeepCode 的目标产品结构是：
+## 2. 正确产品关系
 
 ```text
-DeepCode Runtime
-+ Built-in DeepAgent（13 Roles）
-+ DeepCode Gateway
-+ DeepSeek-native Provider / Harness
-= DeepCode v0.1
+DeepCode / OpenCode Host
+├── Host Execution Services
+│   ├── Session
+│   ├── Provider
+│   ├── Context / History
+│   ├── Tool / Permission
+│   └── Harness / Evidence
+├── Built-in oh-my-deepagent Plugin
+│   ├── Roles
+│   ├── Skills
+│   ├── Planning
+│   ├── Delegation
+│   ├── Subagents
+│   └── Multi-Agent Orchestration
+└── Gateway
+    ├── Platform Authentication
+    ├── Session Mapping
+    ├── Workspace Policy
+    └── Message Delivery
 ```
 
-当前整体仍处于 **研究型 Alpha / 集成验证阶段**，尚不满足正式开源发布条件。主要原因：
+oh-my-deepagent 是 DeepCode 的内置插件，与宿主是共生关系。插件可以拥有自己的 Orchestration Loop；真正需要审计的是其执行是否与宿主的权限、工作区和会话契约一致，而不是是否存在名为 `AgentRuntime` 或 `runMessageLoop` 的代码。
 
-1. 若干核心卖点未真正改变主执行路径。
-2. Gateway 入站安全、Session、Queue 和 Runtime Bridge 尚未闭环。
-3. oh-my-deepagent 仍需移除重复 Runtime 并接入统一 Tool/Permission。
-4. 13 个角色缺少完整 Runtime 场景验证。
-5. 缺少统一、可重复的测试与发布门禁。
-6. 开源安装、配置、贡献和安全响应闭环尚未完成。
+## 3. 状态定义
 
-## 5. Phase 0 完成定义
+- **Verified**：代码路径、实际行为、自动化测试和运行证据齐全。
+- **Implemented-Unverified**：代码存在，缺少当前基线运行证据。
+- **Partial**：只完成部分链路。
+- **Not Implemented**：不存在或未接入。
+- **Blocked**：环境或外部条件阻塞验证。
 
-Phase 0 只完成文档和架构冻结，不修改业务代码。
+## 4. 文档目录
 
-已完成：
+| 文档 | 用途 |
+|---|---|
+| [00_CODE_REVIEW.md](./00_CODE_REVIEW.md) | 当前代码审查和风险证据 |
+| [01_PRODUCT_ARCHITECTURE.md](./01_PRODUCT_ARCHITECTURE.md) | 产品架构概览 |
+| [02_TECHNICAL_ARCHITECTURE.md](./02_TECHNICAL_ARCHITECTURE.md) | 技术架构概览 |
+| [03_PRD.md](./03_PRD.md) | v0.1 产品需求和发布门槛 |
+| [04_TEST_PLAN_AND_CASES.md](./04_TEST_PLAN_AND_CASES.md) | 测试策略和用例基线 |
+| [05_FUNCTIONAL_TEST_REPORT.md](./05_FUNCTIONAL_TEST_REPORT.md) | 当前功能验证报告 |
+| [06_ITERATION_PLAN.md](./06_ITERATION_PLAN.md) | 后续迭代顺序 |
+| [07_REQUIREMENT_TRACEABILITY.md](./07_REQUIREMENT_TRACEABILITY.md) | 需求—代码—测试—证据矩阵 |
+| [08_V0.1_SCOPE.md](./08_V0.1_SCOPE.md) | v0.1 范围冻结 |
+| [09_V0.1_PRODUCT_ARCHITECTURE.md](./09_V0.1_PRODUCT_ARCHITECTURE.md) | v0.1 产品架构详版 |
+| [10_V0.1_TECHNICAL_ARCHITECTURE.md](./10_V0.1_TECHNICAL_ARCHITECTURE.md) | v0.1 技术架构详版 |
+| [11_V0.1_AGENT_INTEGRATION_PLAN.md](./11_V0.1_AGENT_INTEGRATION_PLAN.md) | oh-my-deepagent 插件集成计划 |
+| [12_V0.1_GATEWAY_PLAN.md](./12_V0.1_GATEWAY_PLAN.md) | Gateway 正式交付计划 |
+| [13_V0.1_MIGRATION_MANIFEST.md](./13_V0.1_MIGRATION_MANIFEST.md) | Keep/Adapt/Bridge/Replace/Remove 清单 |
+| [14_PHASE0_ERRATA_AGENT_RUNTIME.md](./14_PHASE0_ERRATA_AGENT_RUNTIME.md) | Host Runtime 与插件编排勘误 |
 
-- v0.1 产品范围确认。
-- Gateway 正式产品定位。
-- 13 角色正式预装目标。
-- 唯一 Runtime 原则。
-- 产品和技术目标架构。
-- Agent 集成计划。
-- Gateway 交付计划。
-- 迁移与删除清单。
+## 5. 已确认的产品范围
 
-下一阶段进入代码前，必须先按迁移清单完成准确仓库盘点，生成真实 13 角色、Gateway Adapter、独立 Runtime 和调用方清单。
+1. Gateway 是 v0.1 一级能力，Gateway Core 目标 Stable，飞书为首个 Stable Adapter 目标。
+2. 现有 13 个 Agent 角色作为 DeepCode 内置插件能力预装，并逐角色达到发布标准。
+3. 不把 oh-my-deepagent 作为独立产品要求用户安装。
+4. 不删除插件编排能力、Subagent 或 Multi-Agent 设计。
+5. 安全、Provider Contract、安装、CI 和运行证据仍是发布硬门槛。
 
-## 6. 决策规则
+## 6. 当前判断边界
 
-后续所有需求、代码和文档变更必须满足：
+目前已确认 `packages/oh-my-deepagent` 包含独立组合的 AgentRuntime、消息循环、工具、记忆、Provider 和 Transport 实现；尚未完成：
+
+- 它们是否被当前生产入口调用；
+- 它们与原始 oh-my-OpenAgent 插件契约的关系；
+- 它们是插件编排、兼容层、测试 Runtime 还是重复实现；
+- 哪些应 Keep、Adapt、Bridge、Replace 或 Remove。
+
+因此，Phase 1 必须先生成真实调用图和架构来源审计，不得预设删除。
+
+## 7. 决策规则
 
 ```text
 用户价值明确
-AND 符合已冻结 v0.1 范围
-AND 使用唯一生产 Runtime
+AND 宿主—插件边界清楚
 AND 主链路真实生效
+AND 权限与工作区不可绕过
 AND 有自动化测试
 AND 有可观察证据
-AND 安全边界可验证
 ```
-
-任何缩减 Gateway、13 角色或唯一 Runtime 目标的变更，必须新增 ADR 并经产品确认，不得在代码整改中隐式改变。
