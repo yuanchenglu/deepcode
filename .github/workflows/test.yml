@@ -66,6 +66,17 @@ jobs:
             turbo-${{ runner.os }}-${{ hashFiles('turbo.json', '**/package.json') }}-
             turbo-${{ runner.os }}-
 
+      - name: Cache ripgrep binary
+        if: runner.os == 'Windows'
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ~/.cache/deepcode/bin
+          key: ripgrep-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('packages/core/src/ripgrep/binary.ts') }}
+
+      - name: Prewarm ripgrep binary
+        if: runner.os == 'Windows'
+        run: bun packages/core/script/prepare-ripgrep.ts
+
       - name: Run unit tests
         timeout-minutes: 20
         run: |
