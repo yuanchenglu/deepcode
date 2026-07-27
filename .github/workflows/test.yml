@@ -17,46 +17,14 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
-  contents: write
+  contents: read
   checks: write
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  migrate-s1-02-httpapi:
-    if: github.event_name == 'pull_request' && github.head_ref == 'agent/s1-02-c-identity'
-    runs-on: ubuntu-latest
-    outputs:
-      changed: ${{ steps.commit.outputs.changed }}
-    steps:
-      - name: Checkout PR branch
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
-        with:
-          ref: ${{ github.head_ref }}
-          token: ${{ secrets.GITHUB_TOKEN }}
-          fetch-depth: 0
-
-      - name: Apply HttpApi identity migration
-        run: python3 script/s1-02-migrate-httpapi-identity.py
-
-      - name: Commit migration
-        id: commit
-        run: |
-          if git diff --quiet; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          git config user.email "bot@opencode.ai"
-          git config user.name "opencode"
-          git add packages/opencode/test/server/httpapi-exercise/index.ts packages/opencode/test/server/auth.test.ts
-          git commit -m "test(identity): migrate HttpApi identity fixtures | 迁移 HttpApi 身份测试夹具"
-          git push origin "HEAD:${{ github.head_ref }}"
-          echo "changed=true" >> "$GITHUB_OUTPUT"
-
   unit:
-    needs: migrate-s1-02-httpapi
-    if: needs.migrate-s1-02-httpapi.outputs.changed != 'true'
     name: unit (${{ matrix.settings.name }})
     strategy:
       fail-fast: false
@@ -137,8 +105,6 @@ jobs:
           path: packages/opencode/httpapi.log
 
   e2e:
-    needs: migrate-s1-02-httpapi
-    if: needs.migrate-s1-02-httpapi.outputs.changed != 'true'
     name: e2e (${{ matrix.settings.name }})
     strategy:
       fail-fast: false
