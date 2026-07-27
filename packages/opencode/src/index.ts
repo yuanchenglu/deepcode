@@ -20,7 +20,7 @@ import { GithubCommand } from "./cli/cmd/github"
 import { ExportCommand } from "./cli/cmd/export"
 import { ImportCommand } from "./cli/cmd/import"
 import { AttachCommand } from "./cli/cmd/attach"
-import { TuiThreadCommand } from "./cli/cmd/deepcode-tui"
+import { TuiThreadCommand } from "./cli/cmd/tui"
 import { AcpCommand } from "./cli/cmd/acp"
 import { EOL } from "os"
 import { WebCommand } from "./cli/cmd/web"
@@ -33,14 +33,19 @@ import { Heap } from "./cli/heap"
 
 const args = hideBin(process.argv)
 
+function brand(out: string) {
+  return out.replaceAll("OpenCode", Product.name).replaceAll("opencode", Product.cli)
+}
+
 function show(out: string) {
-  const text = out.trimStart()
+  const branded = brand(out)
+  const text = branded.trimStart()
   if (!text.startsWith(`${Product.cli} `)) {
     process.stderr.write(UI.logo() + EOL + EOL)
     process.stderr.write(text + EOL)
     return
   }
-  process.stderr.write(out)
+  process.stderr.write(branded)
 }
 
 const cli = yargs(args)
