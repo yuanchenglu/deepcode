@@ -37,11 +37,11 @@
 | --- | --- | --- | --- | --- | --- |
 | S1-02-A | `DONE` | 先建立失败的共存契约测试与 fixture | 两个 package 的新增/现有 test 文件；fixture 目录 | S1-01A | [失败基线](./test-results/S1-02-A-baseline.md) |
 | S1-02-B | `DONE` | Core 路径、数据库和环境入口改为 DeepCode | `packages/core/src/global.ts`、`database/database.ts`、`flag/flag.ts` | A | [Core 验证](./test-results/S1-02-B-core.md) |
-| S1-02-C | `IN_REVIEW` | 统一身份、配置发现与 CLI 用户身份隔离 | `packages/core/src/product.ts`、Core 配置/路径/DB/Flag；CLI `config/{config,paths,tui,managed}.ts`、`index.ts`、`cli/ui.ts`、`cli/cmd/deepcode-tui.ts`、相关测试 | B | [配置与 CLI 验证](./test-results/S1-02-C-config-cli.md) |
+| S1-02-C | `DONE` | 统一身份、配置发现与 CLI 用户身份隔离 | `packages/core/src/product.ts`、Core 配置/路径/DB/Flag；CLI 配置、TUI、MDM、CLI identity、Server Auth 与测试 fixture | B | [配置与 CLI 验证](./test-results/S1-02-C-config-cli.md) |
 | S1-02-D | `NOT_STARTED` | 安装检测和卸载目标 fail-closed | `packages/opencode/src/installation/index.ts`、`src/cli/cmd/uninstall.ts` | C | 不访问上游下载源、不清理 `.opencode`；生命周期 fixture 通过 |
 | S1-02-E | `NOT_STARTED` | 全链共存回归和字符串分类 | 只改测试、证据与明确遗漏；构建输出留给 S1-03 | A-D | 两个隔离 fixture + `rg` 分类 + package 级 typecheck/test |
 
-S1-02-C 扩大文件所有权的原因：配置发现存在 Core、CLI、TUI 和 MDM 四个入口，只修改最初列出的三个文件会保留旁路；`global.ts`、数据库和 Flag 在 C 中仅改为消费统一 `Product` 常量，不改变 B 已验收的行为。
+S1-02-C 扩大文件所有权的原因：配置发现存在 Core、CLI、TUI、MDM、Server Auth 和测试公共 fixture 等入口，只修改最初列出的三个文件会保留旁路；`global.ts`、数据库和 Flag 在 C 中仅改为消费统一 `Product` 常量，不改变 B 已验收的行为。
 
 ## 禁止范围
 
@@ -71,15 +71,18 @@ S1-02-C 扩大文件所有权的原因：配置发现存在 Core、CLI、TUI 和
 - 新增 `Product` 单一身份定义，集中管理产品名、CLI 名、路径 slug、配置文件、配置目录、环境变量前缀和 MDM domain。
 - Core、CLI、TUI、MDM 均只发现 `deepcode.json`、`deepcode.jsonc` 与 `.deepcode`；不添加 OpenCode fallback。
 - CLI `scriptName`、help logo、进程标记和运行时选项环境变量切换为 DeepCode。
-- 新增独立的活动共存测试文件；原始失败基线用例保留为历史证据，不作为完成门禁。
-- `https://opencode.ai/config.json`、`/.well-known/opencode`、`@opencode-ai/*` 暂时分类为上游 schema/protocol/package 兼容标识；它们不参与本地配置发现、用户目录或 CLI 身份。后续必须在 S1-02-E 再次审计。
+- Server Auth 用户环境变量和默认 Basic Auth 用户名切换为 DeepCode。
+- 公共测试 fixture、HttpApi config/data/database 隔离目录与模拟模型配置统一使用 DeepCode 命名空间。
+- 共存用例验证仅有 OpenCode 配置时不加载，双配置并存时只读取 DeepCode。
+- package typecheck、Linux 全量 unit、generated client、HttpApi `coverage/auth/effect` 三模式与 Linux E2E 已通过；详细 run 与 artifact 见验证证据。
+- `https://opencode.ai/config.json`、`/.well-known/opencode`、`@opencode-ai/*` 暂时分类为上游 schema/protocol/package 兼容标识；它们不参与本地配置发现、用户目录或 CLI 身份。S1-02-E 必须再次审计。
 
 ## 下一执行点
 
-1. 等待 S1-02-C 的 package typecheck、配置测试和 CI 证据；失败则保持 `IN_REVIEW` 并修复。
-2. S1-02-C 验证通过后领取 `S1-02-D`，使安装检测、升级和卸载目标 fail-closed。
+1. PR #2 的最终 evidence head 必须通过 `typecheck` / `test` required checks，并由 auto-merge 自动 squash 合入 `develop`。
+2. 合入后从最新 `develop` 创建独立分支领取 S1-02-D，使安装检测、升级和卸载目标 fail-closed。
 3. S1-02-D 未完成前，S1-02 父任务保持 `IN_PROGRESS`，产品仍为 NO-GO。
 
 ## 当前结论
 
-S1-02-A、S1-02-B 已完成；S1-02-C 代码和静态契约检查完成，状态为 `IN_REVIEW`。安装/卸载和最终全链共存回归尚未完成，因此不得进入 S1-03 或宣称 Alpha 可发布。
+S1-02-A、S1-02-B、S1-02-C 已完成；身份、配置、CLI、Server Auth 与测试基础设施已形成 DeepCode 独立用户边界。安装/卸载和最终全链共存回归尚未完成，因此不得进入 S1-03 或宣称 Alpha 可发布。
