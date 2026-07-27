@@ -1,9 +1,9 @@
 # DeepCode 三阶段交付总计划（Implementation-ready Master Plan）
 
-> 文档版本：1.0
+> 文档版本：1.1
 > 基线日期：2026-07-27
 > 当前状态：Ready for implementation（计划可执行，产品当前仍为 NO-GO）
-> 适用分支：当前工作基线 `develop`；唯一默认分支由任务 `S1-01` 最终核实并统一
+> 分支拓扑：`develop` 为实施基线；`master` 为 GitHub 默认/发布分支；里程碑通过审查后从 `develop` 合入 `master`
 > 文档定位：本目录唯一的跨阶段执行总计划
 > 目标读者：后续实现人员与 AI；本文不依赖口头上下文即可执行
 
@@ -11,6 +11,7 @@
 
 | 日期       | 版本 | 变更                                                                                                            | 依据                                     |
 | ---------- | ---: | --------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| 2026-07-27 |  1.1 | 明确 `develop` 开发、`master` 发布的分支拓扑；将 S1-01 拆为仓库基线与官网止损，解除外部官网权限对代码任务的依赖死锁 | 远端仓库元数据与执行一致性复核 |
 | 2026-07-27 |  1.0 | 将交付重构为“官网可安装 → 完整能力 → 设计驱动的 WebUI/Electron”三阶段，并补齐任务级输入、步骤、测试、证据和门禁 | 用户目标澄清、源码与现有开源准备文档复核 |
 
 ---
@@ -210,14 +211,16 @@ DeepCode 允许插件拥有规划或编排循环，但所有真实副作用必�
 
 ```mermaid
 flowchart LR
-  S1A["S1-01 决策与信息止损"] --> S1B["S1-02 身份隔离"]
+  S1A["S1-01A 仓库与分支基线"] --> S1B["S1-02 身份隔离"]
+  S1A --> S1W["S1-01B 官网定位与止损"]
   S1B --> S1C["S1-03 安装与制品"]
   S1A --> S1D["S1-04 P0 运行链"]
   S1A --> S1E["S1-05 开源治理"]
   S1C --> S1F["S1-06 CI/Release"]
   S1D --> S1F
   S1E --> S1F
-  S1F --> S1G["S1-07 官网安装"]
+  S1W --> S1G["S1-07 官网安装"]
+  S1F --> S1G
   S1G --> S1H["S1-08 Parallels 验收"]
   S1H --> G1["Gate 1 官网公开"]
   G1 --> S2A["S2-01 架构与来源审计"]
@@ -280,17 +283,56 @@ flowchart LR
 
 ## 5. 第一阶段任务卡
 
-### S1-01 冻结发行决策并停止错误公开信息
+### S1-01A 冻结仓库、分支与发行基线
 
 **状态**：`NOT_STARTED`
 **优先级**：P0
 **依赖**：无
-**可并行**：不可；这是所有第一阶段任务的输入
+**可并行**：不可；完成后立即解锁 S1-02、S1-04、S1-05
+
+**已知证据**：
+
+- 官方代码仓库为 `yuanchenglu/deepcode`；
+- 远端仅有 `develop`、`master`，不存在 `dev`；
+- GitHub 当前默认分支为 `master`，当前实施基线为 `develop`。
+
+**开工假设**：`develop` 承载实施，阶段里程碑经审查后合入 `master`；Alpha Release 归属 `yuanchenglu/deepcode`。置信度：确定。
+
+**允许修改**：
+
+- 根 `AGENTS.md`、`README.md`；
+- `.github/workflows/*` 中的分支触发与 Release 目标；
+- `docs/open-source-readiness/*`；
+- 不修改运行时代码。
+
+**执行步骤**：
+
+1. 用 GitHub 仓库元数据核实 owner/repo、权限、远端分支和默认分支。
+2. 将已验证值写入 `evidence/S1-01A/README.md`，并记录核验时间和证据 URL。
+3. 统一仓库内分支说明：实现默认在 `develop`，发布/默认分支为 `master`，里程碑从 `develop` 合入 `master`。
+4. 确认 Alpha 命名为 `v0.1.0-alpha.N`，Release owner/repo 为 `yuanchenglu/deepcode`。
+5. 盘点 CI 分支触发；实现 CI 覆盖 `develop` 和 `master`，发布仅由 `master` 上受保护的 tag/workflow 触发。
+
+**验收**：
+
+- 后续任务不再出现 `dev` 或模糊 owner/repo；
+- `develop`、`master` 的职责及合入方向唯一明确；
+- S1-02、S1-04、S1-05 不依赖官网权限即可开始。
+
+**反证/停止条件**：若仓库元数据与本文记录不一致，先更新事实基线；不得凭文档覆盖 GitHub 实际状态。
+
+---
+
+### S1-01B 定位官网源码并停止错误公开信息
+
+**状态**：`NOT_STARTED`
+**优先级**：P0
+**依赖**：`S1-01A`
+**可并行**：可与 S1-02、S1-04、S1-05 并行；只阻塞 S1-07 和 Gate 1
 
 **已知证据**：
 
 - `https://deepcode.starseas.org` 当前公开 `npm install -g deepcode`；该无作用域包不属于本项目；
-- 本仓库存在 `master`、`develop`、项目说明中的 `dev` 三套分支语义；
 - `packages/web` 存在，但尚不能证明是线上域名的部署源。
 
 **开工假设**：第一阶段以 GitHub Release 二进制为唯一可信源；npm scoped 包延后。置信度：大概率（95%）。
@@ -304,20 +346,19 @@ flowchart LR
 
 **执行步骤**：
 
-1. 用仓库配置、GitHub 仓库设置、DNS/部署平台记录核实：Release 仓库、唯一默认分支、官网源码位置、部署动作所有者。
-2. 将结论写入 `evidence/S1-01/README.md`；每项必须是“已验证值”，不得写“应该”。
+1. 用 DNS/部署平台记录核实官网源码位置、部署动作所有者和部署命令。
+2. 将结论写入 `evidence/S1-01B/README.md`；每项必须是“已验证值”，不得写“应该”。
 3. 在 Release 产生前，把官网错误 npm 命令替换为“Alpha 准备中”或关闭安装按钮；根 README 同步。
-4. 确认 Alpha 命名：`v0.1.0-alpha.N`；确认 manifest URL 和 Release owner/repo。
-5. 若 `packages/web` 不是线上源码，记录实际仓库与部署入口；未经证实不得修改 `packages/web` 冒充上线完成。
-6. 统一 CI 目标分支；若需修改 GitHub 默认分支，该外部状态变更必须由仓库管理员明确执行或授权。
+4. 确认 manifest URL；若 `packages/web` 不是线上源码，记录实际仓库与部署入口。
+5. 未经部署后验证，不得把本地页面修改记为线上止损完成。
 
 **验收**：
 
 - 公开页面不再引导安装第三方包；
-- Release 仓库、默认分支、官网源码、部署命令均有可复核证据；
-- 后续任务不再使用模糊的 owner/repo 或分支占位符。
+- 官网源码、部署所有者、部署命令均有可复核证据；
+- S1-07 使用已验证的真实官网源码。
 
-**反证/停止条件**：如果域名部署权限或源码无法定位，将本任务标记 `BLOCKED`；可以继续做本地隔离，但不得宣称官网上线。
+**反证/停止条件**：如果域名部署权限或源码无法定位，将本任务标记 `BLOCKED`；S1-02、S1-04、S1-05 继续执行，但不得宣称官网上线。
 
 ---
 
@@ -325,7 +366,7 @@ flowchart LR
 
 **状态**：`NOT_STARTED`
 **优先级**：P0
-**依赖**：`S1-01`
+**依赖**：`S1-01A`
 **可并行**：可与 `S1-04`、`S1-05` 并行，但修改重叠文件时必须串行
 
 **主要证据/文件**：
@@ -416,7 +457,7 @@ cd packages/opencode && ./script/build.ts
 
 **状态**：`NOT_STARTED`
 **优先级**：P0
-**依赖**：`S1-01`
+**依赖**：`S1-01A`
 **可并行**：可与 `S1-02`、`S1-05` 并行
 
 **主要证据/文件**：
@@ -458,7 +499,7 @@ cd packages/opencode && bun test test/provider test/permission
 
 **状态**：`NOT_STARTED`
 **优先级**：P0
-**依赖**：`S1-01`
+**依赖**：`S1-01A`
 **可并行**：可与 `S1-02`、`S1-04` 并行
 
 **范围**：根 LICENSE/NOTICE/README、SECURITY、CONTRIBUTING、SUPPORT、CODE_OF_CONDUCT、UPSTREAM、依赖和来源清单。
@@ -512,11 +553,11 @@ cd packages/opencode && bun test test/provider test/permission
 
 **状态**：`NOT_STARTED`
 **优先级**：P0
-**依赖**：`S1-01`、`S1-06`
+**依赖**：`S1-01B`、`S1-06`
 
 **执行步骤**：
 
-1. 在 `S1-01` 已确认的真实官网源码中实现 `/install`；不得假设一定是 `packages/web`。
+1. 在 `S1-01B` 已确认的真实官网源码中实现 `/install`；不得假设一定是 `packages/web`。
 2. 安装器只读取本项目 Release/manifest，按 OS/arch 选择制品并校验 SHA-256。
 3. 官网提供复制按钮与完整文档：系统要求、安装、配置 DeepSeek、首个任务、升级、回滚、卸载、故障排查。
 4. 明示 Alpha 状态：当前 Stable、Experimental、未交付能力各自列表。
@@ -1125,7 +1166,7 @@ cd packages/desktop && bun run package:mac
 
 | ID   | 风险                               | 概率/影响 | 早期信号                                  | 处理                                       | 所有阶段 |
 | ---- | ---------------------------------- | --------- | ----------------------------------------- | ------------------------------------------ | -------- |
-| R-01 | 官网源码或部署权限不在当前仓库     | 中/高     | 无法把 commit 映射到线上                  | S1-01 先核实；缺权限则 BLOCKED，不伪报上线 | 1        |
+| R-01 | 官网源码或部署权限不在当前仓库     | 中/高     | 无法把 commit 映射到线上                  | S1-01B 先核实；缺权限则 BLOCKED，不伪报上线 | 1        |
 | R-02 | DeepCode 默认读取 OpenCode 数据    | 高/严重   | 测试中出现 `.opencode`/`opencode.db` 访问 | 共存契约测试 + VM 哈希                     | 1/3      |
 | R-03 | 发行仍下载上游或第三方包           | 高/严重   | URL/npm 名仍指向 OpenCode/占用包          | Release URL allowlist + checksum           | 1        |
 | R-04 | 实验代码被当作完整能力             | 高/高     | 只有包内测试，无生产消费者                | S2-01 调用图 + Claim Evidence              | 2        |
@@ -1144,9 +1185,9 @@ cd packages/desktop && bun run package:mac
 
 | 决策                      | 推荐默认                                                         | 截止任务       | 未确认影响                       |
 | ------------------------- | ---------------------------------------------------------------- | -------------- | -------------------------------- |
-| GitHub 唯一默认分支       | 以实际开发基线核实后选一条，并让 CI/文档一致；当前倾向 `develop` | S1-01          | Release/Required CI 不能最终配置 |
-| 官网源码和部署入口        | 使用能映射到 `deepcode.starseas.org` 的真实部署源                | S1-01          | Gate 1 阻塞                      |
-| GitHub Release owner/repo | 当前 DeepCode 官方仓库                                           | S1-01          | 安装器无法固定可信源             |
+| GitHub 分支拓扑           | `develop` 实施、`master` 默认/发布；CI 覆盖两者，里程碑从前者合入后者 | S1-01A       | 已核实；后续只需校验 CI 配置     |
+| 官网源码和部署入口        | 使用能映射到 `deepcode.starseas.org` 的真实部署源                | S1-01B         | Gate 1 阻塞                      |
+| GitHub Release owner/repo | `yuanchenglu/deepcode`                                           | S1-01A         | 已核实                           |
 | npm scope                 | 延后，只有验证所有权后启用                                       | 第二阶段后评估 | 不影响 Stage 1                   |
 | Desktop App ID/签名主体   | 设计阶段前由项目主体确认                                         | S3-07          | Desktop Beta/Stable 阻塞         |
 | UI 视觉方向               | 经 S3-02 的原型测试后由用户批准                                  | S3-03          | UI 实现阻塞，这是预期门禁        |
@@ -1167,7 +1208,7 @@ cd packages/desktop && bun run package:mac
 | 产品 WebUI       | `packages/app/src/app.tsx`、`src/pages/*`、`src/context/*`                                                                   |
 | UI 系统          | `packages/ui/src/*`、`packages/storybook`                                                                                    |
 | Electron         | `packages/desktop/electron-builder.config.ts`、`src/main/*`、`src/preload/*`、`src/renderer/*`                               |
-| 官网候选         | `packages/web`；是否为线上源码待 S1-01 证实                                                                                  |
+| 官网候选         | `packages/web`；是否为线上源码待 S1-01B 证实                                                                                  |
 | CI/Release       | `.github/workflows/test.yml`、`typecheck.yml`、`publish.yml`、`deploy.yml`                                                   |
 
 ## 附录 B：讨论债务
