@@ -1,17 +1,23 @@
 # DeepCode v0.1 测试计划与用例基线
 
-> 版本：2.1
-> 状态：Phase 0 勘误后范围冻结
+> 版本：3.0
+> 状态：v0.1 CLI-first Alpha 范围已修订
 > 原则：分别验证 Host Execution 与 Plugin Orchestration，不以“只有一条 Loop”作为正确性标准
+
+## 更新记录（Update Log）
+
+| 时间 | 更新内容 | 来源 |
+|---|---|---|
+| 2026-07-27 | 新增发行身份、OpenCode/Oh-my-OpenAgent 共存、官网安装和 Parallels 验收；拆分 v0.1/v0.2/v0.3 门禁 | 开源准备复核与用户确认 |
 
 ## 1. 测试目标
 
 1. 证明 DeepSeek Provider 请求和响应协议正确。
 2. 证明 Host 对真实副作用、权限和工作区保持有效治理。
-3. 证明 oh-my-deepagent 的 Role、Subagent 和 Multi-Agent 编排真实可用。
-4. 证明插件状态与 Host Session/Task 可关联和恢复。
-5. 证明 Gateway 可安全进入 Host/Plugin 产品链路。
-6. 证明开源用户可安装、运行、测试和贡献。
+3. 证明 DeepCode 的安装、配置、数据、升级和卸载与 OpenCode/Oh-my-OpenAgent 隔离。
+4. 证明开源用户可从本项目制品安装、运行、测试和贡献。
+5. v0.2 证明 oh-my-deepagent 的 Role、Subagent 和 Multi-Agent 编排真实可用。
+6. v0.3 证明 Gateway 可安全进入 Host/Plugin 产品链路。
 
 ## 2. 测试模型
 
@@ -75,7 +81,7 @@ Role Selection
 | Security | deny、路径、Webhook、Secret、权限继承 |
 | Reliability | Abort、Timeout、Queue、Resume、长会话 |
 
-## 5. Phase 1 审计测试
+## 5. v0.2 Agent 审计测试
 
 ### AUD-001~010 原始架构和调用图
 
@@ -214,25 +220,53 @@ Role Selection
 
 覆盖飞书鉴权、Parser、私聊/群聊、多轮、角色、分段、重连、幂等和真机 E2E。
 
-## 14. 安装和 CI
+## 14. 安装、共存和 CI
 
-- INS-001~012：Package/Binary、Help、Version、Doctor、卸载。
+- INS-001：官网安装源只指向本项目 Release。
+- INS-002：SHA-256 校验失败时拒绝安装。
+- INS-003：`deepcode --version`、`deepcode --help`。
+- INS-004：重复安装幂等。
+- INS-005：升级到指定版本。
+- INS-006：升级失败可回滚。
+- INS-007：卸载只删除 DeepCode 文件。
+- INS-008：安装后实际配置、数据和数据库路径属于 `deepcode`。
+- INS-009：默认不读取 `.opencode`、`opencode.json(c)`。
+- INS-010：默认不解释 `OPENCODE_*`。
+- INS-011：默认不加载 Oh-my-OpenAgent。
+- INS-012：安装过程没有半安装残留。
+- COE-001：已有 OpenCode 时安装和运行 DeepCode。
+- COE-002：已有 OpenCode + Oh-my-OpenAgent 时安装和运行 DeepCode。
+- COE-003：`deepcode`、`opencode`、`omo` 命令互不覆盖。
+- COE-004：DeepCode 运行前后 OpenCode 配置/数据库校验值不变。
+- COE-005：DeepCode 升级和卸载不调用 OpenCode 包管理命令。
+- COE-006：DeepCode 和 OpenCode 可同时运行，端口/进程可区分。
+- VM-001~004：干净 macOS、OpenCode、OpenCode+Oh-my-OpenAgent、升级/回滚快照。
 - OSS-001~015：License、Security、Contribution、Claim Evidence。
 - PERF-001~012：启动、长 Session、Queue、并发、内存边界。
 
-统一命令目标：
+统一命令目标尚未实现，建立前必须在 CI 中显式列出各 Package 命令：
 
 ```bash
 bun run check
 ```
 
-## 15. Release Exit Criteria
+## 15. 分版本 Release Exit Criteria
 
-- P0=0。
+### v0.1 Alpha
+
+- Alpha 暴露面 P0=0。
 - Provider Contract 全通过。
 - Host Execution E2E 通过。
-- Plugin Orchestration 和关键角色通过。
-- Host-Plugin 安全 Contract 通过。
-- Gateway Core/飞书通过。
-- 安装 Matrix 和 CI 通过。
+- 安装、升级、卸载、共存 Matrix 和 Required CI 通过。
+- Parallels VM-001~004 和官网安装 Smoke 通过。
+- OpenCode/Oh-my-OpenAgent 状态不变。
+- 未交付 Agent/Gateway/Desktop 未被宣称 Stable。
+
+### v0.2 Agent
+
+- Plugin Orchestration、关键角色和 Host-Plugin 安全 Contract 通过。
 - 没有因错误“单 Loop”假设造成的插件能力回退。
+
+### v0.3 Gateway
+
+- Gateway Core/飞书 Contract、真机 E2E 和安全门禁通过。
