@@ -10,18 +10,20 @@ const layer = LayerNode.compile(Installation.node, [])
 
 describe("installation", () => {
   test("uses the DeepCode user-agent identity", () => {
-    expect(Installation.userAgent("test")).toStartWith("deepcode/")
-    expect(Installation.userAgent("test")).not.toContain("opencode")
+    const userAgent = Installation.userAgent("test")
+    expect(userAgent.startsWith("deepcode/")).toBe(true)
+    expect(userAgent).not.toContain("opencode")
   })
 
   describe("method detection", () => {
-    test("recognizes only the DeepCode curl installation directory", () => {
+    test("recognizes only the DeepCode curl installation directory and binary", () => {
       expect(Installation.detectMethod(path.join("home", "user", ".deepcode", "bin", "deepcode"))).toBe("curl")
       expect(Installation.detectMethod(path.join("home", "user", ".deepcode", "bin", "deepcode.exe"))).toBe("curl")
     })
 
-    test("does not inherit OpenCode or generic local installations", () => {
+    test("does not inherit OpenCode, generic local, or wrong-binary installations", () => {
       expect(Installation.detectMethod(path.join("home", "user", ".opencode", "bin", "opencode"))).toBe("unknown")
+      expect(Installation.detectMethod(path.join("home", "user", ".deepcode", "bin", "opencode"))).toBe("unknown")
       expect(Installation.detectMethod(path.join("home", "user", ".local", "bin", "deepcode"))).toBe("unknown")
       expect(Installation.detectMethod(path.join("usr", "local", "bin", "opencode"))).toBe("unknown")
     })
