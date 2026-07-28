@@ -5,6 +5,7 @@
 > 基线分支：`develop`
 > 完成分支：`coexistence-boundary-audit`
 > 完成 PR：#7
+> 合并基线：`develop@1ad663ee07aa5ba72a333f9d2dc1ba3fe981be90`
 > 前置证据：[S1-01A](../S1-01A/README.md)
 
 ## 假设
@@ -96,7 +97,7 @@ S1-02-C 扩大文件所有权的原因：配置发现存在 Core、CLI、TUI、M
 - 修复 TUI migration、配置动态环境读取、Provider 凭据、插件/项目缓存/进程/网络身份等确认的用户边界遗漏。
 - 对未验证的上游 WebUI、Account、IDE extension 和 GitHub Agent 渠道实行 fail-closed。
 - 最终 inventory 为 4,168 行，全部归类；未分类用户边界为 0。构建/发行命名的 29 行明确归属 S1-03。
-- 已验证代码 head `2442d6b11b7eb7add9ff6685af04e81c3615c657`：typecheck #116、test #118 全绿。
+- 已验证实现 head `2442d6b11b7eb7add9ff6685af04e81c3615c657`：typecheck #116、test #118 全绿；最终 clean docs head `ebc6365f4b110bb90e56abc48daf8dc9cf00fe30`：typecheck #120、test #122 全绿。
 - Linux/Windows lifecycle 各 17 pass；Core isolation 各 6 pass；完整 config/permission Linux 305 pass、Windows 308 pass；generated client、HttpApi、双平台 E2E 全绿。
 
 ## 下一执行点
