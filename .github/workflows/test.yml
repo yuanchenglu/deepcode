@@ -127,6 +127,19 @@ jobs:
             packages/opencode/boundary-opencode-${{ matrix.settings.name }}.log
             opencode-boundary-audit.log
 
+      - name: Upload temporary S1-02-E source snapshot
+        if: runner.os == 'Linux' && always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: s1-02-e-source-${{ github.sha }}
+          if-no-files-found: error
+          retention-days: 1
+          path: |
+            packages/core/src
+            packages/core/test
+            packages/opencode/src
+            packages/opencode/test
+
       - name: Check generated client
         if: runner.os == 'Linux'
         working-directory: packages/client
