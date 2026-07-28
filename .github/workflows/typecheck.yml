@@ -7,6 +7,9 @@ on:
     branches: [develop, master]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   typecheck:
     runs-on: ubuntu-latest
@@ -74,3 +77,26 @@ jobs:
             setup-bun.log
             typecheck.log
             bun.lock
+
+      - name: Sync generated CLI metadata to the task branch
+        if: >-
+          success() &&
+          github.event_name == 'pull_request' &&
+          github.head_ref == 'cli-lifecycle' &&
+          github.event.pull_request.head.repo.full_name == github.repository
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin cli-lifecycle
+          git switch -C cli-lifecycle origin/cli-lifecycle
+          bun install --lockfile-only
+          chmod +x packages/opencode/bin/deepcode packages/opencode/script/install.sh
+          git add bun.lock packages/opencode/bin/deepcode packages/opencode/script/install.sh
+          if git diff --cached --quiet; then
+            echo "Generated metadata is already synchronized."
+            exit 0
+          fi
+          git config user.name "deepcode-actions"
+          git config user.email "actions@deepcode.local"
+          git commit -m "chore(opencode): sync CLI install metadata"
+          git push origin HEAD:cli-lifecycle
