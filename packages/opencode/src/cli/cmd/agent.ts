@@ -2,6 +2,7 @@ import { cmd } from "./cmd"
 import * as prompts from "@clack/prompts"
 import { UI } from "../ui"
 import { Global } from "@opencode-ai/core/global"
+import { Product } from "@opencode-ai/core/product"
 import path from "path"
 import fs from "fs/promises"
 import { Filesystem } from "@/util/filesystem"
@@ -108,7 +109,10 @@ const AgentCreateCommand = effectCmd({
           if (prompts.isCancel(scopeResult)) throw new UI.CancelledError()
           scope = scopeResult
         }
-        targetPath = path.join(scope === "global" ? Global.Path.config : path.join(ctx.worktree, ".opencode"), "agents")
+        targetPath = path.join(
+          scope === "global" ? Global.Path.config : path.join(ctx.worktree, Product.config.directory),
+          "agents",
+        )
       }
 
       // Get description
@@ -186,12 +190,9 @@ const AgentCreateCommand = effectCmd({
       // Build permissions config — deny anything not explicitly selected.
       const permissions: Record<string, "deny"> = {}
       for (const permission of AVAILABLE_PERMISSIONS) {
-        if (!selected.includes(permission)) {
-          permissions[permission] = "deny"
-        }
+        if (!selected.includes(permission)) permissions[permission] = "deny"
       }
 
-      // Build frontmatter
       const frontmatter: {
         description: string
         mode: AgentMode
@@ -200,11 +201,8 @@ const AgentCreateCommand = effectCmd({
         description: generated.whenToUse,
         mode,
       }
-      if (Object.keys(permissions).length > 0) {
-        frontmatter.permission = permissions
-      }
+      if (Object.keys(permissions).length > 0) frontmatter.permission = permissions
 
-      // Write file
       const content = matter.stringify(generated.systemPrompt, frontmatter)
       const filePath = path.join(targetPath, `${generated.identifier}.md`)
 
@@ -221,9 +219,8 @@ const AgentCreateCommand = effectCmd({
 
       await Filesystem.write(filePath, content)
 
-      if (isFullyNonInteractive) {
-        console.log(filePath)
-      } else {
+      if (isFullyNonInteractive) console.log(filePath)
+      else {
         prompts.log.success(`Agent created: ${filePath}`)
         prompts.outro("Done")
       }
@@ -238,9 +235,7 @@ const AgentListCommand = effectCmd({
     const { Agent } = yield* Effect.promise(() => import("../../agent/agent"))
     const agents = yield* Agent.Service.use((svc) => svc.list())
     const sortedAgents = agents.sort((a, b) => {
-      if (a.native !== b.native) {
-        return a.native ? -1 : 1
-      }
+      if (a.native !== b.native) return a.native ? -1 : 1
       return a.name.localeCompare(b.name)
     })
 
