@@ -50,7 +50,8 @@ export function detectMethod(execPath: string): Method {
   const normalized = path.normalize(execPath)
   const compare = (value: string, expected: string) =>
     process.platform === "win32" ? value.toLowerCase() === expected.toLowerCase() : value === expected
-  const binary = path.basename(normalized).replace(process.platform === "win32" ? /\.exe$/i : /\.exe$/, "")
+  const basename = path.basename(normalized)
+  const binary = process.platform === "win32" ? basename.replace(/\.exe$/i, "") : basename
   const bin = path.dirname(normalized)
   const install = path.dirname(bin)
   const exactDirectory = compare(path.basename(bin), "bin")
