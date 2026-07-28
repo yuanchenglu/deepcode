@@ -1,0 +1,33 @@
+name: plan-handoff-sync
+
+on:
+  push:
+    branches:
+      - agent/s1-02-d-install-uninstall-guard
+    paths:
+      - .github/workflows/plan-handoff-sync.yml
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          ref: agent/s1-02-d-install-uninstall-guard
+          fetch-depth: 0
+
+      - name: Update plan and remove one-shot files
+        run: python .github/scripts/sync-plan-handoff.py
+
+      - name: Commit progress snapshot
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "docs(plan): update implementation progress and handoff | 更新实施进度与交接"
+          git push origin HEAD:agent/s1-02-d-install-uninstall-guard
