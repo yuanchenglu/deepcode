@@ -26,22 +26,22 @@ void mock.module("bonjour-service", () => ({
 const { Server } = await import("../../src/server/server")
 
 const original = {
-  DEEPCODE_SERVER_PASSWORD: Flag.DEEPCODE_SERVER_PASSWORD,
-  DEEPCODE_SERVER_USERNAME: Flag.DEEPCODE_SERVER_USERNAME,
+  DEEPCODE_SERVER_PASSWORD: Flag.OPENCODE_SERVER_PASSWORD,
+  DEEPCODE_SERVER_USERNAME: Flag.OPENCODE_SERVER_USERNAME,
 }
 
 afterEach(async () => {
   events.length = 0
-  Flag.DEEPCODE_SERVER_PASSWORD = original.DEEPCODE_SERVER_PASSWORD
-  Flag.DEEPCODE_SERVER_USERNAME = original.DEEPCODE_SERVER_USERNAME
+  Flag.OPENCODE_SERVER_PASSWORD = original.DEEPCODE_SERVER_PASSWORD
+  Flag.OPENCODE_SERVER_USERNAME = original.DEEPCODE_SERVER_USERNAME
   await disposeAllInstances()
   await resetDatabase()
 })
 
 describe("HttpApi Server.listen mDNS", () => {
   test("skips publish for loopback hostnames", async () => {
-    Flag.DEEPCODE_SERVER_PASSWORD = "mdns-secret"
-    Flag.DEEPCODE_SERVER_USERNAME = "opencode"
+    Flag.OPENCODE_SERVER_PASSWORD = "mdns-secret"
+    Flag.OPENCODE_SERVER_USERNAME = "opencode"
     const listener = await Server.listen({ hostname: "127.0.0.1", port: 0, mdns: true })
     try {
       expect(events.filter((e) => e.kind === "publish")).toEqual([])
@@ -52,8 +52,8 @@ describe("HttpApi Server.listen mDNS", () => {
   })
 
   test("publishes for non-loopback hostnames and unpublishes on stop", async () => {
-    Flag.DEEPCODE_SERVER_PASSWORD = "mdns-secret"
-    Flag.DEEPCODE_SERVER_USERNAME = "opencode"
+    Flag.OPENCODE_SERVER_PASSWORD = "mdns-secret"
+    Flag.OPENCODE_SERVER_USERNAME = "opencode"
     const listener = await Server.listen({ hostname: "0.0.0.0", port: 0, mdns: true })
     try {
       const published = events.filter((e) => e.kind === "publish")
@@ -68,8 +68,8 @@ describe("HttpApi Server.listen mDNS", () => {
   })
 
   test("scope finalizer unpublishes even if stop() is not called for force-close", async () => {
-    Flag.DEEPCODE_SERVER_PASSWORD = "mdns-secret"
-    Flag.DEEPCODE_SERVER_USERNAME = "opencode"
+    Flag.OPENCODE_SERVER_PASSWORD = "mdns-secret"
+    Flag.OPENCODE_SERVER_USERNAME = "opencode"
     const listener = await Server.listen({ hostname: "0.0.0.0", port: 0, mdns: true })
     expect(events.filter((e) => e.kind === "publish").length).toBe(1)
     // Plain (graceful) stop without close=true should still unpublish.

@@ -1,4 +1,5 @@
 import { NamedError } from "@opencode-ai/core/util/error"
+import { Product } from "@opencode-ai/core/product"
 import { errorFormat } from "@/util/error"
 import { isRecord } from "@/util/record"
 

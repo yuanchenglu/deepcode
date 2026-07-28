@@ -23,16 +23,16 @@ import { testEffect } from "../lib/effect"
 const testStateLayer = Layer.effectDiscard(
   Effect.gen(function* () {
     const original = {
-      DEEPCODE_SERVER_PASSWORD: Flag.DEEPCODE_SERVER_PASSWORD,
-      DEEPCODE_SERVER_USERNAME: Flag.DEEPCODE_SERVER_USERNAME,
+      DEEPCODE_SERVER_PASSWORD: Flag.OPENCODE_SERVER_PASSWORD,
+      DEEPCODE_SERVER_USERNAME: Flag.OPENCODE_SERVER_USERNAME,
       envPassword: process.env.DEEPCODE_SERVER_PASSWORD,
       envUsername: process.env.DEEPCODE_SERVER_USERNAME,
     }
 
     yield* Effect.addFinalizer(() =>
       Effect.sync(() => {
-        Flag.DEEPCODE_SERVER_PASSWORD = original.DEEPCODE_SERVER_PASSWORD
-        Flag.DEEPCODE_SERVER_USERNAME = original.DEEPCODE_SERVER_USERNAME
+        Flag.OPENCODE_SERVER_PASSWORD = original.DEEPCODE_SERVER_PASSWORD
+        Flag.OPENCODE_SERVER_USERNAME = original.DEEPCODE_SERVER_USERNAME
         restoreEnv("DEEPCODE_SERVER_PASSWORD", original.envPassword)
         restoreEnv("DEEPCODE_SERVER_USERNAME", original.envUsername)
       }),

@@ -10,8 +10,8 @@ import { resetDatabase } from "../fixture/db"
 import { disposeAllInstances, tmpdir } from "../fixture/fixture"
 
 const original = {
-  DEEPCODE_SERVER_PASSWORD: Flag.DEEPCODE_SERVER_PASSWORD,
-  DEEPCODE_SERVER_USERNAME: Flag.DEEPCODE_SERVER_USERNAME,
+  DEEPCODE_SERVER_PASSWORD: Flag.OPENCODE_SERVER_PASSWORD,
+  DEEPCODE_SERVER_USERNAME: Flag.OPENCODE_SERVER_USERNAME,
   envPassword: process.env.DEEPCODE_SERVER_PASSWORD,
   envUsername: process.env.DEEPCODE_SERVER_USERNAME,
 }
@@ -19,8 +19,8 @@ const auth = { username: "opencode", password: "listen-secret" }
 const testPty = process.platform === "win32" ? test.skip : test
 
 afterEach(async () => {
-  Flag.DEEPCODE_SERVER_PASSWORD = original.DEEPCODE_SERVER_PASSWORD
-  Flag.DEEPCODE_SERVER_USERNAME = original.DEEPCODE_SERVER_USERNAME
+  Flag.OPENCODE_SERVER_PASSWORD = original.DEEPCODE_SERVER_PASSWORD
+  Flag.OPENCODE_SERVER_USERNAME = original.DEEPCODE_SERVER_USERNAME
   if (original.envPassword === undefined) delete process.env.DEEPCODE_SERVER_PASSWORD
   else process.env.DEEPCODE_SERVER_PASSWORD = original.envPassword
   if (original.envUsername === undefined) delete process.env.DEEPCODE_SERVER_USERNAME
@@ -30,16 +30,16 @@ afterEach(async () => {
 })
 
 async function startListener() {
-  Flag.DEEPCODE_SERVER_PASSWORD = auth.password
-  Flag.DEEPCODE_SERVER_USERNAME = auth.username
+  Flag.OPENCODE_SERVER_PASSWORD = auth.password
+  Flag.OPENCODE_SERVER_USERNAME = auth.username
   process.env.DEEPCODE_SERVER_PASSWORD = auth.password
   process.env.DEEPCODE_SERVER_USERNAME = auth.username
   return Server.listen({ hostname: "127.0.0.1", port: 0 })
 }
 
 async function startNoAuthListener() {
-  Flag.DEEPCODE_SERVER_PASSWORD = undefined
-  Flag.DEEPCODE_SERVER_USERNAME = auth.username
+  Flag.OPENCODE_SERVER_PASSWORD = undefined
+  Flag.OPENCODE_SERVER_USERNAME = auth.username
   delete process.env.DEEPCODE_SERVER_PASSWORD
   process.env.DEEPCODE_SERVER_USERNAME = auth.username
   return Server.listen({ hostname: "127.0.0.1", port: 0 })

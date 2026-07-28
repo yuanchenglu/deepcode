@@ -13,13 +13,13 @@ import { testEffect } from "../lib/effect"
 const testStateLayer = Layer.effectDiscard(
   Effect.gen(function* () {
     const original = {
-      DEEPCODE_SERVER_PASSWORD: Flag.DEEPCODE_SERVER_PASSWORD,
+      DEEPCODE_SERVER_PASSWORD: Flag.OPENCODE_SERVER_PASSWORD,
     }
-    Flag.DEEPCODE_SERVER_PASSWORD = "secret"
+    Flag.OPENCODE_SERVER_PASSWORD = "secret"
     yield* Effect.promise(() => resetDatabase())
     yield* Effect.addFinalizer(() =>
       Effect.promise(async () => {
-        Flag.DEEPCODE_SERVER_PASSWORD = original.DEEPCODE_SERVER_PASSWORD
+        Flag.OPENCODE_SERVER_PASSWORD = original.DEEPCODE_SERVER_PASSWORD
         await resetDatabase()
       }),
     )
