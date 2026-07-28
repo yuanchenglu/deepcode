@@ -33,6 +33,11 @@ describe("installation", () => {
       expect(Installation.detectMethod(path.join("home", "user", ".local", "bin", "deepcode"))).toBe("unknown")
       expect(Installation.detectMethod(path.join("usr", "local", "bin", "opencode"))).toBe("unknown")
     })
+
+    test("uses native case sensitivity for installation paths", () => {
+      const value = Installation.detectMethod(path.join("home", "user", ".DeepCode", "bin", "DeepCode"))
+      expect(value).toBe(process.platform === "win32" ? "curl" : "unknown")
+    })
   })
 
   describe("release lookup", () => {
