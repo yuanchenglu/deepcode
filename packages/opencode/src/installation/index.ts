@@ -8,6 +8,7 @@ import semver from "semver"
 import { InstallationChannel, InstallationVersion } from "@opencode-ai/core/installation/version"
 import { Product } from "@opencode-ai/core/product"
 import { InstallationEvent } from "@opencode-ai/schema/installation-event"
+import { latestVersion, upgradeCurl } from "./release"
 
 export type Method = "curl" | "npm" | "yarn" | "pnpm" | "bun" | "brew" | "scoop" | "choco" | "unknown"
 
@@ -89,14 +90,26 @@ const service: Interface = {
   method: Effect.fn("Installation.method")(function* () {
     return detectMethod(process.execPath)
   }),
-  latest: Effect.fn("Installation.latest")(function* (_method?: Method) {
-    // S1-02 must never fall back to OpenCode release, package-manager, or install-script endpoints.
-    // S1-03 will replace this safe placeholder with the verified DeepCode GitHub Release channel.
-    return InstallationVersion
+  latest: Effect.fn("Installation.latest")(function* (method: Method = "curl") {
+    if (method !== "curl") return InstallationVersion
+    return yield* Effect.tryPromise({
+      try: () => latestVersion(),
+      catch: () => InstallationVersion,
+    }).pipe(Effect.catchAll((version) => Effect.succeed(version)))
   }),
   upgrade: Effect.fn("Installation.upgrade")(function* (method: Method, target: string) {
-    return yield* new UpgradeFailedError({
-      stderr: `DeepCode upgrade is disabled until the verified release channel is available (method: ${method}, target: ${target}).`,
+    if (method !== "curl") {
+      return yield* new UpgradeFailedError({
+        stderr: `DeepCode ${method} upgrades are disabled in Alpha. Install through the verified GitHub Release/curl channel.`,
+      })
+    }
+
+    return yield* Effect.tryPromise({
+      try: () => upgradeCurl(target),
+      catch: (error) =>
+        new UpgradeFailedError({
+          stderr: error instanceof Error ? error.message : String(error),
+        }),
     })
   }),
 }
@@ -110,5 +123,28 @@ const { runPromise } = makeRuntime(Service, AppNodeBuilder.build(node))
 export const latest = (...args: Parameters<Interface["latest"]>) => runPromise((s) => s.latest(...args))
 export const method = () => runPromise((s) => s.method())
 export const upgrade = (...args: Parameters<Interface["upgrade"]>) => runPromise((s) => s.upgrade(...args))
+
+export {
+  ReleaseRepository,
+  ReleaseBaseUrl,
+  ReleaseManifestName,
+  ReleaseChecksumsName,
+  InstallManifestName,
+  normalizeVersion,
+  platformName,
+  architectureName,
+  artifactName,
+  releaseUrl,
+  sha256,
+  parseReleaseManifest,
+  parseInstallManifest,
+  latestVersion,
+  downloadVerifiedRelease,
+  upgradeCurl,
+  replaceBinaryAtomically,
+  readInstallManifest,
+  installManifestPath,
+  isOwnedInstallPath,
+} from "./release"
 
 export * as Installation from "."
