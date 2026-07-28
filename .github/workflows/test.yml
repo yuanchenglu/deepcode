@@ -101,7 +101,7 @@ jobs:
         working-directory: packages/opencode
         run: |
           set -o pipefail
-          bun test test/config/coexistence.test.ts test/config/tui-coexistence.test.ts test/permission --timeout 30000 2>&1 | tee boundary-opencode-${{ matrix.settings.name }}.log
+          bun test test/config/coexistence.test.ts test/config/tui-coexistence.test.ts test/effect/runtime-flags-deepcode.test.ts test/permission --timeout 30000 2>&1 | tee boundary-opencode-${{ matrix.settings.name }}.log
 
       - name: Capture S1-02-E OpenCode string inventory
         if: runner.os == 'Linux' && always()
