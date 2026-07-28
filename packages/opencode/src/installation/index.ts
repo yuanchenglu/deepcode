@@ -48,12 +48,14 @@ export function isLocal() {
 
 export function detectMethod(execPath: string): Method {
   const normalized = path.normalize(execPath)
-  const binary = path.basename(normalized).replace(/\.exe$/i, "").toLowerCase()
+  const compare = (value: string, expected: string) =>
+    process.platform === "win32" ? value.toLowerCase() === expected.toLowerCase() : value === expected
+  const binary = path.basename(normalized).replace(process.platform === "win32" ? /\.exe$/i : /\.exe$/, "")
   const bin = path.dirname(normalized)
   const install = path.dirname(bin)
-  const exactDirectory = path.basename(bin).toLowerCase() === "bin"
-  const exactNamespace = path.basename(install).toLowerCase() === Product.config.directory.toLowerCase()
-  return exactDirectory && exactNamespace && binary === Product.cli ? "curl" : "unknown"
+  const exactDirectory = compare(path.basename(bin), "bin")
+  const exactNamespace = compare(path.basename(install), Product.config.directory)
+  return exactDirectory && exactNamespace && compare(binary, Product.cli) ? "curl" : "unknown"
 }
 
 export class UpgradeFailedError extends Schema.TaggedErrorClass<UpgradeFailedError>()("UpgradeFailedError", {
