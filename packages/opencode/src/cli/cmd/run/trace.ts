@@ -1,7 +1,7 @@
 // Dev-only JSONL event trace for direct interactive mode.
 //
-// Enable with OPENCODE_DIRECT_TRACE=1. Writes one JSON line per event to
-// ~/.local/share/opencode/log/direct/<timestamp>-<pid>.jsonl. Also writes
+// Enable with DEEPCODE_DIRECT_TRACE=1. Writes one JSON line per event to
+// ~/.local/share/deepcode/log/direct/<timestamp>-<pid>.jsonl. Also writes
 // a latest.json pointer so you can quickly find the most recent trace.
 //
 // The trace captures the full closed loop: outbound prompts, inbound SDK
@@ -55,7 +55,7 @@ export function trace(): Trace | undefined {
     return state || undefined
   }
 
-  if (!process.env.OPENCODE_DIRECT_TRACE) {
+  if (!process.env.DEEPCODE_DIRECT_TRACE) {
     state = false
     return undefined
   }

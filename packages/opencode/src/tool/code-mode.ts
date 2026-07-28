@@ -20,7 +20,7 @@ export const Parameters = Schema.Struct({
   code: Schema.String.annotate({
     description: [
       "JavaScript source to execute.",
-      "Inside CodeMode, `tools` contains only the MCP/CodeMode tools listed in this execute tool's description; top-level opencode tools like bash, read, or lsp are not available unless listed there.",
+      "Inside CodeMode, `tools` contains only the MCP/CodeMode tools listed in this execute tool's description; top-level DeepCode tools like bash, read, or lsp are not available unless listed there.",
       "Call available tools using the exact signatures shown in this execute tool's description, compose the results, and `return` the final value.",
     ].join(" "),
   }),

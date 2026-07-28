@@ -15,8 +15,8 @@ Options:
       --hostname     hostname to listen on                           [string] [default: "127.0.0.1"]
       --mdns         enable mDNS service discovery (defaults hostname to 0.0.0.0)
                                                                           [boolean] [default: false]
-      --mdns-domain  custom domain name for mDNS service (default: opencode.local)
-                                                                [string] [default: "opencode.local"]
+      --mdns-domain  custom domain name for mDNS service (default: deepcode.local)
+                                                                [string] [default: "deepcode.local"]
       --cors         additional domains to allow for CORS                      [array] [default: []]
       --cwd          working directory [string] [default: "<HOME>"]"
 `;
@@ -44,7 +44,7 @@ Options:
 exports[`opencode CLI help-text snapshots every documented command emits stable help text: opencode attach --help 1`] = `
 "opencode attach <url>
 
-attach to a running opencode server
+attach to a running DeepCode server
 
 Positionals:
   url  http://localhost:4096                                                     [string] [required]
@@ -59,8 +59,8 @@ Options:
   -c, --continue      continue the last session                                            [boolean]
   -s, --session       session id to continue                                                [string]
       --fork          fork the session when continuing (use with --continue or --session)  [boolean]
-  -p, --password      basic auth password (defaults to OPENCODE_SERVER_PASSWORD)            [string]
-  -u, --username      basic auth username (defaults to OPENCODE_SERVER_USERNAME or 'opencode')
+  -p, --password      basic auth password (defaults to DEEPCODE_SERVER_PASSWORD)            [string]
+  -u, --username      basic auth username (defaults to DEEPCODE_SERVER_USERNAME or 'deepcode')
                                                                                             [string]
       --mini          start the minimal interactive interface             [boolean] [default: false]
       --no-replay     disable mini session history replay on resume and after resize       [boolean]
@@ -92,9 +92,9 @@ Options:
                                           [string] [choices: "default", "json"] [default: "default"]
   -f, --file         file(s) to attach to message                                            [array]
       --title        title for the session (uses truncated prompt if no value provided)     [string]
-      --attach       attach to a running opencode server (e.g., http://localhost:4096)      [string]
-  -p, --password     basic auth password (defaults to OPENCODE_SERVER_PASSWORD)             [string]
-  -u, --username     basic auth username (defaults to OPENCODE_SERVER_USERNAME or 'opencode')
+      --attach       attach to a running DeepCode server (e.g., http://localhost:4096)      [string]
+  -p, --password     basic auth password (defaults to DEEPCODE_SERVER_PASSWORD)             [string]
+  -u, --username     basic auth username (defaults to DEEPCODE_SERVER_USERNAME or 'deepcode')
                                                                                             [string]
       --dir          directory to run in, path on remote server if attaching                [string]
       --port         port for the local server (defaults to random port if no value provided)
@@ -220,8 +220,8 @@ Options:
       --hostname     hostname to listen on                           [string] [default: "127.0.0.1"]
       --mdns         enable mDNS service discovery (defaults hostname to 0.0.0.0)
                                                                           [boolean] [default: false]
-      --mdns-domain  custom domain name for mDNS service (default: opencode.local)
-                                                                [string] [default: "opencode.local"]
+      --mdns-domain  custom domain name for mDNS service (default: deepcode.local)
+                                                                [string] [default: "deepcode.local"]
       --cors         additional domains to allow for CORS                      [array] [default: []]"
 `;
 
@@ -240,8 +240,8 @@ Options:
       --hostname     hostname to listen on                           [string] [default: "127.0.0.1"]
       --mdns         enable mDNS service discovery (defaults hostname to 0.0.0.0)
                                                                           [boolean] [default: false]
-      --mdns-domain  custom domain name for mDNS service (default: opencode.local)
-                                                                [string] [default: "opencode.local"]
+      --mdns-domain  custom domain name for mDNS service (default: deepcode.local)
+                                                                [string] [default: "deepcode.local"]
       --cors         additional domains to allow for CORS                      [array] [default: []]"
 `;
 

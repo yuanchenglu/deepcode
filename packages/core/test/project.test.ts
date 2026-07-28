@@ -147,20 +147,40 @@ describe("ProjectV2.resolve", () => {
     }),
   )
 
-  it.live("returns previous cached id from common dir", () =>
+  it.live("returns previous DeepCode cached id from common dir", () =>
     Effect.gen(function* () {
       const tmp = yield* Effect.acquireRelease(
         Effect.promise(() => tmpdir()),
         (tmp) => Effect.promise(() => tmp[Symbol.asyncDispose]()),
       )
       yield* Effect.promise(() => initRepo(tmp.path, { commit: true, remote: "git@github.com:owner/repo.git" }))
-      yield* Effect.promise(() => Bun.write(path.join(tmp.path, ".git", "opencode"), "old-id"))
+      yield* Effect.promise(() => Bun.write(path.join(tmp.path, ".git", "deepcode"), "old-id"))
       const project = yield* ProjectV2.Service
 
       const result = yield* project.resolve(abs(tmp.path))
 
       expect(result.previous).toBe(ProjectV2.ID.make("old-id"))
       expect(result.id).toBe(remoteID("github.com/owner/repo"))
+    }),
+  )
+
+  it.live("ignores an OpenCode cache file", () =>
+    Effect.gen(function* () {
+      const tmp = yield* Effect.acquireRelease(
+        Effect.promise(() => tmpdir()),
+        (tmp) => Effect.promise(() => tmp[Symbol.asyncDispose]()),
+      )
+      yield* Effect.promise(() => initRepo(tmp.path, { commit: true, remote: "git@github.com:owner/repo.git" }))
+      yield* Effect.promise(() => Bun.write(path.join(tmp.path, ".git", "opencode"), "opencode-id"))
+      const project = yield* ProjectV2.Service
+
+      const result = yield* project.resolve(abs(tmp.path))
+
+      expect(result.previous).toBeUndefined()
+      expect(result.id).toBe(remoteID("github.com/owner/repo"))
+      expect(yield* Effect.promise(() => Bun.file(path.join(tmp.path, ".git", "opencode")).text())).toBe(
+        "opencode-id",
+      )
     }),
   )
 
@@ -175,7 +195,7 @@ describe("ProjectV2.resolve", () => {
 
       yield* project.resolve(abs(tmp.path))
 
-      expect(yield* Effect.promise(() => Bun.file(path.join(tmp.path, ".git", "opencode")).exists())).toBe(false)
+      expect(yield* Effect.promise(() => Bun.file(path.join(tmp.path, ".git", "deepcode")).exists())).toBe(false)
     }),
   )
 
@@ -206,7 +226,7 @@ describe("ProjectV2.resolve", () => {
         Effect.promise(() => $`rm -rf ${worktree}`.quiet().nothrow()).pipe(Effect.ignore),
       )
       yield* Effect.promise(() => initRepo(tmp.path, { commit: true, remote: "git@github.com:owner/repo.git" }))
-      yield* Effect.promise(() => Bun.write(path.join(tmp.path, ".git", "opencode"), "old-id"))
+      yield* Effect.promise(() => Bun.write(path.join(tmp.path, ".git", "deepcode"), "old-id"))
       yield* Effect.promise(() => $`git worktree add ${worktree} -b test-${Date.now()}`.cwd(tmp.path).quiet())
       const project = yield* ProjectV2.Service
 

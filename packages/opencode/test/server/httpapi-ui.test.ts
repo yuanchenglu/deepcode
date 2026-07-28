@@ -23,18 +23,18 @@ import { testEffect } from "../lib/effect"
 const testStateLayer = Layer.effectDiscard(
   Effect.gen(function* () {
     const original = {
-      OPENCODE_SERVER_PASSWORD: Flag.OPENCODE_SERVER_PASSWORD,
-      OPENCODE_SERVER_USERNAME: Flag.OPENCODE_SERVER_USERNAME,
-      envPassword: process.env.OPENCODE_SERVER_PASSWORD,
-      envUsername: process.env.OPENCODE_SERVER_USERNAME,
+      DEEPCODE_SERVER_PASSWORD: Flag.OPENCODE_SERVER_PASSWORD,
+      DEEPCODE_SERVER_USERNAME: Flag.OPENCODE_SERVER_USERNAME,
+      envPassword: process.env.DEEPCODE_SERVER_PASSWORD,
+      envUsername: process.env.DEEPCODE_SERVER_USERNAME,
     }
 
     yield* Effect.addFinalizer(() =>
       Effect.sync(() => {
-        Flag.OPENCODE_SERVER_PASSWORD = original.OPENCODE_SERVER_PASSWORD
-        Flag.OPENCODE_SERVER_USERNAME = original.OPENCODE_SERVER_USERNAME
-        restoreEnv("OPENCODE_SERVER_PASSWORD", original.envPassword)
-        restoreEnv("OPENCODE_SERVER_USERNAME", original.envUsername)
+        Flag.OPENCODE_SERVER_PASSWORD = original.DEEPCODE_SERVER_PASSWORD
+        Flag.OPENCODE_SERVER_USERNAME = original.DEEPCODE_SERVER_USERNAME
+        restoreEnv("DEEPCODE_SERVER_PASSWORD", original.envPassword)
+        restoreEnv("DEEPCODE_SERVER_USERNAME", original.envUsername)
       }),
     )
   }),
@@ -64,8 +64,8 @@ function app(input?: { password?: string; username?: string }) {
       Layer.provide(
         ConfigProvider.layer(
           ConfigProvider.fromUnknown({
-            OPENCODE_SERVER_PASSWORD: input?.password,
-            OPENCODE_SERVER_USERNAME: input?.username,
+            DEEPCODE_SERVER_PASSWORD: input?.password,
+            DEEPCODE_SERVER_USERNAME: input?.username,
           }),
         ),
       ),
@@ -184,118 +184,23 @@ function responseText(response: Response) {
 }
 
 describe("HttpApi UI fallback", () => {
-  it.live("serves the web UI through the HTTP API app", () =>
+  it.live("does not proxy to an upstream product when embedded UI is unavailable", () =>
     Effect.gen(function* () {
-      let proxiedUrl: string | undefined
-
+      let requested = false
       const response = yield* uiApp({
         disableEmbeddedWebUi: true,
-        client: httpClient(
-          new Response("<html>opencode</html>", { headers: { "content-type": "text/html" } }),
-          (request) => {
-            proxiedUrl = request.url
-          },
+        client: Layer.succeed(
+          HttpClient.HttpClient,
+          HttpClient.make((request) => {
+            requested = true
+            return Effect.die(`unexpected upstream UI request: ${request.url}`)
+          }),
         ),
       }).request("/")
 
-      expect(response.status).toBe(200)
-      expect(response.headers.get("content-type")).toContain("text/html")
-      expect(yield* responseText(response)).toBe("<html>opencode</html>")
-      expect(proxiedUrl).toBe("https://app.opencode.ai/")
-    }),
-  )
-
-  it.live("strips upstream transfer encoding headers from proxied assets", () =>
-    Effect.gen(function* () {
-      let proxiedUrl: string | undefined
-
-      const response = yield* Effect.gen(function* () {
-        const fs = yield* FSUtil.Service
-        const client = yield* HttpClient.HttpClient
-        const flags = yield* RuntimeFlags.Service
-        return yield* serveUIEffect(HttpServerRequest.fromWeb(new Request("http://localhost/assets/app.js")), {
-          fs,
-          client,
-          disableEmbeddedWebUi: flags.disableEmbeddedWebUi,
-        })
-      }).pipe(
-        Effect.provide(
-          Layer.mergeAll(
-            RuntimeFlags.layer({ disableEmbeddedWebUi: true }),
-            Layer.succeed(
-              HttpClient.HttpClient,
-              HttpClient.make((request) => {
-                proxiedUrl = request.url
-                return Effect.succeed(
-                  HttpClientResponse.fromWeb(
-                    request,
-                    new Response("console.log('ok')", {
-                      headers: {
-                        "content-encoding": "br",
-                        "content-length": "999",
-                        "content-type": "text/javascript",
-                      },
-                    }),
-                  ),
-                )
-              }),
-            ),
-          ),
-        ),
-        Effect.map(HttpServerResponse.toWeb),
-      )
-
-      expect(response.status).toBe(200)
-      expect(proxiedUrl).toBe("https://app.opencode.ai/assets/app.js")
-      expect(response.headers.get("content-encoding")).toBeNull()
-      expect(response.headers.get("content-length")).not.toBe("999")
-      expect(response.headers.get("content-type")).toContain("text/javascript")
-      expect(yield* responseText(response)).toBe("console.log('ok')")
-    }),
-  )
-
-  // Regression for #25698 (Ope): upstream `transfer-encoding: chunked` was
-  // forwarded through the proxy while the proxy itself re-frames the body,
-  // causing browsers to fail with `ERR_INVALID_CHUNKED_ENCODING`.
-  it.live("strips upstream transfer-encoding header from proxied assets", () =>
-    Effect.gen(function* () {
-      const response = yield* Effect.gen(function* () {
-        const fs = yield* FSUtil.Service
-        const client = yield* HttpClient.HttpClient
-        const flags = yield* RuntimeFlags.Service
-        return yield* serveUIEffect(HttpServerRequest.fromWeb(new Request("http://localhost/")), {
-          fs,
-          client,
-          disableEmbeddedWebUi: flags.disableEmbeddedWebUi,
-        })
-      }).pipe(
-        Effect.provide(
-          Layer.mergeAll(
-            RuntimeFlags.layer({ disableEmbeddedWebUi: true }),
-            Layer.succeed(
-              HttpClient.HttpClient,
-              HttpClient.make((request) =>
-                Effect.succeed(
-                  HttpClientResponse.fromWeb(
-                    request,
-                    new Response("<html>opencode</html>", {
-                      headers: {
-                        "transfer-encoding": "chunked",
-                        "content-type": "text/html",
-                      },
-                    }),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-        Effect.map(HttpServerResponse.toWeb),
-      )
-
-      expect(response.status).toBe(200)
-      expect(response.headers.get("transfer-encoding")).toBeNull()
-      expect(yield* responseText(response)).toBe("<html>opencode</html>")
+      expect(response.status).toBe(404)
+      expect(requested).toBe(false)
+      expect(yield* responseText(response)).toContain("Not Found")
     }),
   )
 

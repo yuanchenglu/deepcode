@@ -5,9 +5,11 @@ import { Option, Schema } from "effect"
 import { TuiConfig } from "@opencode-ai/tui/config"
 import { Flag } from "@opencode-ai/core/flag/flag"
 import { Global } from "@opencode-ai/core/global"
+import { Product } from "@opencode-ai/core/product"
 import { Filesystem } from "@/util/filesystem"
 import * as ConfigPaths from "@/config/paths"
 
+// Retained until DeepCode publishes a verified TUI schema endpoint.
 const TUI_SCHEMA_URL = "https://opencode.ai/tui.json"
 
 const decodeTheme = Schema.decodeUnknownOption(Schema.String)
@@ -22,13 +24,13 @@ interface MigrateInput {
 }
 
 /**
- * Migrates tui-specific keys (theme, keybinds, tui) from opencode.json files
- * into dedicated tui.json files. Migration is performed per-directory and
- * skips only locations where a tui.json already exists.
+ * Migrates TUI-specific keys (theme, keybinds, tui) from DeepCode config files
+ * into dedicated tui.json files. OpenCode files are never discovered or
+ * modified by this implicit migration path.
  */
 export async function migrateTuiConfig(input: MigrateInput) {
-  const opencode = await opencodeFiles(input)
-  for (const file of opencode) {
+  const files = await deepCodeFiles(input)
+  for (const file of files) {
     const source = await Filesystem.readText(file).catch(() => undefined)
     if (!source) continue
     const errors: JsoncParseError[] = []
@@ -112,14 +114,15 @@ async function backupAndStripLegacy(file: string, source: string) {
     .catch(() => false)
 }
 
-async function opencodeFiles(input: { directories: string[]; cwd: string }) {
+async function deepCodeFiles(input: { directories: string[]; cwd: string }) {
   const files = [
-    ...ConfigPaths.fileInDirectory(Global.Path.config, "opencode"),
-    ...(await Filesystem.findUp(["opencode.json", "opencode.jsonc"], input.cwd, undefined, { rootFirst: true })),
+    ...ConfigPaths.fileInDirectory(Global.Path.config, Product.config.basename),
+    ...(await Filesystem.findUp([...Product.config.files], input.cwd, undefined, { rootFirst: true })),
   ]
   for (const dir of unique(input.directories)) {
-    files.push(...ConfigPaths.fileInDirectory(dir, "opencode"))
+    files.push(...ConfigPaths.fileInDirectory(dir, Product.config.basename))
   }
+  // This internal property reads DEEPCODE_CONFIG through Product.envPrefix.
   if (Flag.OPENCODE_CONFIG) files.push(Flag.OPENCODE_CONFIG)
 
   const existing = await Promise.all(
