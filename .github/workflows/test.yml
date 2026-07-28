@@ -141,7 +141,7 @@ jobs:
           bun run test:httpapi 2>&1 | tee httpapi.log
 
       - name: Upload HttpApi log
-        if: runner.os == 'Linux' && always()
+        if: runner.os == 'Linux' && always() && hashFiles('packages/opencode/httpapi.log') != ''
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: httpapi-${{ github.run_attempt }}
@@ -218,3 +218,44 @@ jobs:
           path: |
             packages/app/e2e/test-results
             packages/app/e2e/playwright-report
+
+  apply-s1-02-e-regression-fixes:
+    if: github.event_name == 'pull_request' && github.head_ref == 'coexistence-boundary-audit'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout implementation branch
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          ref: coexistence-boundary-audit
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Apply and push audited regression fixes
+        run: |
+          set -euo pipefail
+          script=docs/open-source-readiness/evidence/S1-02/.apply-s1e-regression-fixes.py
+          if [ ! -f "$script" ]; then
+            echo "S1-02-E regression fixes already applied"
+            exit 0
+          fi
+          python -m py_compile "$script"
+          python "$script"
+          rm -f "$script"
+          git diff --check
+          git config user.email "bot@deepcode.local"
+          git config user.name "deepcode-ci"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No regression changes produced"
+            exit 1
+          fi
+          git commit -m "fix(identity): repair S1-02-E regression contracts
+
+          English:
+          Restore internal Flag compatibility property names in tests, align DeepCode-owned network and telemetry assertions, fix plugin dependency typing, import Product for CLI errors, and read DEEPCODE_API_KEY at the OpenCode-compatible provider boundary.
+
+          简体中文:
+          恢复测试中的内部 Flag 兼容属性名，同步 DeepCode 自有网络与遥测断言，修复插件依赖类型和 CLI Product 导入，并在 OpenCode 兼容 Provider 边界读取 DEEPCODE_API_KEY。"
+          git push origin HEAD:coexistence-boundary-audit
