@@ -3,8 +3,9 @@
 > 状态：DONE
 > 基线：`develop@c848bc537e8c5677c36a360dd00122745a2f5b2e`
 > 分支：`coexistence-boundary-audit`
-> PR：#7
-> 已验证代码 head：`2442d6b11b7eb7add9ff6685af04e81c3615c657`
+> PR：#7（已 squash 合入 `develop@1ad663ee07aa5ba72a333f9d2dc1ba3fe981be90`）
+> 已验证实现 head：`2442d6b11b7eb7add9ff6685af04e81c3615c657`
+> 最终 clean docs head：`ebc6365f4b110bb90e56abc48daf8dc9cf00fe30`
 
 ## 假设与判定标准
 
@@ -63,8 +64,10 @@
 
 ## 最终验证
 
-- typecheck run #116 / id `30354218370`：SUCCESS。
-- test run #118 / id `30354218292`：SUCCESS。
+- 实现 head typecheck run #116 / id `30354218370`：SUCCESS。
+- 实现 head test run #118 / id `30354218292`：SUCCESS。
+- 最终 docs head typecheck run #120 / id `30355593747`：SUCCESS。
+- 最终 docs head test run #122 / id `30355593871`：SUCCESS；首次 Linux HttpApi 尝试在 Effect phase runner stall 后触发 15 分钟 timeout，同一 run 仅重跑失败 job 后通过，成功 artifact `httpapi-2` / id `8687319884`。
 - Linux generic unit：8/8 Turbo tasks success；Core 1,070 pass / 6 skip / 0 fail。
 - Windows generic unit：SUCCESS。
 - Linux Core isolation：6 pass / 0 fail / 10 assertions。
