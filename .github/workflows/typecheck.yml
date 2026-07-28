@@ -63,7 +63,7 @@ jobs:
             bun --cwd packages/opencode typecheck
           } 2>&1 | tee typecheck.log
 
-      - name: Upload typecheck and setup logs
+      - name: Upload typecheck, setup, and lockfile evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
@@ -73,3 +73,4 @@ jobs:
           path: |
             setup-bun.log
             typecheck.log
+            bun.lock
