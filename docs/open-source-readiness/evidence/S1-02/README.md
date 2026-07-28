@@ -1,9 +1,10 @@
 # S1-02 DeepCode 用户边界与共存隔离
 
-> 状态：IN_PROGRESS
+> 状态：DONE
 > 启动日期：2026-07-27
 > 基线分支：`develop`
-> 当前实施分支：`coexistence-boundary-audit`
+> 完成分支：`coexistence-boundary-audit`
+> 完成 PR：#7
 > 前置证据：[S1-01A](../S1-01A/README.md)
 
 ## 假设
@@ -40,7 +41,7 @@
 | S1-02-B | `DONE` | Core 路径、数据库和环境入口改为 DeepCode | `packages/core/src/global.ts`、`database/database.ts`、`flag/flag.ts` | A | [Core 验证](./test-results/S1-02-B-core.md) |
 | S1-02-C | `DONE` | 统一身份、配置发现与 CLI 用户身份隔离 | `packages/core/src/product.ts`、Core 配置/路径/DB/Flag；CLI 配置、TUI、MDM、CLI identity、Server Auth 与测试 fixture | B | [配置与 CLI 验证](./test-results/S1-02-C-config-cli.md) |
 | S1-02-D | `DONE` | 安装检测和卸载目标 fail-closed | `packages/opencode/src/installation/index.ts`、Upgrade/Uninstall CLI、CI lifecycle gate 与 installation tests | C | [安装与卸载验证](./test-results/S1-02-D-install-uninstall.md) |
-| S1-02-E | `IN_PROGRESS` | 全链共存回归和字符串分类 | 配置/TUI/permission/lifecycle tests、CI boundary gate、分类证据与明确遗漏；构建输出留给 S1-03 | A-D | [边界审计](./test-results/S1-02-E-boundary-audit.md) |
+| S1-02-E | `DONE` | 全链共存回归和字符串分类 | 配置/TUI/permission/lifecycle tests、CI boundary gate、分类证据与明确遗漏；构建输出留给 S1-03 | A-D | [边界审计](./test-results/S1-02-E-boundary-audit.md) |
 
 S1-02-C 扩大文件所有权的原因：配置发现存在 Core、CLI、TUI、MDM、Server Auth 和测试公共 fixture 等入口，只修改最初列出的三个文件会保留旁路；`global.ts`、数据库和 Flag 在 C 中仅改为消费统一 `Product` 常量，不改变 B 已验收的行为。
 
@@ -91,19 +92,19 @@ S1-02-C 扩大文件所有权的原因：配置发现存在 Core、CLI、TUI、M
 
 ### S1-02-E：全链共存回归和字符串分类
 
-- 基线：`develop@c848bc537e8c5677c36a360dd00122745a2f5b2e`。
-- 分支：`coexistence-boundary-audit`。
-- 首批已确认测试债务：两个关键共存用例仍为 `.skip`；配置/TUI 测试仍包含 `OPENCODE_*`、`.opencode` 的旧产品断言。
-- 执行顺序：先激活失败契约与 package-scoped boundary gate，再逐条修复测试或明确的生产遗漏，最后生成字符串分类和生命周期树哈希证据。
+- PR #7 已完成 DeepCode-only、OpenCode-only、双配置并存、TUI 树哈希、RuntimeFlags、完整 config/permission 和生命周期隔离回归。
+- 修复 TUI migration、配置动态环境读取、Provider 凭据、插件/项目缓存/进程/网络身份等确认的用户边界遗漏。
+- 对未验证的上游 WebUI、Account、IDE extension 和 GitHub Agent 渠道实行 fail-closed。
+- 最终 inventory 为 4,168 行，全部归类；未分类用户边界为 0。构建/发行命名的 29 行明确归属 S1-03。
+- 已验证代码 head `2442d6b11b7eb7add9ff6685af04e81c3615c657`：typecheck #116、test #118 全绿。
+- Linux/Windows lifecycle 各 17 pass；Core isolation 各 6 pass；完整 config/permission Linux 305 pass、Windows 308 pass；generated client、HttpApi、双平台 E2E 全绿。
 
 ## 下一执行点
 
-1. 激活 DeepCode-only、OpenCode-only、双配置并存测试，并新增 `.opencode` / `opencode.json(c)` 默认忽略的负向断言。
-2. 在 Linux/Windows CI 中运行 `packages/opencode` 的 installation/config/permission 边界测试并上传日志。
-3. 生成 `packages/core`、`packages/opencode` 的 `opencode|OPENCODE` 全量清单，逐条分类为内部命名、上游兼容、用户边界或遗漏。
-4. 增加隔离 fixture，验证生命周期操作前后 OpenCode 目录树和 shell 配置哈希不变。
-5. 全部通过后更新 PLAN 与本 evidence，将 S1-02 父任务标记 `DONE`。
+S1-02 父任务完成。下一唯一代码任务是 **S1-03：建立 DeepCode 安装、制品与 Release 边界**。不得继续依赖或发布 `opencode` launcher、上游归档名、上游 updater；S1-03 必须建立 DeepCode-owned artifact、checksum、rollback 和 release channel。
+
+S1-01B、S1-04、S1-05 仍可按 PLAN 的依赖关系并行，但产品总体继续保持 NO-GO，Gate 1 未通过。
 
 ## 当前结论
 
-S1-02-A/B/C/D 已完成并合入 `develop`。S1-02-E 已从最新 `develop` 独立启动；父任务继续保持 `IN_PROGRESS`，产品仍为 NO-GO。
+S1-02-A/B/C/D/E 全部 DONE。默认用户配置、持久化、进程、网络和生命周期边界已与 OpenCode 隔离，并通过 Linux/Windows 全链验证。构建和公开发行闭环尚未完成，产品仍为 NO-GO。
