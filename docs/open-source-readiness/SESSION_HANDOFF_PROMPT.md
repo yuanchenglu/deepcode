@@ -2,7 +2,7 @@
 
 以下代码块可直接完整复制到新的 ChatGPT / Codex 会话。
 
-```text
+````text
 @GitHub yuanchenglu/deepcode
 
 你现在接手 GitHub 仓库 `yuanchenglu/deepcode` 的三阶段交付计划实施工作。
@@ -165,9 +165,10 @@ CI 环境的 Playwright 依赖版本与锁定版本不一致，E2E 在 CI 无法
 至少运行并保存：
 
 ```bash
-cd packages/opencode && bun typecheck
-cd packages/opencode && bun test test/installation
-cd packages/opencode && ./script/build.ts
+cd packages/opencode
+bun typecheck
+bun test test/installation
+./script/build.ts
 ```
 
 同时保留现有完整门禁：Linux/Windows unit、E2E、typecheck、lifecycle、完整 config/permission、generated client、HttpApi 和 OpenCode coexistence inventory。
@@ -182,4 +183,4 @@ cd packages/opencode && ./script/build.ts
 - 下一唯一执行点
 
 请直接执行，不要只做状态汇报。不要依赖旧容器，也不要让任何有效修改只存在于本地。
-```
+````
