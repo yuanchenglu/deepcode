@@ -36,7 +36,7 @@ export interface InstallManifest {
 
 export interface DownloadOptions {
   readonly releaseBaseUrl?: string
-  readonly platform?: string
+  readonly platform?: NodeJS.Platform | SupportedPlatform
   readonly architecture?: string
   readonly fetcher?: typeof fetch
 }
@@ -60,18 +60,21 @@ export function normalizeVersion(value: string) {
   return normalized
 }
 
-export function platformName(value = process.platform): SupportedPlatform {
+export function platformName(value: NodeJS.Platform | SupportedPlatform = process.platform): SupportedPlatform {
   if (value === "darwin" || value === "linux" || value === "windows") return value
   if (value === "win32") return "windows"
   throw new Error(`DeepCode release does not support platform: ${value}`)
 }
 
-export function architectureName(value = process.arch): SupportedArchitecture {
+export function architectureName(value: string = process.arch): SupportedArchitecture {
   if (value === "arm64" || value === "x64") return value
   throw new Error(`DeepCode release does not support architecture: ${value}`)
 }
 
-export function artifactName(platform = process.platform, architecture = process.arch) {
+export function artifactName(
+  platform: NodeJS.Platform | SupportedPlatform = process.platform,
+  architecture: string = process.arch,
+) {
   const os = platformName(platform)
   const arch = architectureName(architecture)
   const extension = os === "linux" ? "tar.gz" : "zip"
@@ -123,7 +126,7 @@ export function parseInstallManifest(input: string, execPath: string): InstallMa
 
   const files = root.files.map((item) => {
     if (typeof item !== "string" || !isOwnedInstallPath(item, execPath)) {
-      throw new Error("Install manifest contains a path outside the DeepCode installation root")
+      throw new Error("Install manifest contains a path outside the verified DeepCode install file set")
     }
     return path.normalize(item)
   })
@@ -224,11 +227,16 @@ export function installManifestPath(execPath: string) {
   return path.join(path.dirname(path.dirname(path.resolve(execPath))), InstallManifestName)
 }
 
+export function ownedInstallFiles(execPath: string) {
+  const executable = path.resolve(execPath)
+  return [executable, path.resolve(`${executable}.previous`), path.resolve(installManifestPath(executable))]
+}
+
 export function isOwnedInstallPath(value: string, execPath: string) {
-  const root = path.dirname(path.dirname(path.resolve(execPath)))
   const resolved = path.resolve(value)
-  const relative = path.relative(root, resolved)
-  return relative.length > 0 && relative !== ".." && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative)
+  const compare = (left: string, right: string) =>
+    process.platform === "win32" ? left.toLowerCase() === right.toLowerCase() : left === right
+  return ownedInstallFiles(execPath).some((candidate) => compare(resolved, candidate))
 }
 
 async function prepareReleaseCandidate(downloaded: DownloadedRelease, directory: string) {
@@ -263,7 +271,7 @@ async function writeInstallManifest(execPath: string, version: string) {
     schema: 1,
     product: "deepcode",
     version,
-    files: [path.resolve(execPath), path.resolve(`${execPath}.previous`), path.resolve(file)],
+    files: ownedInstallFiles(execPath),
   }
   const temporary = `${file}.tmp`
   await fs.writeFile(temporary, `${JSON.stringify(manifest, null, 2)}\n`)
