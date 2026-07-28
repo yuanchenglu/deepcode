@@ -106,7 +106,12 @@ jobs:
       - name: Capture S1-02-E OpenCode string inventory
         if: runner.os == 'Linux' && always()
         run: |
-          rg -n --hidden --glob '!**/node_modules/**' 'opencode|OPENCODE' packages/core packages/opencode | tee opencode-boundary-audit.log
+          status=0
+          git grep -n -I -E 'opencode|OPENCODE' -- packages/core packages/opencode > opencode-boundary-audit.log || status=$?
+          if [ "$status" -gt 1 ]; then
+            exit "$status"
+          fi
+          cat opencode-boundary-audit.log
 
       - name: Upload unit and boundary logs
         if: always()
