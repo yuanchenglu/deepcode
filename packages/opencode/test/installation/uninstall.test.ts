@@ -9,7 +9,9 @@ import {
 describe("uninstall isolation", () => {
   test("accepts only the exact DeepCode binary target", () => {
     expect(isDeepCodeBinaryPath(path.join("home", "user", ".deepcode", "bin", "deepcode"))).toBe(true)
-    expect(isDeepCodeBinaryPath(path.join("home", "user", ".deepcode", "bin", "deepcode.exe"))).toBe(true)
+    expect(isDeepCodeBinaryPath(path.join("home", "user", ".deepcode", "bin", "deepcode.exe"))).toBe(
+      process.platform === "win32",
+    )
 
     expect(isDeepCodeBinaryPath(path.join("home", "user", ".opencode", "bin", "opencode"))).toBe(false)
     expect(isDeepCodeBinaryPath(path.join("home", "user", ".deepcode", "bin", "opencode"))).toBe(false)
