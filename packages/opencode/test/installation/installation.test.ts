@@ -16,9 +16,11 @@ describe("installation", () => {
   })
 
   describe("method detection", () => {
-    test("recognizes only the exact DeepCode curl installation directory and binary", () => {
+    test("recognizes only the exact DeepCode curl installation directory and native binary", () => {
       expect(Installation.detectMethod(path.join("home", "user", ".deepcode", "bin", "deepcode"))).toBe("curl")
-      expect(Installation.detectMethod(path.join("home", "user", ".deepcode", "bin", "deepcode.exe"))).toBe("curl")
+      expect(Installation.detectMethod(path.join("home", "user", ".deepcode", "bin", "deepcode.exe"))).toBe(
+        process.platform === "win32" ? "curl" : "unknown",
+      )
     })
 
     test("does not inherit OpenCode, generic local, nested, or wrong-binary installations", () => {
