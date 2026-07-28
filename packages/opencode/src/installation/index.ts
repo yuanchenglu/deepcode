@@ -49,7 +49,8 @@ export function isLocal() {
 export function detectMethod(execPath: string): Method {
   const normalized = path.normalize(execPath).toLowerCase()
   const marker = path.normalize(`${path.sep}${Product.config.directory}${path.sep}bin${path.sep}`).toLowerCase()
-  return normalized.includes(marker) ? "curl" : "unknown"
+  const binary = path.basename(normalized).replace(/\.exe$/i, "")
+  return normalized.includes(marker) && binary === Product.cli ? "curl" : "unknown"
 }
 
 export class UpgradeFailedError extends Schema.TaggedErrorClass<UpgradeFailedError>()("UpgradeFailedError", {
