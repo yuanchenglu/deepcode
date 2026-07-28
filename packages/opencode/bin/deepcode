@@ -1,0 +1,76 @@
+#!/usr/bin/env node
+
+const childProcess = require("child_process")
+const fs = require("fs")
+const os = require("os")
+const path = require("path")
+
+const forwardedSignals = ["SIGINT", "SIGTERM", "SIGHUP"]
+
+function run(target) {
+  const child = childProcess.spawn(target, process.argv.slice(2), { stdio: "inherit" })
+  child.on("error", (error) => {
+    console.error(error.message)
+    process.exit(1)
+  })
+
+  const forwarders = {}
+  for (const signal of forwardedSignals) {
+    forwarders[signal] = () => {
+      try {
+        child.kill(signal)
+      } catch {
+        // The child may already have exited.
+      }
+    }
+    process.on(signal, forwarders[signal])
+  }
+
+  child.on("exit", (code, signal) => {
+    for (const forwardedSignal of forwardedSignals) {
+      process.removeListener(forwardedSignal, forwarders[forwardedSignal])
+    }
+    if (signal) {
+      process.kill(process.pid, signal)
+      return
+    }
+    process.exit(typeof code === "number" ? code : 0)
+  })
+}
+
+const platformMap = { darwin: "darwin", linux: "linux", win32: "windows" }
+const architectureMap = { x64: "x64", arm64: "arm64" }
+const platform = platformMap[os.platform()]
+const architecture = architectureMap[os.arch()]
+
+if (!platform || !architecture) {
+  console.error(`DeepCode does not publish a CLI artifact for ${os.platform()}-${os.arch()}.`)
+  process.exit(1)
+}
+
+const scriptPath = fs.realpathSync(__filename)
+const scriptDir = path.dirname(scriptPath)
+const packageName = `deepcode-${platform}-${architecture}`
+const binaryName = platform === "windows" ? "deepcode.exe" : "deepcode"
+const cached = path.join(scriptDir, ".deepcode")
+
+function findBinary(startDir) {
+  let current = startDir
+  for (;;) {
+    const candidate = path.join(current, "node_modules", packageName, "bin", binaryName)
+    if (fs.existsSync(candidate)) return candidate
+    const parent = path.dirname(current)
+    if (parent === current) return
+    current = parent
+  }
+}
+
+const resolved = process.env.DEEPCODE_BIN_PATH || (fs.existsSync(cached) ? cached : findBinary(scriptDir))
+if (!resolved) {
+  console.error(
+    "DeepCode package-manager installation is not supported in Alpha. Install the verified GitHub Release through the official curl installer.",
+  )
+  process.exit(1)
+}
+
+run(resolved)
