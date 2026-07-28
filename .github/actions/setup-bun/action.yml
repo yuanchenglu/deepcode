@@ -11,11 +11,12 @@ runs:
     - name: Initialize setup diagnostics
       shell: bash
       run: |
+        PACKAGE_MANAGER=$(node -p "require('./package.json').packageManager" 2>/dev/null || true)
         {
           echo "runner_os=$RUNNER_OS"
           echo "runner_arch=$RUNNER_ARCH"
           echo "node=$(node --version 2>/dev/null || true)"
-          echo "package_manager=$(node -p \"require('./package.json').packageManager\" 2>/dev/null || true)"
+          echo "package_manager=$PACKAGE_MANAGER"
         } > setup-bun.log
 
     # node-gyp@latest (invoked via bunx for native install scripts) requires Node >=22;
