@@ -247,20 +247,41 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
-      - name: Apply and commit audited migration
+      - name: Apply audited migration
+        id: apply
+        run: |
+          set +e
+          {
+            set -x
+            for script in \
+              .apply-s1e-transform.py \
+              .apply-s1e-cleanup.py \
+              .apply-s1e-cleanup2.py \
+              .apply-s1e-final-cleanup.py \
+              .apply-s1e-final.py; do
+              python -m py_compile "docs/open-source-readiness/evidence/S1-02/$script"
+              python "docs/open-source-readiness/evidence/S1-02/$script"
+            done
+          } > s1e-apply.log 2>&1
+          status=$?
+          cat s1e-apply.log
+          exit "$status"
+
+      - name: Upload S1-02-E migration traceback
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: s1-02-e-apply-${{ github.sha }}
+          if-no-files-found: error
+          retention-days: 2
+          path: s1e-apply.log
+
+      - name: Commit audited migration
+        if: success()
         run: |
           set -euo pipefail
           git config user.email "bot@deepcode.local"
           git config user.name "deepcode-ci"
-          for script in \
-            .apply-s1e-transform.py \
-            .apply-s1e-cleanup.py \
-            .apply-s1e-cleanup2.py \
-            .apply-s1e-final-cleanup.py \
-            .apply-s1e-final.py; do
-            python -m py_compile "docs/open-source-readiness/evidence/S1-02/$script"
-            python "docs/open-source-readiness/evidence/S1-02/$script"
-          done
           rm -f docs/open-source-readiness/evidence/S1-02/.apply-s1e-*.py
           rm -f .github/workflows/s1e-apply.yml
           python - <<'PY'
