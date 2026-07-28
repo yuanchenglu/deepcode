@@ -128,11 +128,11 @@ describe("ModelsDevPlugin", () => {
     Effect.acquireUseRelease(
       Effect.sync(() => {
         const previous = {
-          path: Flag.DEEPCODE_MODELS_PATH,
-          disabled: Flag.DEEPCODE_DISABLE_MODELS_FETCH,
+          path: Flag.OPENCODE_MODELS_PATH,
+          disabled: Flag.OPENCODE_DISABLE_MODELS_FETCH,
         }
-        Flag.DEEPCODE_MODELS_PATH = path.join(import.meta.dir, "fixtures", "models-dev.json")
-        Flag.DEEPCODE_DISABLE_MODELS_FETCH = true
+        Flag.OPENCODE_MODELS_PATH = path.join(import.meta.dir, "fixtures", "models-dev.json")
+        Flag.OPENCODE_DISABLE_MODELS_FETCH = true
         return previous
       }),
       () =>
@@ -162,8 +162,8 @@ describe("ModelsDevPlugin", () => {
         }).pipe(Effect.provide(AppNodeBuilder.build(ModelsDev.node))),
       (previous) =>
         Effect.sync(() => {
-          Flag.DEEPCODE_MODELS_PATH = previous.path
-          Flag.DEEPCODE_DISABLE_MODELS_FETCH = previous.disabled
+          Flag.OPENCODE_MODELS_PATH = previous.path
+          Flag.OPENCODE_DISABLE_MODELS_FETCH = previous.disabled
         }),
     ),
   )
