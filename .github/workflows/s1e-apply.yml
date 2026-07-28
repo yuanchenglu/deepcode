@@ -1,0 +1,86 @@
+name: apply-s1-02-e-boundary-migration
+
+on:
+  push:
+    branches:
+      - coexistence-boundary-audit
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apply-s1-02-e-boundary-migration
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    if: github.repository == 'yuanchenglu/deepcode'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          ref: coexistence-boundary-audit
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Configure git identity
+        run: |
+          git config user.email "bot@deepcode.local"
+          git config user.name "deepcode-ci"
+
+      - name: Apply audited transformations
+        run: |
+          set -euo pipefail
+          python -m py_compile \
+            docs/open-source-readiness/evidence/S1-02/.apply-s1e-transform.py \
+            docs/open-source-readiness/evidence/S1-02/.apply-s1e-cleanup.py \
+            docs/open-source-readiness/evidence/S1-02/.apply-s1e-cleanup2.py \
+            docs/open-source-readiness/evidence/S1-02/.apply-s1e-final-cleanup.py \
+            docs/open-source-readiness/evidence/S1-02/.apply-s1e-final.py
+          python docs/open-source-readiness/evidence/S1-02/.apply-s1e-transform.py
+          python docs/open-source-readiness/evidence/S1-02/.apply-s1e-cleanup.py
+          python docs/open-source-readiness/evidence/S1-02/.apply-s1e-cleanup2.py
+          python docs/open-source-readiness/evidence/S1-02/.apply-s1e-final-cleanup.py
+          python docs/open-source-readiness/evidence/S1-02/.apply-s1e-final.py
+
+      - name: Remove temporary migration machinery
+        run: |
+          set -euo pipefail
+          rm -f \
+            docs/open-source-readiness/evidence/S1-02/.apply-s1e-transform.py \
+            docs/open-source-readiness/evidence/S1-02/.apply-s1e-cleanup.py \
+            docs/open-source-readiness/evidence/S1-02/.apply-s1e-cleanup2.py \
+            docs/open-source-readiness/evidence/S1-02/.apply-s1e-final-cleanup.py \
+            docs/open-source-readiness/evidence/S1-02/.apply-s1e-final.py \
+            .github/workflows/s1e-apply.yml
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('.github/workflows/test.yml')
+          text = path.read_text()
+          start = text.find('      - name: Upload temporary S1-02-E source snapshot')
+          if start != -1:
+              end = text.find('      - name: Check generated client', start)
+              if end == -1:
+                  raise SystemExit('could not locate end of temporary source snapshot step')
+              text = text[:start] + text[end:]
+              path.write_text(text)
+          PY
+          git diff --check
+
+      - name: Commit and push atomic migration
+        run: |
+          set -euo pipefail
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No migration changes produced"
+            exit 1
+          fi
+          git commit -m "fix(identity): close DeepCode coexistence boundaries
+
+English:
+Move remaining user-visible environment, path, process, UI, OAuth, MCP, ACP, plugin, project-cache, and CLI boundaries to DeepCode. Fail closed for unverified upstream UI, account, IDE, and GitHub-agent channels while preserving explicitly classified package, schema, protocol, and provider compatibility identifiers.
+
+简体中文:
+将剩余用户可见环境变量、路径、进程、UI、OAuth、MCP、ACP、插件、项目缓存和 CLI 边界切换到 DeepCode；对未验证的上游 UI、账户、IDE 和 GitHub Agent 渠道实行 fail-closed，同时保留已分类的包、Schema、协议和 Provider 兼容标识。"
+          git push origin HEAD:coexistence-boundary-audit
