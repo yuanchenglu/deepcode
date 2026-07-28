@@ -1,7 +1,7 @@
 # DeepCode 三阶段交付总计划（Implementation-ready Master Plan）
 
-> 文档版本：1.3
-> 基线日期：2026-07-27
+> 文档版本：1.4
+> 基线日期：2026-07-29
 > 当前状态：Implementation in progress（计划执行中，产品当前仍为 NO-GO）
 > 分支拓扑：`develop` 为实施基线；`master` 为 GitHub 默认/发布分支；里程碑通过审查后从 `develop` 合入 `master`
 > 文档定位：本目录唯一的跨阶段执行总计划
@@ -11,22 +11,25 @@
 
 | 日期       | 版本 | 变更                                                                                                            | 依据                                     |
 | ---------- | ---: | --------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| 2026-07-29 |  1.4 | 回填 PR #9 合并收口、最终远程基线与父级任务卡计数；新增 canonical 会话交接提示词并固化五仓开发流程规范 | PR #9、typecheck #124、test #126、GitHub 远程状态 |
 | 2026-07-28 |  1.3 | 完成 S1-02-D/E 与父任务验收；回填 PR #6/#7、双平台全链 CI、字符串分类和下一唯一任务 S1-03 | PR #6、PR #7、typecheck #120、test #122 与 evidence |
 | 2026-07-28 |  1.2 | 回填实际实施进度、PR/CI 基线与远程交接入口；明确 S1-02-D 为 IN_REVIEW、S1-02-E 为下一执行点 | PR #2、PR #6、GitHub Actions 与远程分支复核 |
 | 2026-07-27 |  1.1 | 明确 `develop` 开发、`master` 发布的分支拓扑；将 S1-01 拆为仓库基线与官网止损，解除外部官网权限对代码任务的依赖死锁 | 远端仓库元数据与执行一致性复核 |
 | 2026-07-27 |  1.0 | 将交付重构为“官网可安装 → 完整能力 → 设计驱动的 WebUI/Electron”三阶段，并补齐任务级输入、步骤、测试、证据和门禁 | 用户目标澄清、源码与现有开源准备文档复核 |
 
 
-## 当前执行快照（2026-07-28）
+## 当前执行快照（2026-07-29）
 
 > 本节记录实施事实，不替代各任务卡验收条件。CI、PR 和分支状态变化时，后续执行者必须以 GitHub 实时状态复核。
 
 | 范围 | 当前状态 | 已完成 | 当前执行点 / 阻塞 |
 | --- | --- | --- | --- |
 | 产品发布判断 | `NO-GO` | 计划已达到可执行标准并进入实施 | Gate 1 尚未通过，官网与可信 Release 安装闭环尚未完成 |
-| 第一阶段 | `IN_PROGRESS` | S1-01A `DONE`；S1-02-A/B/C/D/E 与父任务 `DONE` | 下一唯一代码任务 S1-03；S1-01B、S1-04、S1-05 及后续 Stage 1 任务仍未完成 |
-| 第二阶段 | `NOT_STARTED` | 无 | 受 Gate 1 阻塞，不得提前宣称完整 Provider/Harness/Agent/Gateway 能力 |
-| 第三阶段 | `NOT_STARTED` | 无 | 受 Gate 2 和设计门禁阻塞，不得提前大规模改造 WebUI/Electron |
+| 第一阶段 | `IN_PROGRESS` | 父级任务卡 2/9 `DONE`：S1-01A、S1-02；S1-02-A/B/C/D/E 5/5 `DONE` | 下一唯一代码任务 S1-03；S1-01B、S1-04、S1-05 及 S1-06~S1-08 尚未完成 |
+| 第二阶段 | `NOT_STARTED` | 父级任务卡 0/8 `DONE` | 受 Gate 1 阻塞，不得提前宣称完整 Provider/Harness/Agent/Gateway 能力 |
+| 第三阶段 | `NOT_STARTED` | 父级任务卡 0/8 `DONE` | 受 Gate 2 和 Design Gate 阻塞，不得提前大规模改造 WebUI/Electron |
+
+> 按父级任务卡计数，当前为 2/25 `DONE`。该计数仅表示门禁任务完成数量，不代表加权工程量百分比；S1-02 是已完成的高风险基础任务。
 
 ### 已落入远程的实施基线
 
@@ -34,7 +37,9 @@
 - PR #6 / S1-02-D 已通过完整门禁并 squash 合入 `develop@c848bc537e8c5677c36a360dd00122745a2f5b2e`。
 - PR #7 / S1-02-E 已通过完整门禁并 squash 合入 `develop@1ad663ee07aa5ba72a333f9d2dc1ba3fe981be90`。
 - PR #7 最终 clean docs head：`ebc6365f4b110bb90e56abc48daf8dc9cf00fe30`；typecheck #120 / `30355593747`、test #122 / `30355593871` 全部 SUCCESS。HttpApi 首次尝试在 Effect phase 遭遇 runner stall 并触发 15 分钟 timeout；同一 run 仅重跑失败的 Linux unit job后，HttpApi artifact `httpapi-2` 成功，未修改或放宽门禁。
-- 代码、测试、CI boundary gate、inventory 和 evidence 均已推送到远程，不依赖旧容器中的未提交文件。
+- PR #8 因分支名不符合根 `AGENTS.md` 且遗漏生成的 `.pyc` 清理而关闭、未合并；由合规分支上的 PR #9 取代。
+- PR #9 / S1-02 post-merge closeout 已通过 typecheck #124 / `30359898506`、test #126 / `30359898493`，并 squash 合入 `develop@ea9d848e29dc9ae04ace7c5e1f12921157c224ed`。
+- 代码、测试、CI boundary gate、inventory、evidence 与交接基线均已推送到 GitHub 远程，不依赖旧容器中的未提交文件。
 
 ### S1-02 当前完成度
 
@@ -48,7 +53,15 @@
 
 S1-02-A/B/C/D/E 与父任务已完成。下一唯一代码执行点是 **S1-03**。S1-03 完成前，不得发布 DeepCode launcher/归档或恢复任何上游 updater。
 
-远程交接入口：[HANDOFF_2026-07-28.md](./HANDOFF_2026-07-28.md)。该文件包含可直接粘贴到新会话的完整提示词、分支/PR/Commit 基线、流程纪律和下一执行逻辑。
+远程交接状态：[HANDOFF_2026-07-28.md](./HANDOFF_2026-07-28.md)。可直接粘贴到新会话的 canonical 提示词：[SESSION_HANDOFF_PROMPT.md](./SESSION_HANDOFF_PROMPT.md)。新会话必须先读取 GitHub 实时状态，不能把旧容器或提示词中的 SHA 当作高于远程的事实源。
+
+### 统一开发流程与远程保存纪律
+
+- 第一优先始终是：合规功能分支 → Pull Request → 完整 CI → squash 合入 `develop`。
+- PR/CI 持续异常时，必须先定位根因并区分代码、测试、环境或规则问题；能修复则修复，不能解决才允许直推 `develop`。
+- 直推 commit 必须包含 `## 问题原因` 和 `## 技术债务`；技术债务还可按项目约定写入 `TECH_DEBT.md` / `BUG_LIST.md`。
+- 无论是否完成合并，每次会话结束前都必须把有效代码、测试、证据、计划和交接信息推送到远程分支；不得把旧容器作为唯一保存位置。
+- 五仓统一规范及完整 commit 模板见 [SESSION_HANDOFF_PROMPT.md](./SESSION_HANDOFF_PROMPT.md)。
 
 ---
 
