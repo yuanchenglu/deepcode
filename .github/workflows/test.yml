@@ -232,3 +232,66 @@ jobs:
           path: |
             packages/app/e2e/test-results
             packages/app/e2e/playwright-report
+
+  # BEGIN TEMP S1-02-E APPLY
+  apply-s1-02-e:
+    if: github.event_name == 'pull_request' && github.head_ref == 'coexistence-boundary-audit'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout implementation branch
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          ref: coexistence-boundary-audit
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Apply and commit audited migration
+        run: |
+          set -euo pipefail
+          git config user.email "bot@deepcode.local"
+          git config user.name "deepcode-ci"
+          for script in \
+            .apply-s1e-transform.py \
+            .apply-s1e-cleanup.py \
+            .apply-s1e-cleanup2.py \
+            .apply-s1e-final-cleanup.py \
+            .apply-s1e-final.py; do
+            python -m py_compile "docs/open-source-readiness/evidence/S1-02/$script"
+            python "docs/open-source-readiness/evidence/S1-02/$script"
+          done
+          rm -f docs/open-source-readiness/evidence/S1-02/.apply-s1e-*.py
+          rm -f .github/workflows/s1e-apply.yml
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('.github/workflows/test.yml')
+          text = path.read_text()
+          snapshot = text.find('      - name: Upload temporary S1-02-E source snapshot')
+          if snapshot != -1:
+              snapshot_end = text.find('      - name: Check generated client', snapshot)
+              if snapshot_end == -1:
+                  raise SystemExit('temporary source snapshot end marker missing')
+              text = text[:snapshot] + text[snapshot_end:]
+          begin = text.find('  # BEGIN TEMP S1-02-E APPLY')
+          end = text.find('  # END TEMP S1-02-E APPLY', begin)
+          if begin == -1 or end == -1:
+              raise SystemExit('temporary apply job markers missing')
+          end = text.find('\n', end)
+          if end == -1:
+              end = len(text)
+          else:
+              end += 1
+          path.write_text(text[:begin] + text[end:])
+          PY
+          git diff --check
+          git add -A
+          git commit -m "fix(identity): close DeepCode coexistence boundaries
+
+          English:
+          Move remaining user-visible environment, path, process, UI, OAuth, MCP, ACP, plugin, project-cache, and CLI boundaries to DeepCode. Fail closed for unverified upstream UI, account, IDE, and GitHub-agent channels while preserving explicitly classified package, schema, protocol, and provider compatibility identifiers.
+
+          简体中文:
+          将剩余用户可见环境变量、路径、进程、UI、OAuth、MCP、ACP、插件、项目缓存和 CLI 边界切换到 DeepCode；对未验证的上游 UI、账户、IDE 和 GitHub Agent 渠道实行 fail-closed，同时保留已分类的包、Schema、协议和 Provider 兼容标识。"
+          git push origin HEAD:coexistence-boundary-audit
+  # END TEMP S1-02-E APPLY
