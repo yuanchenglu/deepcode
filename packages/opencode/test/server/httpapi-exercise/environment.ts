@@ -20,11 +20,11 @@ export const exerciseDatabasePath =
   path.join(process.env.TMPDIR ?? "/tmp", `deepcode-httpapi-exercise-${process.pid}.db`)
 process.env.DEEPCODE_DB = exerciseDatabasePath
 // Internal property names remain upstream-compatible; user-facing environment names do not.
-Flag.OPENCODE_DB = exerciseDatabasePath
+Flag.DEEPCODE_DB = exerciseDatabasePath
 
 export const original = {
-  OPENCODE_SERVER_PASSWORD: Flag.OPENCODE_SERVER_PASSWORD,
-  OPENCODE_SERVER_USERNAME: Flag.OPENCODE_SERVER_USERNAME,
+  DEEPCODE_SERVER_PASSWORD: Flag.DEEPCODE_SERVER_PASSWORD,
+  DEEPCODE_SERVER_USERNAME: Flag.DEEPCODE_SERVER_USERNAME,
 }
 
 export const cleanupExercisePaths = Effect.promise(async () => {

@@ -87,7 +87,7 @@ export interface ReasoningConfig {
  * 默认配置常量（供初始化参考和外部覆盖时作为 fallback）
  *
  * 注意：运行时配置存储在 Layer 内的 Ref 中，
- * 通过 setConfig 方法可动态修改（如通过 opencode.json 配置）。
+ * 通过 setConfig 方法可动态修改（如通过 deepcode.json 配置）。
  */
 export const DEFAULT_CONFIG: ReasoningConfig = {
   stripFromHistory: true,
@@ -154,7 +154,7 @@ export interface Interface {
    * 动态更新 reasoning 配置
    *
    * 使用 Partial 合并，未指定的字段保持原值。
-   * 允许运行时通过 opencode.json 等外部配置覆盖默认值。
+   * 允许运行时通过 deepcode.json 等外部配置覆盖默认值。
    *
    * @param partial - 需要更新的配置字段
    */
@@ -304,7 +304,7 @@ const layer = Layer.effect(
        *
        * 使用 Ref.update 合并 partial 配置，未指定的字段保持原值。
        * 同时同步更新 configCache，确保同步方法能读取到最新配置。
-       * 允许运行时通过 opencode.json 等外部配置覆盖默认值。
+       * 允许运行时通过 deepcode.json 等外部配置覆盖默认值。
        */
       setConfig: Effect.fn("DeepCodeReasoningManager.setConfig")(
         (partial: Partial<ReasoningConfig>) =>

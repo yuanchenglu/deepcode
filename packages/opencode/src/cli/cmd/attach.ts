@@ -6,7 +6,7 @@ import { ServerAuth } from "@/server/auth"
 
 export const AttachCommand = cmd({
   command: "attach <url>",
-  describe: "attach to a running opencode server",
+  describe: "attach to a running DeepCode server",
   builder: (yargs) =>
     yargs
       .positional("url", {
@@ -35,7 +35,7 @@ export const AttachCommand = cmd({
       .option("password", {
         alias: ["p"],
         type: "string",
-        describe: "basic auth password (defaults to OPENCODE_SERVER_PASSWORD)",
+        describe: "basic auth password (defaults to DEEPCODE_SERVER_PASSWORD)",
       })
       .option("username", {
         alias: ["u"],

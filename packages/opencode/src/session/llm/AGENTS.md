@@ -1,6 +1,6 @@
 # Session LLM Runtime Boundaries
 
-`../llm.ts` is the opencode session LLM service. It owns opencode concerns: auth, config, model/provider resolution, plugins, permissions, telemetry headers, and runtime selection. It is the only file in this area that should know about the full session request shape.
+`../llm.ts` is the DeepCode session LLM service. It owns DeepCode concerns: auth, config, model/provider resolution, plugins, permissions, telemetry headers, and runtime selection. It is the only file in this area that should know about the full session request shape.
 
 This folder contains adapters behind that service boundary:
 
@@ -85,6 +85,6 @@ Both runtimes converge on the same `LLMEvent` stream consumed by the session pro
 Safety boundary:
 
 - AI SDK remains the default.
-- `OPENCODE_EXPERIMENTAL_NATIVE_LLM=true` or the umbrella `OPENCODE_EXPERIMENTAL=true` opts in. Native is not a global replacement.
+- `DEEPCODE_EXPERIMENTAL_NATIVE_LLM=true` or the umbrella `DEEPCODE_EXPERIMENTAL=true` opts in. Native is not a global replacement.
 - Native execution currently supports OpenAI, opencode-managed OpenAI-compatible, and Anthropic API-key paths backed by `@ai-sdk/openai`, `@ai-sdk/openai-compatible`, or `@ai-sdk/anthropic` catalog entries.
 - Unsupported providers, OpenAI OAuth, and missing API-key cases fall back to AI SDK.

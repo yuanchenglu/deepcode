@@ -88,7 +88,7 @@ function authHeaders() {
   return {
     "Content-Type": "application/x-www-form-urlencoded",
     Accept: "application/json",
-    "User-Agent": `opencode/${InstallationVersion}`,
+    "User-Agent": `deepcode/${InstallationVersion}`,
   }
 }
 
@@ -541,7 +541,7 @@ export async function XaiAuthPlugin(input: PluginInput, options: XaiAuthPluginOp
               }
             }
             headers.set("authorization", `Bearer ${currentAuth.access}`)
-            headers.set("User-Agent", `opencode/${InstallationVersion}`)
+            headers.set("User-Agent", `deepcode/${InstallationVersion}`)
 
             return fetch(requestInput, { ...init, headers })
           },

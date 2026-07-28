@@ -131,7 +131,7 @@ const clear = (wait = false) => Effect.runPromise(clearEffect(wait))
 // Get managed config directory from environment (set in preload.ts)
 const managedConfigDir = process.env.DEEPCODE_TEST_MANAGED_CONFIG_DIR!
 const originalTestToken = process.env.TEST_TOKEN
-const originalConsoleToken = process.env.OPENCODE_CONSOLE_TOKEN
+const originalConsoleToken = process.env.DEEPCODE_CONSOLE_TOKEN
 
 beforeEach(async () => {
   await clear(true)
@@ -141,8 +141,8 @@ afterEach(async () => {
   await fs.rm(managedConfigDir, { force: true, recursive: true }).catch(() => {})
   if (originalTestToken === undefined) delete process.env.TEST_TOKEN
   else process.env.TEST_TOKEN = originalTestToken
-  if (originalConsoleToken === undefined) delete process.env.OPENCODE_CONSOLE_TOKEN
-  else process.env.OPENCODE_CONSOLE_TOKEN = originalConsoleToken
+  if (originalConsoleToken === undefined) delete process.env.DEEPCODE_CONSOLE_TOKEN
+  else process.env.DEEPCODE_CONSOLE_TOKEN = originalConsoleToken
   await clear(true)
 })
 
@@ -294,7 +294,7 @@ it.instance("loads config with defaults when no files exist", () =>
   }),
 )
 
-it.instance.skip("does not load an OpenCode-only project configuration", () =>
+it.instance("does not load an OpenCode-only project configuration", () =>
   Effect.gen(function* () {
     const test = yield* TestInstance
     yield* writeConfigEffect(test.directory, { username: "opencode-only" }, "opencode.json")
@@ -304,7 +304,7 @@ it.instance.skip("does not load an OpenCode-only project configuration", () =>
   }),
 )
 
-it.instance.skip("loads DeepCode configuration when both products coexist", () =>
+it.instance("loads DeepCode configuration when both products coexist", () =>
   Effect.gen(function* () {
     const test = yield* TestInstance
     yield* Effect.all([
@@ -342,12 +342,12 @@ it.effect("creates global jsonc config with schema when no global configs exist"
   ),
 )
 
-it.effect("does not create global config when OPENCODE_CONFIG_DIR is set", () =>
+it.effect("does not create global config when DEEPCODE_CONFIG_DIR is set", () =>
   Effect.gen(function* () {
     const custom = yield* tmpdirScoped()
     yield* withGlobalConfig({}, ({ dir }) =>
       withProcessEnv(
-        "OPENCODE_CONFIG_DIR",
+        "DEEPCODE_CONFIG_DIR",
         custom,
         Effect.gen(function* () {
           yield* Config.use.get().pipe(provideInstanceEffect(dir))
@@ -455,7 +455,7 @@ test("loads project config from Cygwin paths on Windows", async () => {
   })
 })
 
-it.instance("ignores legacy tui keys in opencode config", () =>
+it.instance("ignores legacy tui keys in deepcode config", () =>
   Effect.gen(function* () {
     const test = yield* TestInstance
     yield* writeConfigEffect(test.directory, {
@@ -606,7 +606,7 @@ const accountTokenIt = configIt({
     config: () =>
       Effect.succeed(
         Option.some({
-          provider: { opencode: { options: { apiKey: "{env:OPENCODE_CONSOLE_TOKEN}" } } },
+          provider: { opencode: { options: { apiKey: "{env:DEEPCODE_CONSOLE_TOKEN}" } } },
         }),
       ),
     token: () => Effect.succeed(Option.some(AccessToken.make("st_test_token"))),
@@ -932,7 +932,7 @@ it.instance("gets config directories", () =>
   }),
 )
 
-it.effect("does not try to install dependencies in read-only OPENCODE_CONFIG_DIR", () =>
+it.effect("does not try to install dependencies in read-only DEEPCODE_CONFIG_DIR", () =>
   Effect.gen(function* () {
     if (process.platform === "win32") return
 
@@ -942,18 +942,18 @@ it.effect("does not try to install dependencies in read-only OPENCODE_CONFIG_DIR
     yield* FSUtil.use.chmod(readonly, 0o555)
     yield* Effect.addFinalizer(() => FSUtil.use.chmod(readonly, 0o755).pipe(Effect.ignore))
 
-    yield* withProcessEnv("OPENCODE_CONFIG_DIR", readonly, Config.use.get().pipe(provideInstanceEffect(dir)))
+    yield* withProcessEnv("DEEPCODE_CONFIG_DIR", readonly, Config.use.get().pipe(provideInstanceEffect(dir)))
   }).pipe(Effect.provide(testInstanceStoreLayer), Effect.provide(LayerNode.compile(CrossSpawnSpawner.node))),
 )
 
-it.effect("installs dependencies in writable OPENCODE_CONFIG_DIR", () =>
+it.effect("installs dependencies in writable DEEPCODE_CONFIG_DIR", () =>
   Effect.gen(function* () {
     const dir = yield* tmpdirScoped()
     const configDir = path.join(dir, "configdir")
     yield* FSUtil.use.ensureDir(configDir)
 
     yield* withProcessEnv(
-      "OPENCODE_CONFIG_DIR",
+      "DEEPCODE_CONFIG_DIR",
       configDir,
       Config.Service.use((svc) => svc.get().pipe(Effect.andThen(svc.waitForDependencies()))).pipe(
         provideInstanceEffect(dir),
@@ -1024,7 +1024,7 @@ it.effect("global config remains global when project config is disabled", () =>
       local: { model: "local/model" },
     },
     withProcessEnv(
-      "OPENCODE_DISABLE_PROJECT_CONFIG",
+      "DEEPCODE_DISABLE_PROJECT_CONFIG",
       "true",
       Effect.gen(function* () {
         const config = yield* Config.use.get()
@@ -1178,7 +1178,7 @@ it.instance("migrates legacy write tool to edit permission", () =>
 )
 
 // Managed settings tests
-// Note: preload.ts sets OPENCODE_TEST_MANAGED_CONFIG which Global.Path.managedConfig uses
+// Note: preload.ts sets DEEPCODE_TEST_MANAGED_CONFIG which Global.Path.managedConfig uses
 
 it.instance(
   "managed settings override user settings",
@@ -1564,7 +1564,7 @@ test("remote well-known config can use FetchHttpClient layer", async () => {
 
 const templatedHeaderWellKnown = wellKnown({
   remoteConfig: {
-    url: "https://config.example.com/opencode.json",
+    url: "https://config.example.com/deepcode.json",
     headers: { Authorization: "Bearer {env:TEST_TOKEN}" },
   },
   remote: {
@@ -1576,7 +1576,7 @@ templatedHeaderWellKnown.it.instance("wellknown remote_config supports templated
   Effect.gen(function* () {
     const config = yield* Config.use.get()
     expect(templatedHeaderWellKnown.seen.wellKnown).toBe("https://example.com/.well-known/opencode")
-    expect(templatedHeaderWellKnown.seen.remote).toBe("https://config.example.com/opencode.json")
+    expect(templatedHeaderWellKnown.seen.remote).toBe("https://config.example.com/deepcode.json")
     expect(templatedHeaderWellKnown.seen.authorization).toBe("Bearer test-token")
     expect(config.mcp?.confluence?.enabled).toBe(true)
   }),
@@ -1586,7 +1586,7 @@ const remotePrecedenceWellKnown = wellKnown({
   config: {
     mcp: { confluence: { type: "remote", url: "https://confluence.example.com/mcp", enabled: false } },
   },
-  remoteConfig: { url: "https://config.example.com/{env:TEST_TOKEN}/opencode.json" },
+  remoteConfig: { url: "https://config.example.com/{env:TEST_TOKEN}/deepcode.json" },
   remote: {
     config: { mcp: { confluence: { type: "remote", url: "https://confluence.example.com/mcp", enabled: true } } },
   },
@@ -1597,14 +1597,14 @@ remotePrecedenceWellKnown.it.instance(
   () =>
     Effect.gen(function* () {
       const config = yield* Config.use.get()
-      expect(remotePrecedenceWellKnown.seen.remote).toBe("https://config.example.com/test-token/opencode.json")
+      expect(remotePrecedenceWellKnown.seen.remote).toBe("https://config.example.com/test-token/deepcode.json")
       expect(config.mcp?.confluence?.enabled).toBe(true)
     }),
 )
 
 const envIsolationWellKnown = wellKnown({
   remoteConfig: {
-    url: "https://config.example.com/opencode.json",
+    url: "https://config.example.com/deepcode.json",
     headers: { Authorization: "Bearer {env:TEST_TOKEN}" },
   },
   remote: {
@@ -1628,7 +1628,7 @@ envIsolationWellKnown.it.instance(
 const nullConfigWellKnown = wellKnown({
   wellKnown: {
     config: null,
-    remote_config: { url: "https://config.example.com/opencode.json" },
+    remote_config: { url: "https://config.example.com/deepcode.json" },
   },
   remote: {
     mcp: { confluence: { type: "remote", url: "https://confluence.example.com/mcp", enabled: true } },
@@ -1638,26 +1638,26 @@ const nullConfigWellKnown = wellKnown({
 nullConfigWellKnown.it.instance("wellknown config null is treated as absent", () =>
   Effect.gen(function* () {
     const config = yield* Config.use.get()
-    expect(nullConfigWellKnown.seen.remote).toBe("https://config.example.com/opencode.json")
+    expect(nullConfigWellKnown.seen.remote).toBe("https://config.example.com/deepcode.json")
     expect(config.mcp?.confluence?.enabled).toBe(true)
   }),
 )
 
 const invalidRemoteWellKnown = wellKnown({
-  remoteConfig: { url: "https://config.example.com/opencode.json" },
+  remoteConfig: { url: "https://config.example.com/deepcode.json" },
   remote: "not an object",
 })
 
 invalidRemoteWellKnown.it.instance("wellknown remote_config rejects non-object config responses", () =>
   Effect.gen(function* () {
     const exit = yield* Config.use.get().pipe(Effect.exit)
-    expect(invalidRemoteWellKnown.seen.remote).toBe("https://config.example.com/opencode.json")
+    expect(invalidRemoteWellKnown.seen.remote).toBe("https://config.example.com/deepcode.json")
     expect(Exit.isFailure(exit)).toBe(true)
   }),
 )
 
 const loginPageWellKnown = wellKnown({
-  remoteConfig: { url: "https://config.example.com/opencode.json" },
+  remoteConfig: { url: "https://config.example.com/deepcode.json" },
   remoteHtml: "<!DOCTYPE html><html><head><title>Sign in</title></head><body>Login required</body></html>",
 })
 
@@ -1666,7 +1666,7 @@ loginPageWellKnown.it.instance(
   () =>
     Effect.gen(function* () {
       const exit = yield* Config.use.get().pipe(Effect.exit)
-      expect(loginPageWellKnown.seen.remote).toBe("https://config.example.com/opencode.json")
+      expect(loginPageWellKnown.seen.remote).toBe("https://config.example.com/deepcode.json")
       expect(Exit.isFailure(exit)).toBe(true)
       const error = Exit.isFailure(exit) ? Cause.squash(exit.cause) : undefined
       expect(NamedError.hasName(error, "ConfigRemoteAuthError")).toBe(true)
@@ -1767,7 +1767,7 @@ describe("deduplicatePluginOrigins", () => {
   })
 
   test("keeps path plugins separate from package plugins", () => {
-    const plugins = ["oh-my-opencode@2.4.3", "file:///project/.opencode/plugin/oh-my-opencode.js"]
+    const plugins = ["oh-my-opencode@2.4.3", "file:///project/.deepcode/plugin/oh-my-opencode.js"]
 
     const result = dedupe(plugins)
 
@@ -1808,12 +1808,12 @@ describe("deduplicatePluginOrigins", () => {
   )
 })
 
-describe("OPENCODE_DISABLE_PROJECT_CONFIG", () => {
+describe("DEEPCODE_DISABLE_PROJECT_CONFIG", () => {
   it.instance(
     "skips project config files when flag is set",
     () =>
       withProcessEnv(
-        "OPENCODE_DISABLE_PROJECT_CONFIG",
+        "DEEPCODE_DISABLE_PROJECT_CONFIG",
         "true",
         Effect.gen(function* () {
           const config = yield* Config.use.get()
@@ -1826,7 +1826,7 @@ describe("OPENCODE_DISABLE_PROJECT_CONFIG", () => {
 
   it.instance("skips project .deepcode/ directories when flag is set", () =>
     withProcessEnv(
-      "OPENCODE_DISABLE_PROJECT_CONFIG",
+      "DEEPCODE_DISABLE_PROJECT_CONFIG",
       "true",
       Effect.gen(function* () {
         const test = yield* TestInstance
@@ -1842,7 +1842,7 @@ describe("OPENCODE_DISABLE_PROJECT_CONFIG", () => {
 
   it.instance("still loads global config when flag is set", () =>
     withProcessEnv(
-      "OPENCODE_DISABLE_PROJECT_CONFIG",
+      "DEEPCODE_DISABLE_PROJECT_CONFIG",
       "true",
       Effect.gen(function* () {
         const config = yield* Config.use.get()
@@ -1856,7 +1856,7 @@ describe("OPENCODE_DISABLE_PROJECT_CONFIG", () => {
     "skips relative instructions with warning when flag is set but no config dir",
     () =>
       withProcessEnvs(
-        { OPENCODE_CONFIG_DIR: undefined, OPENCODE_DISABLE_PROJECT_CONFIG: "true" },
+        { DEEPCODE_CONFIG_DIR: undefined, DEEPCODE_DISABLE_PROJECT_CONFIG: "true" },
         Effect.gen(function* () {
           const test = yield* TestInstance
           yield* FSUtil.use.writeWithDirs(path.join(test.directory, "CUSTOM.md"), "# Custom Instructions")
@@ -1869,12 +1869,12 @@ describe("OPENCODE_DISABLE_PROJECT_CONFIG", () => {
   )
 
   it.instance(
-    "OPENCODE_CONFIG_DIR still works when flag is set",
+    "DEEPCODE_CONFIG_DIR still works when flag is set",
     () =>
       Effect.gen(function* () {
         const configDir = yield* tmpdirScoped({ config: { model: "configdir/model" } })
         yield* withProcessEnvs(
-          { OPENCODE_DISABLE_PROJECT_CONFIG: "true", OPENCODE_CONFIG_DIR: configDir },
+          { DEEPCODE_DISABLE_PROJECT_CONFIG: "true", DEEPCODE_CONFIG_DIR: configDir },
           Effect.gen(function* () {
             const config = yield* Config.use.get()
             expect(config.model).toBe("configdir/model")
@@ -1885,13 +1885,13 @@ describe("OPENCODE_DISABLE_PROJECT_CONFIG", () => {
   )
 })
 
-// Regression for #28206: malformed OPENCODE_PERMISSION JSON used to crash
+// Regression for #28206: malformed DEEPCODE_PERMISSION JSON used to crash
 // the app on startup with an unhandled SyntaxError. Loading the config with
 // an invalid JSON value in this env var should not throw.
-describe("OPENCODE_PERMISSION env var", () => {
-  it.instance("does not crash when OPENCODE_PERMISSION contains invalid JSON", () =>
+describe("DEEPCODE_PERMISSION env var", () => {
+  it.instance("does not crash when DEEPCODE_PERMISSION contains invalid JSON", () =>
     withProcessEnv(
-      "OPENCODE_PERMISSION",
+      "DEEPCODE_PERMISSION",
       "{invalid",
       Effect.gen(function* () {
         const config = yield* Config.use.get()
@@ -1902,13 +1902,13 @@ describe("OPENCODE_PERMISSION env var", () => {
   )
 })
 
-describe("OPENCODE_CONFIG_CONTENT token substitution", () => {
-  it.instance("substitutes {env:} tokens in OPENCODE_CONFIG_CONTENT", () =>
+describe("DEEPCODE_CONFIG_CONTENT token substitution", () => {
+  it.instance("substitutes {env:} tokens in DEEPCODE_CONFIG_CONTENT", () =>
     withProcessEnv(
       "TEST_CONFIG_VAR",
       "test_api_key_12345",
       withProcessEnv(
-        "OPENCODE_CONFIG_CONTENT",
+        "DEEPCODE_CONFIG_CONTENT",
         JSON.stringify({
           $schema: "https://opencode.ai/config.json",
           username: "{env:TEST_CONFIG_VAR}",
@@ -1921,12 +1921,12 @@ describe("OPENCODE_CONFIG_CONTENT token substitution", () => {
     ),
   )
 
-  it.instance("substitutes {file:} tokens in OPENCODE_CONFIG_CONTENT", () =>
+  it.instance("substitutes {file:} tokens in DEEPCODE_CONFIG_CONTENT", () =>
     Effect.gen(function* () {
       const test = yield* TestInstance
       yield* FSUtil.use.writeWithDirs(path.join(test.directory, "api_key.txt"), "secret_key_from_file")
       yield* withProcessEnv(
-        "OPENCODE_CONFIG_CONTENT",
+        "DEEPCODE_CONFIG_CONTENT",
         JSON.stringify({
           $schema: "https://opencode.ai/config.json",
           username: "{file:./api_key.txt}",
@@ -1948,7 +1948,7 @@ test("parseManagedPlist strips MDM metadata keys", async () => {
     ConfigParse.jsonc(
       await ConfigManaged.parseManagedPlist(
         JSON.stringify({
-          PayloadDisplayName: "OpenCode Managed",
+          PayloadDisplayName: "DeepCode Managed",
           PayloadIdentifier: "ai.deepcode.managed.test",
           PayloadType: "ai.deepcode.managed",
           PayloadUUID: "AAAA-BBBB-CCCC",
