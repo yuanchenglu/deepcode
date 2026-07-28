@@ -1,0 +1,38 @@
+name: plan handoff update
+
+on:
+  push:
+    branches:
+      - plan-handoff-update
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: plan-handoff-update
+          fetch-depth: 0
+
+      - name: Configure git identity
+        run: |
+          git config user.name deepcode
+          git config user.email bot@deepcode.local
+
+      - name: Update plan and handoff
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          python docs/open-source-readiness/.update-plan-handoff.py
+          git add docs/open-source-readiness/PLAN.md \
+            docs/open-source-readiness/HANDOFF_2026-07-28.md \
+            docs/open-source-readiness/SESSION_HANDOFF_PROMPT.md
+          git rm docs/open-source-readiness/.update-plan-handoff.py
+          git diff --cached --check
+          git commit -m "docs(readiness): update plan and session handoff"
+          git push origin HEAD:plan-handoff-update
