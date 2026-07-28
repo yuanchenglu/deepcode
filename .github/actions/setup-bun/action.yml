@@ -8,6 +8,16 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: Initialize setup diagnostics
+      shell: bash
+      run: |
+        {
+          echo "runner_os=$RUNNER_OS"
+          echo "runner_arch=$RUNNER_ARCH"
+          echo "node=$(node --version 2>/dev/null || true)"
+          echo "package_manager=$(node -p \"require('./package.json').packageManager\" 2>/dev/null || true)"
+        } > setup-bun.log
+
     # node-gyp@latest (invoked via bunx for native install scripts) requires Node >=22;
     # some runner images ship an older system Node on PATH
     - name: Setup Node
@@ -26,7 +36,9 @@ runs:
             Linux)   OS=linux ;;
             Windows) OS=windows ;;
           esac
-          echo "url=https://github.com/oven-sh/bun/releases/download/bun-v${V}/bun-${OS}-x64-baseline.zip" >> "$GITHUB_OUTPUT"
+          URL="https://github.com/oven-sh/bun/releases/download/bun-v${V}/bun-${OS}-x64-baseline.zip"
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "bun_download_url=$URL" >> setup-bun.log
         fi
 
     - name: Setup Bun
@@ -35,10 +47,19 @@ runs:
         bun-version-file: ${{ !steps.bun-url.outputs.url && 'package.json' || '' }}
         bun-download-url: ${{ steps.bun-url.outputs.url }}
 
+    - name: Record Bun version
+      shell: bash
+      run: |
+        echo "bun=$(bun --version)" >> setup-bun.log
+        echo "bun_revision=$(bun --revision 2>/dev/null || true)" >> setup-bun.log
+
     - name: Get cache directory
       id: cache
       shell: bash
-      run: echo "dir=$(bun pm cache)" >> "$GITHUB_OUTPUT"
+      run: |
+        DIR=$(bun pm cache)
+        echo "dir=$DIR" >> "$GITHUB_OUTPUT"
+        echo "bun_cache=$DIR" >> setup-bun.log
 
     - name: Restore Bun dependencies
       id: bun-cache
@@ -55,14 +76,19 @@ runs:
 
     - name: Install dependencies
       run: |
-        # Workaround for patched peer variants
-        # e.g. ./patches/ for standard-openapi
-        # https://github.com/oven-sh/bun/issues/28147
-        if [ "$RUNNER_OS" = "Windows" ]; then
-          bun install --linker hoisted ${{ inputs.install-flags }}
-        else
-          bun install ${{ inputs.install-flags }}
-        fi
+        set -o pipefail
+        {
+          echo "== bun install =="
+          # Workaround for patched peer variants, for example ./patches/standard-openapi.
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            bun install --linker hoisted ${{ inputs.install-flags }}
+          else
+            bun install ${{ inputs.install-flags }}
+          fi
+          echo "== repository diff after install =="
+          git status --short
+          git diff -- bun.lock package.json packages/opencode/package.json
+        } 2>&1 | tee -a setup-bun.log
       shell: bash
 
     - name: Save Bun dependencies
