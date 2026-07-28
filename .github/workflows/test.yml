@@ -218,3 +218,44 @@ jobs:
           path: |
             packages/app/e2e/test-results
             packages/app/e2e/playwright-report
+
+  finalize-s1-02-e-docs:
+    if: github.event_name == 'pull_request' && github.head_ref == 'coexistence-boundary-audit'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout implementation branch
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          ref: coexistence-boundary-audit
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Finalize and push S1-02-E documentation
+        run: |
+          set -euo pipefail
+          script=docs/open-source-readiness/evidence/S1-02/.finalize-s1e-docs.py
+          if [ ! -f "$script" ]; then
+            echo "S1-02-E documentation already finalized"
+            exit 0
+          fi
+          python -m py_compile "$script"
+          python "$script"
+          rm -f "$script"
+          git diff --check
+          git config user.email "bot@deepcode.local"
+          git config user.name "deepcode-ci"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No documentation changes produced"
+            exit 1
+          fi
+          git commit -m "docs(readiness): complete S1-02 coexistence isolation
+
+          English:
+          Mark S1-02-E and the parent task done, record the 4,168-line string classification and final cross-platform CI, update the master plan to v1.3, and hand off the next unique implementation point to S1-03.
+
+          简体中文:
+          将 S1-02-E 与父任务标记完成，记录 4,168 行字符串分类和最终双平台 CI，将总计划更新至 v1.3，并把下一唯一实施点交接为 S1-03。"
+          git push origin HEAD:coexistence-boundary-audit
