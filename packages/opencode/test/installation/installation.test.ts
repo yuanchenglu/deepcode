@@ -16,14 +16,20 @@ describe("installation", () => {
   })
 
   describe("method detection", () => {
-    test("recognizes only the DeepCode curl installation directory and binary", () => {
+    test("recognizes only the exact DeepCode curl installation directory and binary", () => {
       expect(Installation.detectMethod(path.join("home", "user", ".deepcode", "bin", "deepcode"))).toBe("curl")
       expect(Installation.detectMethod(path.join("home", "user", ".deepcode", "bin", "deepcode.exe"))).toBe("curl")
     })
 
-    test("does not inherit OpenCode, generic local, or wrong-binary installations", () => {
+    test("does not inherit OpenCode, generic local, nested, or wrong-binary installations", () => {
       expect(Installation.detectMethod(path.join("home", "user", ".opencode", "bin", "opencode"))).toBe("unknown")
       expect(Installation.detectMethod(path.join("home", "user", ".deepcode", "bin", "opencode"))).toBe("unknown")
+      expect(Installation.detectMethod(path.join("home", "user", ".deepcode", "bin", "nested", "deepcode"))).toBe(
+        "unknown",
+      )
+      expect(Installation.detectMethod(path.join("home", "user", ".deepcode", "bin-backup", "deepcode"))).toBe(
+        "unknown",
+      )
       expect(Installation.detectMethod(path.join("home", "user", ".local", "bin", "deepcode"))).toBe("unknown")
       expect(Installation.detectMethod(path.join("usr", "local", "bin", "opencode"))).toBe("unknown")
     })
