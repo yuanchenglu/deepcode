@@ -94,8 +94,8 @@ const service: Interface = {
     if (method !== "curl") return InstallationVersion
     return yield* Effect.tryPromise({
       try: () => latestVersion(),
-      catch: () => InstallationVersion,
-    }).pipe(Effect.catchAll((version) => Effect.succeed(version)))
+      catch: (error) => error,
+    }).pipe(Effect.orElseSucceed(() => InstallationVersion))
   }),
   upgrade: Effect.fn("Installation.upgrade")(function* (method: Method, target: string) {
     if (method !== "curl") {
