@@ -26,16 +26,22 @@ const shellMarker = `# ${Product.slug}`
 const shellPath = `${Product.config.directory}/bin`
 
 export function isDeepCodeBinaryPath(value: string) {
-  const normalized = path.normalize(value).toLowerCase()
-  const marker = path.normalize(`${path.sep}${Product.config.directory}${path.sep}bin${path.sep}`).toLowerCase()
-  const binary = path.basename(normalized).replace(/\.exe$/i, "")
-  return normalized.includes(marker) && binary === Product.cli
+  return Installation.detectMethod(value) === "curl"
+}
+
+function isDeepCodeShellPath(value: string) {
+  const normalized = value.trim().replaceAll("\\", "/").replace(/^["']|["']$/g, "")
+  return normalized === shellPath || normalized.endsWith(`/${shellPath}`)
 }
 
 function isDeepCodeShellPathLine(value: string) {
   const normalized = value.trim().replaceAll("\\", "/")
-  if (!normalized.includes(shellPath)) return false
-  return normalized.startsWith("export PATH=") || normalized.startsWith("fish_add_path")
+  if (normalized.startsWith("export PATH=")) {
+    const assignment = normalized.slice("export PATH=".length).trim().replace(/^["']|["']$/g, "")
+    return assignment.split(":").some(isDeepCodeShellPath)
+  }
+  if (!normalized.startsWith("fish_add_path")) return false
+  return normalized.split(/\s+/).slice(1).some(isDeepCodeShellPath)
 }
 
 export function hasDeepCodeShellEntry(content: string) {
