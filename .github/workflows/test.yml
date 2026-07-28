@@ -85,6 +85,12 @@ jobs:
         env:
           DEEPCODE_EXPERIMENTAL_DISABLE_FILEWATCHER: ${{ runner.os == 'Windows' && 'true' || 'false' }}
 
+      - name: Run S1-02-D installation lifecycle tests
+        working-directory: packages/opencode
+        run: |
+          set -o pipefail
+          bun test test/installation --timeout 30000 2>&1 | tee installation-${{ matrix.settings.name }}.log
+
       - name: Upload unit test log
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -92,7 +98,9 @@ jobs:
           name: unit-${{ matrix.settings.name }}-${{ github.run_attempt }}
           if-no-files-found: error
           retention-days: 7
-          path: unit-${{ matrix.settings.name }}.log
+          path: |
+            unit-${{ matrix.settings.name }}.log
+            packages/opencode/installation-${{ matrix.settings.name }}.log
 
       - name: Check generated client
         if: runner.os == 'Linux'
