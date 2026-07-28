@@ -38,7 +38,7 @@
 | S1-02-A | `DONE` | 先建立失败的共存契约测试与 fixture | 两个 package 的新增/现有 test 文件；fixture 目录 | S1-01A | [失败基线](./test-results/S1-02-A-baseline.md) |
 | S1-02-B | `DONE` | Core 路径、数据库和环境入口改为 DeepCode | `packages/core/src/global.ts`、`database/database.ts`、`flag/flag.ts` | A | [Core 验证](./test-results/S1-02-B-core.md) |
 | S1-02-C | `DONE` | 统一身份、配置发现与 CLI 用户身份隔离 | `packages/core/src/product.ts`、Core 配置/路径/DB/Flag；CLI 配置、TUI、MDM、CLI identity、Server Auth 与测试 fixture | B | [配置与 CLI 验证](./test-results/S1-02-C-config-cli.md) |
-| S1-02-D | `NOT_STARTED` | 安装检测和卸载目标 fail-closed | `packages/opencode/src/installation/index.ts`、`src/cli/cmd/uninstall.ts` | C | 不访问上游下载源、不清理 `.opencode`；生命周期 fixture 通过 |
+| S1-02-D | `DONE` | 安装检测和卸载目标 fail-closed | `packages/opencode/src/installation/index.ts`、Upgrade/Uninstall CLI、CI lifecycle gate 与 installation tests | C | [安装与卸载验证](./test-results/S1-02-D-install-uninstall.md) |
 | S1-02-E | `NOT_STARTED` | 全链共存回归和字符串分类 | 只改测试、证据与明确遗漏；构建输出留给 S1-03 | A-D | 两个隔离 fixture + `rg` 分类 + package 级 typecheck/test |
 
 S1-02-C 扩大文件所有权的原因：配置发现存在 Core、CLI、TUI、MDM、Server Auth 和测试公共 fixture 等入口，只修改最初列出的三个文件会保留旁路；`global.ts`、数据库和 Flag 在 C 中仅改为消费统一 `Product` 常量，不改变 B 已验收的行为。
@@ -74,15 +74,27 @@ S1-02-C 扩大文件所有权的原因：配置发现存在 Core、CLI、TUI、M
 - Server Auth 用户环境变量和默认 Basic Auth 用户名切换为 DeepCode。
 - 公共测试 fixture、HttpApi config/data/database 隔离目录与模拟模型配置统一使用 DeepCode 命名空间。
 - 共存用例验证仅有 OpenCode 配置时不加载，双配置并存时只读取 DeepCode。
-- package typecheck、Linux 全量 unit、generated client、HttpApi `coverage/auth/effect` 三模式与 Linux E2E 已通过；详细 run 与 artifact 见验证证据。
+- package typecheck、Linux/Windows unit、generated client、HttpApi `coverage/auth/effect` 三模式与 Linux/Windows E2E 已通过并合入 `develop@babc308`。
 - `https://opencode.ai/config.json`、`/.well-known/opencode`、`@opencode-ai/*` 暂时分类为上游 schema/protocol/package 兼容标识；它们不参与本地配置发现、用户目录或 CLI 身份。S1-02-E 必须再次审计。
+
+### S1-02-D：安装、升级与卸载 fail-closed
+
+- 只识别直接位于 `.deepcode/bin` 的原生 DeepCode 二进制；嵌套目录、相似目录、OpenCode、`.local/bin` 和错误文件名均返回 `unknown`。
+- Unix/Windows 使用原生路径大小写和 `.exe` 语义。
+- 在 S1-03 建立 DeepCode Release 渠道前，latest 返回当前版本，upgrade 对全部 method 返回类型化错误；不执行外部 HTTP、安装脚本或包管理器命令。
+- Upgrade CLI 删除“仍然安装”回退，只保留 curl 入口；未知安装位置立即停止。
+- Uninstall CLI 只使用 DeepCode Global Path 和精确 DeepCode shell marker/PATH；删除 OpenCode 包管理器卸载分支。
+- 精确 PATH 分量回归证明 `.opencode/bin`、`# opencode`、`.deepcode/bin-backup`、`.deepcode/bin-old` 和无关文本保持不变。
+- Linux/Windows lifecycle suite 均为 17 pass / 0 fail / 93 assertions；typecheck、Linux/Windows unit、generated client、HttpApi 和 Linux/Windows E2E 全部通过。
+- 已验证实现 head：`874dc9c959ccd91320e46d3bf3675c2b30ee861e`；typecheck run #65、test run #67。
 
 ## 下一执行点
 
-1. PR #2 的最终 evidence head 必须通过 `typecheck` / `test` required checks，并由 auto-merge 自动 squash 合入 `develop`。
-2. 合入后从最新 `develop` 创建独立分支领取 S1-02-D，使安装检测、升级和卸载目标 fail-closed。
-3. S1-02-D 未完成前，S1-02 父任务保持 `IN_PROGRESS`，产品仍为 NO-GO。
+1. squash 合入 PR #6 到 `develop`，并核验合并后的 S1-02-D evidence。
+2. 从最新 `develop` 创建独立分支实施 S1-02-E。
+3. S1-02-E 首先恢复/修正 `packages/opencode` 整包测试：当前历史测试仍有 `OPENCODE_*`、`.opencode` 和 OpenCode CLI 断言，临时启用 `deepcode#test` 会暴露这些测试债务；不得通过恢复 OpenCode fallback 解决。
+4. 完成 DeepCode-only、OpenCode-only、双配置并存、生命周期树不变和 `opencode` / `OPENCODE` 字符串逐条分类；整链通过后才能把父任务标记 `DONE`。
 
 ## 当前结论
 
-S1-02-A、S1-02-B、S1-02-C 已完成；身份、配置、CLI、Server Auth 与测试基础设施已形成 DeepCode 独立用户边界。安装/卸载和最终全链共存回归尚未完成，因此不得进入 S1-03 或宣称 Alpha 可发布。
+S1-02-A、S1-02-B、S1-02-C 已完成并合入 `develop`。S1-02-D 已完成代码、双平台回归和证据，待 PR #6 squash 合入；S1-02-E 尚未开始，因此父任务继续保持 `IN_PROGRESS`，产品仍为 NO-GO。

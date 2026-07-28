@@ -1,8 +1,8 @@
 # DeepCode 三阶段交付总计划（Implementation-ready Master Plan）
 
-> 文档版本：1.1
+> 文档版本：1.2
 > 基线日期：2026-07-27
-> 当前状态：Ready for implementation（计划可执行，产品当前仍为 NO-GO）
+> 当前状态：Implementation in progress（计划执行中，产品当前仍为 NO-GO）
 > 分支拓扑：`develop` 为实施基线；`master` 为 GitHub 默认/发布分支；里程碑通过审查后从 `develop` 合入 `master`
 > 文档定位：本目录唯一的跨阶段执行总计划
 > 目标读者：后续实现人员与 AI；本文不依赖口头上下文即可执行
@@ -11,8 +11,44 @@
 
 | 日期       | 版本 | 变更                                                                                                            | 依据                                     |
 | ---------- | ---: | --------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| 2026-07-28 |  1.2 | 回填实际实施进度、PR/CI 基线与远程交接入口；明确 S1-02-D 为 IN_REVIEW、S1-02-E 为下一执行点 | PR #2、PR #6、GitHub Actions 与远程分支复核 |
 | 2026-07-27 |  1.1 | 明确 `develop` 开发、`master` 发布的分支拓扑；将 S1-01 拆为仓库基线与官网止损，解除外部官网权限对代码任务的依赖死锁 | 远端仓库元数据与执行一致性复核 |
 | 2026-07-27 |  1.0 | 将交付重构为“官网可安装 → 完整能力 → 设计驱动的 WebUI/Electron”三阶段，并补齐任务级输入、步骤、测试、证据和门禁 | 用户目标澄清、源码与现有开源准备文档复核 |
+
+
+## 当前执行快照（2026-07-28）
+
+> 本节记录实施事实，不替代各任务卡验收条件。CI、PR 和分支状态变化时，后续执行者必须以 GitHub 实时状态复核。
+
+| 范围 | 当前状态 | 已完成 | 当前执行点 / 阻塞 |
+| --- | --- | --- | --- |
+| 产品发布判断 | `NO-GO` | 计划已达到可执行标准并进入实施 | Gate 1 尚未通过，官网与可信 Release 安装闭环尚未完成 |
+| 第一阶段 | `IN_PROGRESS` | S1-01A `DONE`；S1-02-A/B/C `DONE` | S1-02-D `IN_REVIEW`（PR #6）；S1-02-E `NOT_STARTED`；S1-01B 与其余 Stage 1 任务未完成 |
+| 第二阶段 | `NOT_STARTED` | 无 | 受 Gate 1 阻塞，不得提前宣称完整 Provider/Harness/Agent/Gateway 能力 |
+| 第三阶段 | `NOT_STARTED` | 无 | 受 Gate 2 和设计门禁阻塞，不得提前大规模改造 WebUI/Electron |
+
+### 已落入远程的实施基线
+
+- PR #2 `feat(identity): isolate DeepCode config and CLI` 已通过完整门禁并 squash 合入 `develop`。
+- `develop` 对应 S1-02-C 合并提交：`babc3080f9d5c5c90dcf4abb16a0149e6dbc1eb8`。
+- S1-02-D 当前远程分支：`agent/s1-02-d-install-uninstall-guard`。
+- S1-02-D 当前 PR：#6 `fix(lifecycle): fail closed DeepCode install and uninstall boundaries`。
+- 写入交接文档前的实现 head：`06280508d4004104698987c23505794425a834ef`；后续文档提交会继续推进 PR head。
+- 当前必要代码、测试和 evidence 均已推送到远程，不依赖旧容器中的未提交文件。
+
+### S1-02 当前完成度
+
+| 子任务 | 状态 | 结果 |
+| --- | --- | --- |
+| S1-02-A | `DONE` | 建立共存失败基线与 fixture |
+| S1-02-B | `DONE` | Core 路径、数据库与用户环境入口切换至 DeepCode |
+| S1-02-C | `DONE` | 配置发现、CLI/TUI/MDM/Server Auth 和公共测试基础设施完成身份隔离；已合入 `develop` |
+| S1-02-D | `IN_REVIEW` | 安装检测、升级和卸载边界 fail-closed；PR #6 等待最终 CI/证据回填与合并 |
+| S1-02-E | `NOT_STARTED` | 全链共存回归、字符串分类和父任务最终验收 |
+
+S1-02-D 合入后，下一唯一代码执行点是 **S1-02-E**。S1-02-E 完成前，不得开始 S1-03，也不得把 S1-02 父任务标记为 `DONE`。
+
+远程交接入口：[HANDOFF_2026-07-28.md](./HANDOFF_2026-07-28.md)。该文件包含可直接粘贴到新会话的完整提示词、分支/PR/Commit 基线、流程纪律和下一执行逻辑。
 
 ---
 
@@ -365,6 +401,7 @@ flowchart LR
 ### S1-02 建立 DeepCode 用户边界与共存隔离
 
 **状态**：`IN_PROGRESS`
+**子任务进度**：S1-02-A/B/C `DONE`；S1-02-D `IN_REVIEW`（PR #6）；S1-02-E `NOT_STARTED`
 **优先级**：P0
 **依赖**：`S1-01A`
 **可并行**：可与 `S1-04`、`S1-05` 并行，但修改重叠文件时必须串行
@@ -1102,6 +1139,8 @@ cd packages/desktop && bun run package:mac
 ---
 
 ## 12. 实现交接模板
+
+当前远程续作提示词见 [HANDOFF_2026-07-28.md](./HANDOFF_2026-07-28.md)。新会话必须先复核 GitHub 实时状态，再按本节模板领取下一任务。
 
 后续 AI 领取任务时，将以下内容复制到任务说明并填写：
 
