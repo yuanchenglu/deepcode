@@ -38,24 +38,18 @@ export const UpgradeCommand = {
     }
 
     const target = args.target ? args.target.replace(/^v/, "") : await Installation.latest(method)
-    if (!args.target && target === InstallationVersion) {
-      prompts.log.warn("Automatic upgrades are disabled until the verified DeepCode release channel is available.")
-      prompts.outro("Done")
-      return
-    }
-
     if (InstallationVersion === target) {
-      prompts.log.warn(`${Product.name} upgrade skipped: ${target} is already installed`)
+      prompts.log.warn(`${Product.name} ${InstallationVersion} is already the latest verified release`)
       prompts.outro("Done")
       return
     }
 
     prompts.log.info(`From ${InstallationVersion} → ${target}`)
     const spinner = prompts.spinner()
-    spinner.start("Upgrading...")
+    spinner.start("Downloading and verifying DeepCode release...")
     const err = await Installation.upgrade(method, target).catch((error) => error)
     if (err) {
-      spinner.stop("Upgrade failed", 1)
+      spinner.stop("Upgrade failed; the previous binary was preserved or restored", 1)
       if (err instanceof Installation.UpgradeFailedError) prompts.log.error(err.stderr)
       else if (err instanceof Error) prompts.log.error(err.message)
       prompts.outro("Done")
