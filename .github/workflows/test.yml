@@ -54,8 +54,8 @@ jobs:
 
       - name: Configure git identity
         run: |
-          git config --global user.email "bot@opencode.ai"
-          git config --global user.name "opencode"
+          git config --global user.email "bot@deepcode.local"
+          git config --global user.name "deepcode"
 
       - name: Cache Turbo
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
@@ -97,11 +97,11 @@ jobs:
           set -o pipefail
           bun test test/global.test.ts test/config.test.ts --timeout 30000 2>&1 | tee boundary-core-${{ matrix.settings.name }}.log
 
-      - name: Run S1-02-E coexistence boundary tests
+      - name: Run S1-02-E full config and permission regression
         working-directory: packages/opencode
         run: |
           set -o pipefail
-          bun test test/config/coexistence.test.ts test/config/tui-coexistence.test.ts test/effect/runtime-flags-deepcode.test.ts test/permission --timeout 30000 2>&1 | tee boundary-opencode-${{ matrix.settings.name }}.log
+          bun test test/config test/effect/runtime-flags-deepcode.test.ts test/permission --timeout 30000 2>&1 | tee boundary-opencode-${{ matrix.settings.name }}.log
 
       - name: Capture S1-02-E OpenCode string inventory
         if: runner.os == 'Linux' && always()
@@ -126,19 +126,6 @@ jobs:
             packages/core/boundary-core-${{ matrix.settings.name }}.log
             packages/opencode/boundary-opencode-${{ matrix.settings.name }}.log
             opencode-boundary-audit.log
-
-      - name: Upload temporary S1-02-E source snapshot
-        if: runner.os == 'Linux' && always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: s1-02-e-source-${{ github.sha }}
-          if-no-files-found: error
-          retention-days: 1
-          path: |
-            packages/core/src
-            packages/core/test
-            packages/opencode/src
-            packages/opencode/test
 
       - name: Check generated client
         if: runner.os == 'Linux'
@@ -187,7 +174,6 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          # Playwright 1.59 hangs while extracting Chromium with Node 24.16.
           node-version: "24.15"
 
       - name: Setup Bun
@@ -232,85 +218,3 @@ jobs:
           path: |
             packages/app/e2e/test-results
             packages/app/e2e/playwright-report
-
-  # BEGIN TEMP S1-02-E APPLY
-  apply-s1-02-e:
-    if: github.event_name == 'pull_request' && github.head_ref == 'coexistence-boundary-audit'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Checkout implementation branch
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
-        with:
-          ref: coexistence-boundary-audit
-          token: ${{ secrets.GITHUB_TOKEN }}
-          fetch-depth: 0
-
-      - name: Apply audited migration
-        run: |
-          set -euo pipefail
-          for script in \
-            .apply-s1e-transform.py \
-            .apply-s1e-cleanup.py \
-            .apply-s1e-cleanup2.py \
-            .apply-s1e-final-cleanup.py \
-            .apply-s1e-final.py; do
-            python -m py_compile "docs/open-source-readiness/evidence/S1-02/$script"
-            python "docs/open-source-readiness/evidence/S1-02/$script"
-          done
-
-      - name: Commit audited migration
-        run: |
-          set +e
-          {
-            set -x
-            git config user.email "bot@deepcode.local"
-            git config user.name "deepcode-ci"
-            rm -f docs/open-source-readiness/evidence/S1-02/.apply-s1e-*.py
-            rm -f .github/workflows/s1e-apply.yml
-            python - <<'PY'
-            from pathlib import Path
-            path = Path('.github/workflows/test.yml')
-            text = path.read_text()
-            snapshot = text.find('      - name: Upload temporary S1-02-E source snapshot')
-            if snapshot != -1:
-                snapshot_end = text.find('      - name: Check generated client', snapshot)
-                if snapshot_end == -1:
-                    raise SystemExit('temporary source snapshot end marker missing')
-                text = text[:snapshot] + text[snapshot_end:]
-            begin = text.find('  # BEGIN TEMP S1-02-E APPLY')
-            end = text.find('  # END TEMP S1-02-E APPLY', begin)
-            if begin == -1 or end == -1:
-                raise SystemExit('temporary apply job markers missing')
-            end = text.find('\n', end)
-            if end == -1:
-                end = len(text)
-            else:
-                end += 1
-            path.write_text(text[:begin] + text[end:])
-            PY
-            git diff --check
-            git add -A
-            git commit -m "fix(identity): close DeepCode coexistence boundaries
-
-            English:
-            Move remaining user-visible environment, path, process, UI, OAuth, MCP, ACP, plugin, project-cache, and CLI boundaries to DeepCode. Fail closed for unverified upstream UI, account, IDE, and GitHub-agent channels while preserving explicitly classified package, schema, protocol, and provider compatibility identifiers.
-
-            简体中文:
-            将剩余用户可见环境变量、路径、进程、UI、OAuth、MCP、ACP、插件、项目缓存和 CLI 边界切换到 DeepCode；对未验证的上游 UI、账户、IDE 和 GitHub Agent 渠道实行 fail-closed，同时保留已分类的包、Schema、协议和 Provider 兼容标识。"
-            git push origin HEAD:coexistence-boundary-audit
-          } > s1e-commit.log 2>&1
-          status=$?
-          cat s1e-commit.log
-          exit "$status"
-
-      - name: Upload S1-02-E commit traceback
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: s1-02-e-commit-${{ github.sha }}
-          if-no-files-found: error
-          retention-days: 2
-          path: s1e-commit.log
-  # END TEMP S1-02-E APPLY
