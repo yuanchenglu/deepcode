@@ -3,11 +3,12 @@ export * as ConfigManaged from "./managed"
 import { existsSync } from "fs"
 import os from "os"
 import path from "path"
+import { Product } from "@opencode-ai/core/product"
 import { Process } from "@/util/process"
 
-const MANAGED_PLIST_DOMAIN = "ai.opencode.managed"
+const MANAGED_PLIST_DOMAIN = Product.managedPlistDomain
 
-// Keys injected by macOS/MDM into the managed plist that are not OpenCode config
+// Keys injected by macOS/MDM into the managed plist that are not DeepCode config
 const PLIST_META = new Set([
   "PayloadDisplayName",
   "PayloadIdentifier",
@@ -20,16 +21,16 @@ const PLIST_META = new Set([
 function systemManagedConfigDir(): string {
   switch (process.platform) {
     case "darwin":
-      return "/Library/Application Support/opencode"
+      return `/Library/Application Support/${Product.slug}`
     case "win32":
-      return path.join(process.env.ProgramData || "C:\\ProgramData", "opencode")
+      return path.join(process.env.ProgramData || "C:\\ProgramData", Product.slug)
     default:
-      return "/etc/opencode"
+      return `/etc/${Product.slug}`
   }
 }
 
 export function managedConfigDir() {
-  return process.env.OPENCODE_TEST_MANAGED_CONFIG_DIR || systemManagedConfigDir()
+  return process.env.DEEPCODE_TEST_MANAGED_CONFIG_DIR || systemManagedConfigDir()
 }
 
 export function parseManagedPlist(json: string): string {

@@ -129,7 +129,7 @@ const clearEffect = (wait = false) =>
     )
 const clear = (wait = false) => Effect.runPromise(clearEffect(wait))
 // Get managed config directory from environment (set in preload.ts)
-const managedConfigDir = process.env.OPENCODE_TEST_MANAGED_CONFIG_DIR!
+const managedConfigDir = process.env.DEEPCODE_TEST_MANAGED_CONFIG_DIR!
 const originalTestToken = process.env.TEST_TOKEN
 const originalConsoleToken = process.env.OPENCODE_CONSOLE_TOKEN
 
@@ -147,13 +147,13 @@ afterEach(async () => {
 })
 
 const writeManagedSettingsEffect = (settings: object, filename?: string) =>
-  FSUtil.use.writeWithDirs(path.join(managedConfigDir, filename ?? "opencode.json"), JSON.stringify(settings))
+  FSUtil.use.writeWithDirs(path.join(managedConfigDir, filename ?? "deepcode.json"), JSON.stringify(settings))
 
-async function writeConfig(dir: string, config: object, name = "opencode.json") {
+async function writeConfig(dir: string, config: object, name = "deepcode.json") {
   await Filesystem.write(path.join(dir, name), JSON.stringify(config))
 }
 
-const writeConfigEffect = (dir: string, config: object, name = "opencode.json") =>
+const writeConfigEffect = (dir: string, config: object, name = "deepcode.json") =>
   FSUtil.use.writeWithDirs(path.join(dir, name), JSON.stringify(config))
 
 const withInstanceDir = <A, E, R>(dir: string, effect: Effect.Effect<A, E, R>) =>
@@ -202,7 +202,7 @@ const withConfigTree = <A, E, R>(
       [
         input.global ? writeConfigEffect(global, schemaConfig(input.global)) : undefined,
         input.project ? writeConfigEffect(directory, schemaConfig(input.project)) : undefined,
-        input.local ? writeConfigEffect(path.join(directory, ".opencode"), schemaConfig(input.local)) : undefined,
+        input.local ? writeConfigEffect(path.join(directory, ".deepcode"), schemaConfig(input.local)) : undefined,
       ].filter((effect): effect is Effect.Effect<void, FSUtil.Error, FSUtil.Service> => effect !== undefined),
       { concurrency: "unbounded" },
     )
@@ -336,7 +336,7 @@ it.effect("creates global jsonc config with schema when no global configs exist"
     Effect.gen(function* () {
       yield* Config.use.get().pipe(provideInstanceEffect(dir))
 
-      const content = yield* FSUtil.use.readFileString(path.join(dir, "opencode.jsonc"))
+      const content = yield* FSUtil.use.readFileString(path.join(dir, "deepcode.jsonc"))
       expect(content).toContain('"$schema": "https://opencode.ai/config.json"')
     }).pipe(Effect.provide(testInstanceStoreLayer), Effect.provide(LayerNode.compile(CrossSpawnSpawner.node))),
   ),
@@ -352,7 +352,7 @@ it.effect("does not create global config when OPENCODE_CONFIG_DIR is set", () =>
         Effect.gen(function* () {
           yield* Config.use.get().pipe(provideInstanceEffect(dir))
 
-          expect(yield* FSUtil.use.existsSafe(path.join(dir, "opencode.jsonc"))).toBe(false)
+          expect(yield* FSUtil.use.existsSafe(path.join(dir, "deepcode.jsonc"))).toBe(false)
         }).pipe(Effect.provide(testInstanceStoreLayer), Effect.provide(LayerNode.compile(CrossSpawnSpawner.node))),
       ),
     )
@@ -399,18 +399,18 @@ it.effect("updates global config and omits empty shell key in json", () =>
     Effect.gen(function* () {
       yield* Config.use.updateGlobal({ shell: "" })
 
-      const writtenConfig = yield* FSUtil.use.readJson(path.join(dir, "opencode.json"))
+      const writtenConfig = yield* FSUtil.use.readJson(path.join(dir, "deepcode.json"))
       expect(writtenConfig).not.toHaveProperty("shell")
     }),
   ),
 )
 
 it.effect("updates global config and omits empty shell key in jsonc", () =>
-  withGlobalConfig({ config: { shell: "bash", model: "test/model" }, name: "opencode.jsonc" }, ({ dir }) =>
+  withGlobalConfig({ config: { shell: "bash", model: "test/model" }, name: "deepcode.jsonc" }, ({ dir }) =>
     Effect.gen(function* () {
       yield* Config.use.updateGlobal({ shell: "" })
 
-      const file = path.join(dir, "opencode.jsonc")
+      const file = path.join(dir, "deepcode.jsonc")
       const writtenConfig = yield* FSUtil.use.readFileString(file)
       const parsed = ConfigParse.schema(ConfigV1.Info, ConfigParse.jsonc(writtenConfig, file), file)
       expect(writtenConfig).not.toContain('"shell"')
@@ -476,7 +476,7 @@ it.instance("loads JSONC config file", () =>
   Effect.gen(function* () {
     const test = yield* TestInstance
     yield* FSUtil.use.writeWithDirs(
-      path.join(test.directory, "opencode.jsonc"),
+      path.join(test.directory, "deepcode.jsonc"),
       `{
         // This is a comment
         "$schema": "https://opencode.ai/config.json",
@@ -500,7 +500,7 @@ it.instance("jsonc overrides json in the same directory", () =>
         model: "base",
         username: "base",
       },
-      "opencode.jsonc",
+      "deepcode.jsonc",
     )
     yield* writeConfigEffect(test.directory, {
       $schema: "https://opencode.ai/config.json",
@@ -536,14 +536,14 @@ it.instance("preserves env variables when adding $schema to config", () =>
       const test = yield* TestInstance
       // Config without $schema - should trigger auto-add
       yield* FSUtil.use.writeWithDirs(
-        path.join(test.directory, "opencode.json"),
+        path.join(test.directory, "deepcode.json"),
         JSON.stringify({ username: "{env:PRESERVE_VAR}" }),
       )
       const config = yield* Config.use.get()
       expect(config.username).toBe("secret_value")
 
       // Read the file to verify the env variable was preserved
-      const content = yield* FSUtil.use.readFileString(path.join(test.directory, "opencode.json"))
+      const content = yield* FSUtil.use.readFileString(path.join(test.directory, "deepcode.json"))
       expect(content).toContain("{env:PRESERVE_VAR}")
       expect(content).not.toContain("secret_value")
       expect(content).toContain("$schema")
@@ -635,7 +635,7 @@ it.instance("validates config schema and throws on invalid fields", () =>
 it.instance("throws error for invalid JSON", () =>
   Effect.gen(function* () {
     const test = yield* TestInstance
-    yield* FSUtil.use.writeWithDirs(path.join(test.directory, "opencode.json"), "{ invalid json }")
+    yield* FSUtil.use.writeWithDirs(path.join(test.directory, "deepcode.json"), "{ invalid json }")
     const exit = yield* Config.use.get().pipe(Effect.exit)
     expect(Exit.isFailure(exit)).toBe(true)
   }),
@@ -767,11 +767,11 @@ it.instance("accepts the deprecated reference field", () =>
   }),
 )
 
-it.instance("loads config from .opencode directory", () =>
+it.instance("loads config from .deepcode directory", () =>
   Effect.gen(function* () {
     const test = yield* TestInstance
     yield* FSUtil.use.writeWithDirs(
-      path.join(test.directory, ".opencode", "agent", "test.md"),
+      path.join(test.directory, ".deepcode", "agent", "test.md"),
       `---
 model: test/model
 ---
@@ -793,7 +793,7 @@ it.instance("agent markdown permission config preserves user key order", () =>
   Effect.gen(function* () {
     const test = yield* TestInstance
     yield* FSUtil.use.writeWithDirs(
-      path.join(test.directory, ".opencode", "agent", "ordered.md"),
+      path.join(test.directory, ".deepcode", "agent", "ordered.md"),
       `---
 permission:
   bash: allow
@@ -808,11 +808,11 @@ Ordered permissions`,
   }),
 )
 
-it.instance("loads agents from .opencode/agents (plural)", () =>
+it.instance("loads agents from .deepcode/agents (plural)", () =>
   Effect.gen(function* () {
     const test = yield* TestInstance
     yield* FSUtil.use.writeWithDirs(
-      path.join(test.directory, ".opencode", "agents", "helper.md"),
+      path.join(test.directory, ".deepcode", "agents", "helper.md"),
       `---
 model: test/model
 mode: subagent
@@ -821,7 +821,7 @@ Helper agent prompt`,
     )
 
     yield* FSUtil.use.writeWithDirs(
-      path.join(test.directory, ".opencode", "agents", "nested", "child.md"),
+      path.join(test.directory, ".deepcode", "agents", "nested", "child.md"),
       `---
 model: test/model
 mode: subagent
@@ -847,11 +847,11 @@ Nested agent prompt`,
   }),
 )
 
-it.instance("loads commands from .opencode/command (singular)", () =>
+it.instance("loads commands from .deepcode/command (singular)", () =>
   Effect.gen(function* () {
     const test = yield* TestInstance
     yield* FSUtil.use.writeWithDirs(
-      path.join(test.directory, ".opencode", "command", "hello.md"),
+      path.join(test.directory, ".deepcode", "command", "hello.md"),
       `---
 description: Test command
 ---
@@ -859,7 +859,7 @@ Hello from singular command`,
     )
 
     yield* FSUtil.use.writeWithDirs(
-      path.join(test.directory, ".opencode", "command", "nested", "child.md"),
+      path.join(test.directory, ".deepcode", "command", "nested", "child.md"),
       `---
 description: Nested command
 ---
@@ -880,11 +880,11 @@ Nested command template`,
   }),
 )
 
-it.instance("loads commands from .opencode/commands (plural)", () =>
+it.instance("loads commands from .deepcode/commands (plural)", () =>
   Effect.gen(function* () {
     const test = yield* TestInstance
     yield* FSUtil.use.writeWithDirs(
-      path.join(test.directory, ".opencode", "commands", "hello.md"),
+      path.join(test.directory, ".deepcode", "commands", "hello.md"),
       `---
 description: Test command
 ---
@@ -892,7 +892,7 @@ Hello from plural commands`,
     )
 
     yield* FSUtil.use.writeWithDirs(
-      path.join(test.directory, ".opencode", "commands", "nested", "child.md"),
+      path.join(test.directory, ".deepcode", "commands", "nested", "child.md"),
       `---
 description: Nested command
 ---
@@ -1039,7 +1039,7 @@ it.instance("does not error when only custom agent is a subagent", () =>
   Effect.gen(function* () {
     const test = yield* TestInstance
     yield* FSUtil.use.writeWithDirs(
-      path.join(test.directory, ".opencode", "agent", "helper.md"),
+      path.join(test.directory, ".deepcode", "agent", "helper.md"),
       `---
 model: test/model
 mode: subagent
@@ -1216,7 +1216,7 @@ it.instance(
 it.instance("managed jsonc settings override managed json settings", () =>
   Effect.gen(function* () {
     yield* writeManagedSettingsEffect({ model: "managed/json" })
-    yield* writeManagedSettingsEffect({ model: "managed/jsonc" }, "opencode.jsonc")
+    yield* writeManagedSettingsEffect({ model: "managed/jsonc" }, "deepcode.jsonc")
 
     const config = yield* Config.use.get()
     expect(config.model).toBe("managed/jsonc")
@@ -1386,7 +1386,7 @@ it.instance("project config can override MCP server enabled status", () =>
           },
         },
       },
-      "opencode.jsonc",
+      "deepcode.jsonc",
     )
 
     const config = yield* Config.use.get()
@@ -1431,7 +1431,7 @@ it.instance("MCP config deep merges preserving base config properties", () =>
           },
         },
       },
-      "opencode.jsonc",
+      "deepcode.jsonc",
     )
 
     const config = yield* Config.use.get()
@@ -1446,7 +1446,7 @@ it.instance("MCP config deep merges preserving base config properties", () =>
   }),
 )
 
-it.instance("local .opencode config can override MCP from project config", () =>
+it.instance("local .deepcode config can override MCP from project config", () =>
   Effect.gen(function* () {
     const test = yield* TestInstance
     yield* writeConfigEffect(test.directory, {
@@ -1459,9 +1459,9 @@ it.instance("local .opencode config can override MCP from project config", () =>
         },
       },
     })
-    yield* FSUtil.use.ensureDir(path.join(test.directory, ".opencode"))
+    yield* FSUtil.use.ensureDir(path.join(test.directory, ".deepcode"))
     yield* writeConfigEffect(
-      path.join(test.directory, ".opencode"),
+      path.join(test.directory, ".deepcode"),
       {
         $schema: "https://opencode.ai/config.json",
         mcp: {
@@ -1472,7 +1472,7 @@ it.instance("local .opencode config can override MCP from project config", () =>
           },
         },
       },
-      "opencode.json",
+      "deepcode.json",
     )
 
     const config = yield* Config.use.get()
@@ -1677,7 +1677,7 @@ loginPageWellKnown.it.instance(
 describe("resolvePluginSpec", () => {
   test("keeps package specs unchanged", async () => {
     await using tmp = await tmpdir()
-    const file = path.join(tmp.path, "opencode.json")
+    const file = path.join(tmp.path, "deepcode.json")
     expect(await ConfigPlugin.resolvePluginSpec("oh-my-opencode@2.4.3", file)).toBe("oh-my-opencode@2.4.3")
     expect(await ConfigPlugin.resolvePluginSpec("@scope/pkg", file)).toBe("@scope/pkg")
   })
@@ -1693,7 +1693,7 @@ describe("resolvePluginSpec", () => {
       },
     })
 
-    const file = path.join(tmp.path, "opencode.json")
+    const file = path.join(tmp.path, "deepcode.json")
     const hit = await ConfigPlugin.resolvePluginSpec(".\\plugin", file)
     expect(ConfigPlugin.pluginSpecifier(hit)).toBe(pathToFileURL(path.join(tmp.path, "plugin", "index.ts")).href)
   })
@@ -1705,7 +1705,7 @@ describe("resolvePluginSpec", () => {
       },
     })
 
-    const file = path.join(tmp.path, "opencode.json")
+    const file = path.join(tmp.path, "deepcode.json")
     const hit = await ConfigPlugin.resolvePluginSpec("./plugin.ts", file)
     expect(ConfigPlugin.pluginSpecifier(hit)).toBe(pathToFileURL(path.join(tmp.path, "plugin.ts")).href)
   })
@@ -1724,7 +1724,7 @@ describe("resolvePluginSpec", () => {
       },
     })
 
-    const file = path.join(tmp.path, "opencode.json")
+    const file = path.join(tmp.path, "deepcode.json")
     const hit = await ConfigPlugin.resolvePluginSpec("./plugin", file)
     expect(ConfigPlugin.pluginSpecifier(hit)).toBe(pathToFileURL(path.join(tmp.path, "plugin")).href)
   })
@@ -1738,7 +1738,7 @@ describe("resolvePluginSpec", () => {
       },
     })
 
-    const file = path.join(tmp.path, "opencode.json")
+    const file = path.join(tmp.path, "deepcode.json")
     const hit = await ConfigPlugin.resolvePluginSpec("./plugin", file)
     expect(ConfigPlugin.pluginSpecifier(hit)).toBe(pathToFileURL(path.join(tmp.path, "plugin", "index.ts")).href)
   })
@@ -1775,11 +1775,11 @@ describe("deduplicatePluginOrigins", () => {
   })
 
   test("deduplicates direct path plugins by exact spec", () => {
-    const plugins = ["file:///project/.opencode/plugin/demo.ts", "file:///project/.opencode/plugin/demo.ts"]
+    const plugins = ["file:///project/.deepcode/plugin/demo.ts", "file:///project/.deepcode/plugin/demo.ts"]
 
     const result = dedupe(plugins)
 
-    expect(result).toEqual(["file:///project/.opencode/plugin/demo.ts"])
+    expect(result).toEqual(["file:///project/.deepcode/plugin/demo.ts"])
   })
 
   test("preserves order of remaining plugins", () => {
@@ -1796,7 +1796,7 @@ describe("deduplicatePluginOrigins", () => {
       Effect.gen(function* () {
         const test = yield* TestInstance
         yield* FSUtil.use.writeWithDirs(
-          path.join(test.directory, ".opencode", "plugin", "my-plugin.js"),
+          path.join(test.directory, ".deepcode", "plugin", "my-plugin.js"),
           "export default {}",
         )
 
@@ -1824,14 +1824,14 @@ describe("OPENCODE_DISABLE_PROJECT_CONFIG", () => {
     { config: { model: "project/model", username: "project-user" } },
   )
 
-  it.instance("skips project .opencode/ directories when flag is set", () =>
+  it.instance("skips project .deepcode/ directories when flag is set", () =>
     withProcessEnv(
       "OPENCODE_DISABLE_PROJECT_CONFIG",
       "true",
       Effect.gen(function* () {
         const test = yield* TestInstance
         yield* FSUtil.use.writeWithDirs(
-          path.join(test.directory, ".opencode", "command", "test-cmd.md"),
+          path.join(test.directory, ".deepcode", "command", "test-cmd.md"),
           "# Test Command\nThis is a test command.",
         )
         const directories = yield* Config.use.directories()
@@ -1949,8 +1949,8 @@ test("parseManagedPlist strips MDM metadata keys", async () => {
       await ConfigManaged.parseManagedPlist(
         JSON.stringify({
           PayloadDisplayName: "OpenCode Managed",
-          PayloadIdentifier: "ai.opencode.managed.test",
-          PayloadType: "ai.opencode.managed",
+          PayloadIdentifier: "ai.deepcode.managed.test",
+          PayloadType: "ai.deepcode.managed",
           PayloadUUID: "AAAA-BBBB-CCCC",
           PayloadVersion: 1,
           _manualProfile: true,

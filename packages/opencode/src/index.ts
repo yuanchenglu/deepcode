@@ -10,6 +10,7 @@ import { UninstallCommand } from "./cli/cmd/uninstall"
 import { ModelsCommand } from "./cli/cmd/models"
 import { UI } from "./cli/ui"
 import { InstallationVersion } from "@opencode-ai/core/installation/version"
+import { Product } from "@opencode-ai/core/product"
 import { FormatError } from "./cli/error"
 import { ServeCommand } from "./cli/cmd/serve"
 import { DebugCommand } from "./cli/cmd/debug"
@@ -32,19 +33,24 @@ import { Heap } from "./cli/heap"
 
 const args = hideBin(process.argv)
 
+function brand(out: string) {
+  return out.replaceAll("OpenCode", Product.name).replaceAll("opencode", Product.cli)
+}
+
 function show(out: string) {
-  const text = out.trimStart()
-  if (!text.startsWith("opencode ")) {
+  const branded = brand(out)
+  const text = branded.trimStart()
+  if (!text.startsWith(`${Product.cli} `)) {
     process.stderr.write(UI.logo() + EOL + EOL)
     process.stderr.write(text + EOL)
     return
   }
-  process.stderr.write(out)
+  process.stderr.write(branded)
 }
 
 const cli = yargs(args)
   .parserConfiguration({ "populate--": true })
-  .scriptName("opencode")
+  .scriptName(Product.cli)
   .wrap(100)
   .help("help", "show help")
   .alias("help", "h")
@@ -64,17 +70,15 @@ const cli = yargs(args)
     type: "boolean",
   })
   .middleware(async (opts) => {
-    if (opts.printLogs) process.env.OPENCODE_PRINT_LOGS = "1"
-    if (opts.logLevel) process.env.OPENCODE_LOG_LEVEL = opts.logLevel
-    if (opts.pure) {
-      process.env.OPENCODE_PURE = "1"
-    }
+    if (opts.printLogs) process.env.DEEPCODE_PRINT_LOGS = "1"
+    if (opts.logLevel) process.env.DEEPCODE_LOG_LEVEL = opts.logLevel
+    if (opts.pure) process.env.DEEPCODE_PURE = "1"
 
     Heap.start()
 
     process.env.AGENT = "1"
-    process.env.OPENCODE = "1"
-    process.env.OPENCODE_PID = String(process.pid)
+    process.env.DEEPCODE = "1"
+    process.env.DEEPCODE_PID = String(process.pid)
   })
   .usage("")
   .completion("completion", "generate shell completion script")

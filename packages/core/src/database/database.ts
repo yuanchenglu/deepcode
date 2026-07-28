@@ -9,6 +9,7 @@ import { isAbsolute, join } from "path"
 import { DatabaseMigration } from "./migration"
 import { InstallationChannel } from "../installation/version"
 import { makeGlobalNode } from "../effect/app-node"
+import { Product } from "../product"
 
 const makeDatabase = EffectDrizzleSqlite.makeWithDefaults()
 type DatabaseShape = Effect.Success<typeof makeDatabase>
@@ -50,8 +51,8 @@ export function path() {
     process.env.DEEPCODE_DISABLE_CHANNEL_DB === "1" ||
     process.env.DEEPCODE_DISABLE_CHANNEL_DB === "true"
   )
-    return join(Global.Path.data, "deepcode.db")
-  return join(Global.Path.data, `deepcode-${InstallationChannel.replace(/[^a-zA-Z0-9._-]/g, "-")}.db`)
+    return join(Global.Path.data, `${Product.slug}.db`)
+  return join(Global.Path.data, `${Product.slug}-${InstallationChannel.replace(/[^a-zA-Z0-9._-]/g, "-")}.db`)
 }
 
 export const node = makeGlobalNode({ service: Service, layer: layerFromPath(path()), deps: [] })

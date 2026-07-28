@@ -66,11 +66,33 @@ jobs:
             turbo-${{ runner.os }}-${{ hashFiles('turbo.json', '**/package.json') }}-
             turbo-${{ runner.os }}-
 
+      - name: Cache ripgrep binary
+        if: runner.os == 'Windows'
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ~/.cache/deepcode/bin
+          key: ripgrep-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('packages/core/src/ripgrep/binary.ts') }}
+
+      - name: Prewarm ripgrep binary
+        if: runner.os == 'Windows'
+        run: bun packages/core/script/prepare-ripgrep.ts
+
       - name: Run unit tests
         timeout-minutes: 20
-        run: GITHUB_ACTIONS=false bun turbo test
+        run: |
+          set -o pipefail
+          GITHUB_ACTIONS=false bun turbo test 2>&1 | tee unit-${{ matrix.settings.name }}.log
         env:
-          OPENCODE_EXPERIMENTAL_DISABLE_FILEWATCHER: ${{ runner.os == 'Windows' && 'true' || 'false' }}
+          DEEPCODE_EXPERIMENTAL_DISABLE_FILEWATCHER: ${{ runner.os == 'Windows' && 'true' || 'false' }}
+
+      - name: Upload unit test log
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: unit-${{ matrix.settings.name }}-${{ github.run_attempt }}
+          if-no-files-found: error
+          retention-days: 7
+          path: unit-${{ matrix.settings.name }}.log
 
       - name: Check generated client
         if: runner.os == 'Linux'
@@ -80,7 +102,18 @@ jobs:
       - name: Run HttpApi exerciser gates
         if: runner.os == 'Linux'
         working-directory: packages/opencode
-        run: bun run test:httpapi
+        run: |
+          set -o pipefail
+          bun run test:httpapi 2>&1 | tee httpapi.log
+
+      - name: Upload HttpApi log
+        if: runner.os == 'Linux' && always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: httpapi-${{ github.run_attempt }}
+          if-no-files-found: error
+          retention-days: 7
+          path: packages/opencode/httpapi.log
 
   e2e:
     name: e2e (${{ matrix.settings.name }})

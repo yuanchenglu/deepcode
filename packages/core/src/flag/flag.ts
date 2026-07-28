@@ -1,7 +1,8 @@
 import { Config } from "effect"
+import { Product } from "../product"
 
 function read(key: string) {
-  return process.env[key.startsWith("OPENCODE_") ? `DEEPCODE_${key.slice("OPENCODE_".length)}` : key]
+  return process.env[key.startsWith("OPENCODE_") ? `${Product.envPrefix}_${key.slice("OPENCODE_".length)}` : key]
 }
 
 export function truthy(key: string) {
@@ -38,10 +39,10 @@ export const Flag = {
   OPENCODE_DISABLE_FFF: fff === undefined ? process.platform === "win32" : truthy("OPENCODE_DISABLE_FFF"),
 
   // Experimental
-  OPENCODE_EXPERIMENTAL_FILEWATCHER: Config.boolean("OPENCODE_EXPERIMENTAL_FILEWATCHER").pipe(
+  OPENCODE_EXPERIMENTAL_FILEWATCHER: Config.boolean("DEEPCODE_EXPERIMENTAL_FILEWATCHER").pipe(
     Config.withDefault(false),
   ),
-  OPENCODE_EXPERIMENTAL_DISABLE_FILEWATCHER: Config.boolean("OPENCODE_EXPERIMENTAL_DISABLE_FILEWATCHER").pipe(
+  OPENCODE_EXPERIMENTAL_DISABLE_FILEWATCHER: Config.boolean("DEEPCODE_EXPERIMENTAL_DISABLE_FILEWATCHER").pipe(
     Config.withDefault(false),
   ),
   OPENCODE_EXPERIMENTAL_DISABLE_COPY_ON_SELECT:

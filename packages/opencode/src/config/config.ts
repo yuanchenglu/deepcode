@@ -8,6 +8,7 @@ import { mergeDeep } from "remeda"
 import { Global } from "@opencode-ai/core/global"
 import fsNode from "fs/promises"
 import { Flag } from "@opencode-ai/core/flag/flag"
+import { Product } from "@opencode-ai/core/product"
 import { Auth } from "../auth"
 import { Env } from "../env"
 import { applyEdits, modify } from "jsonc-parser"
@@ -35,6 +36,8 @@ import { ConfigPlugin } from "./plugin"
 import { ConfigVariable } from "./variable"
 import { Npm } from "@opencode-ai/core/npm"
 import { withTransientReadRetry } from "@/util/effect-http-client"
+
+const configFiles = [...Product.config.files]
 
 // Custom merge function that concatenates array fields instead of replacing them
 // Keep remeda's deep conditional merge type out of hot config-loading paths; TS profiling showed it dominates here.
@@ -137,9 +140,7 @@ export class Service extends Context.Service<Service, Interface>()("@opencode/Co
 export const use = serviceUse(Service)
 
 function globalConfigFile() {
-  const candidates = ["opencode.jsonc", "opencode.json", "config.json"].map((file) =>
-    path.join(Global.Path.config, file),
-  )
+  const candidates = configFiles.toReversed().map((file) => path.join(Global.Path.config, file))
   for (const file of candidates) {
     if (existsSync(file)) return file
   }
@@ -229,6 +230,7 @@ const layer = Layer.effect(
 
       yield* Effect.promise(() => resolveLoadedPlugins(data, options.path))
       if (!data.$schema) {
+        // Keep the upstream schema URL until a verified DeepCode schema endpoint exists.
         data.$schema = "https://opencode.ai/config.json"
         const updated = text.replace(/^\s*\{/, '{\n  "$schema": "https://opencode.ai/config.json",')
         yield* fs.writeFileString(options.path, updated).pipe(Effect.catch(() => Effect.void))
@@ -255,9 +257,9 @@ const layer = Layer.effect(
             .pipe(Effect.catch(() => Effect.void))
         }
       }
-      result = mergeConfig(result, yield* loadFile(path.join(Global.Path.config, "config.json"), env))
-      result = mergeConfig(result, yield* loadFile(path.join(Global.Path.config, "opencode.json"), env))
-      result = mergeConfig(result, yield* loadFile(path.join(Global.Path.config, "opencode.jsonc"), env))
+      for (const file of configFiles) {
+        result = mergeConfig(result, yield* loadFile(path.join(Global.Path.config, file), env))
+      }
 
       const legacy = path.join(Global.Path.config, "config")
       if (existsSync(legacy)) {
@@ -268,7 +270,7 @@ const layer = Layer.effect(
               if (provider && model) result.model = `${provider}/${model}`
               result["$schema"] = "https://opencode.ai/config.json"
               result = mergeConfig(result, rest)
-              await fsNode.writeFile(path.join(Global.Path.config, "config.json"), JSON.stringify(result, null, 2))
+              await fsNode.writeFile(path.join(Global.Path.config, Product.config.files[0]), JSON.stringify(result, null, 2))
               await fsNode.unlink(legacy)
             })
             .catch(() => {}),
@@ -321,7 +323,7 @@ const layer = Layer.effect(
 
         const pluginScopeForSource = Effect.fnUntraced(function* (source: string) {
           if (source.startsWith("http://") || source.startsWith("https://")) return "global"
-          if (source === "OPENCODE_CONFIG_CONTENT") return "local"
+          if (source === "DEEPCODE_CONFIG_CONTENT") return "local"
           if (containsPath(source, ctx)) return "local"
           return "global"
         })
@@ -356,6 +358,7 @@ const layer = Layer.effect(
           if (value.type === "wellknown") {
             const url = key.replace(/\/+$/, "")
             authEnv[value.key] = value.token
+            // This upstream protocol path is retained as a network compatibility contract, not as product identity.
             const wellknownURL = `${url}/.well-known/opencode`
             yield* Effect.logDebug("fetching remote config", { url: wellknownURL })
             const wellknown = yield* fetchRemoteJson(wellknownURL, undefined, ConfigV1.WellKnown, url)
@@ -403,7 +406,9 @@ const layer = Layer.effect(
         }
 
         if (!Flag.OPENCODE_DISABLE_PROJECT_CONFIG) {
-          for (const file of yield* ConfigPaths.files("opencode", ctx.directory, ctx.worktree).pipe(Effect.orDie)) {
+          for (const file of yield* ConfigPaths.files(Product.config.basename, ctx.directory, ctx.worktree).pipe(
+            Effect.orDie,
+          )) {
             yield* merge(file, yield* loadFile(file, authEnv), "local")
           }
         }
@@ -415,14 +420,14 @@ const layer = Layer.effect(
         const directories = yield* ConfigPaths.directories(ctx.directory, ctx.worktree)
 
         if (Flag.OPENCODE_CONFIG_DIR) {
-          yield* Effect.logDebug("loading config from OPENCODE_CONFIG_DIR", { path: Flag.OPENCODE_CONFIG_DIR })
+          yield* Effect.logDebug("loading config from DEEPCODE_CONFIG_DIR", { path: Flag.OPENCODE_CONFIG_DIR })
         }
 
         const deps: Fiber.Fiber<void>[] = []
 
         for (const dir of directories) {
-          if (dir.endsWith(".opencode") || dir === Flag.OPENCODE_CONFIG_DIR) {
-            for (const file of ["opencode.json", "opencode.jsonc"]) {
+          if (dir.endsWith(Product.config.directory) || dir === Flag.OPENCODE_CONFIG_DIR) {
+            for (const file of configFiles) {
               const source = path.join(dir, file)
               yield* Effect.logDebug(`loading config from ${source}`)
               yield* merge(source, yield* loadFile(source, authEnv))
@@ -458,20 +463,20 @@ const layer = Layer.effect(
           result.command = mergeDeep(result.command ?? {}, yield* Effect.promise(() => ConfigCommand.load(dir)))
           result.agent = mergeDeep(result.agent ?? {}, yield* Effect.promise(() => ConfigAgent.load(dir)))
           result.agent = mergeDeep(result.agent ?? {}, yield* Effect.promise(() => ConfigAgent.loadMode(dir)))
-          // Auto-discovered plugins under `.opencode/plugin(s)` are already local files, so ConfigPlugin.load
+          // Auto-discovered plugins under `.deepcode/plugin(s)` are already local files, so ConfigPlugin.load
           // returns normalized Specs and we only need to attach origin metadata here.
           const list = yield* Effect.promise(() => ConfigPlugin.load(dir))
           yield* mergePluginOrigins(dir, list)
         }
 
-        if (process.env.OPENCODE_CONFIG_CONTENT) {
-          const source = "OPENCODE_CONFIG_CONTENT"
-          const next = yield* loadConfig(process.env.OPENCODE_CONFIG_CONTENT, {
+        if (Flag.OPENCODE_CONFIG_CONTENT) {
+          const source = "DEEPCODE_CONFIG_CONTENT"
+          const next = yield* loadConfig(Flag.OPENCODE_CONFIG_CONTENT, {
             dir: ctx.directory,
             source,
           })
           yield* merge(source, next, "local")
-          yield* Effect.logDebug("loaded custom config from OPENCODE_CONFIG_CONTENT")
+          yield* Effect.logDebug("loaded custom config from DEEPCODE_CONFIG_CONTENT")
         }
 
         const activeAccount = Option.getOrUndefined(
@@ -487,8 +492,8 @@ const layer = Layer.effect(
               { concurrency: 2 },
             )
             if (Option.isSome(tokenOpt)) {
-              process.env["OPENCODE_CONSOLE_TOKEN"] = tokenOpt.value
-              yield* env.set("OPENCODE_CONSOLE_TOKEN", tokenOpt.value)
+              process.env["DEEPCODE_CONSOLE_TOKEN"] = tokenOpt.value
+              yield* env.set("DEEPCODE_CONSOLE_TOKEN", tokenOpt.value)
             }
 
             if (Option.isSome(configOpt)) {
@@ -514,7 +519,7 @@ const layer = Layer.effect(
 
         const managedDir = ConfigManaged.managedConfigDir()
         if (existsSync(managedDir)) {
-          for (const file of ["opencode.json", "opencode.jsonc"]) {
+          for (const file of configFiles) {
             const source = path.join(managedDir, file)
             yield* merge(source, yield* loadFile(source), "global")
           }
@@ -545,7 +550,7 @@ const layer = Layer.effect(
           try {
             result.permission = mergeDeep(result.permission ?? {}, JSON.parse(Flag.OPENCODE_PERMISSION))
           } catch (err) {
-            yield* Effect.logWarning("OPENCODE_PERMISSION contains invalid JSON, skipping", { err })
+            yield* Effect.logWarning("DEEPCODE_PERMISSION contains invalid JSON, skipping", { err })
           }
         }
 
@@ -622,7 +627,7 @@ const layer = Layer.effect(
 
     const update = Effect.fn("Config.update")(function* (config: Info) {
       const dir = yield* InstanceState.directory
-      const file = path.join(dir, "config.json")
+      const file = path.join(dir, Product.config.files[0])
       const existing = yield* loadFile(file)
       yield* fs
         .writeFileString(file, JSON.stringify(mergeDeep(writable(existing), writable(config)), null, 2))
