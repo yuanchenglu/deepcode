@@ -91,7 +91,24 @@ jobs:
           set -o pipefail
           bun test test/installation --timeout 30000 2>&1 | tee installation-${{ matrix.settings.name }}.log
 
-      - name: Upload unit test log
+      - name: Run S1-02-E Core isolation tests
+        working-directory: packages/core
+        run: |
+          set -o pipefail
+          bun test test/global.test.ts test/config.test.ts --timeout 30000 2>&1 | tee boundary-core-${{ matrix.settings.name }}.log
+
+      - name: Run S1-02-E coexistence boundary tests
+        working-directory: packages/opencode
+        run: |
+          set -o pipefail
+          bun test test/config/coexistence.test.ts test/config/tui-coexistence.test.ts test/permission --timeout 30000 2>&1 | tee boundary-opencode-${{ matrix.settings.name }}.log
+
+      - name: Capture S1-02-E OpenCode string inventory
+        if: runner.os == 'Linux' && always()
+        run: |
+          rg -n --hidden --glob '!**/node_modules/**' 'opencode|OPENCODE' packages/core packages/opencode | tee opencode-boundary-audit.log
+
+      - name: Upload unit and boundary logs
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
@@ -101,6 +118,9 @@ jobs:
           path: |
             unit-${{ matrix.settings.name }}.log
             packages/opencode/installation-${{ matrix.settings.name }}.log
+            packages/core/boundary-core-${{ matrix.settings.name }}.log
+            packages/opencode/boundary-opencode-${{ matrix.settings.name }}.log
+            opencode-boundary-audit.log
 
       - name: Check generated client
         if: runner.os == 'Linux'
