@@ -85,25 +85,25 @@ jobs:
         env:
           DEEPCODE_EXPERIMENTAL_DISABLE_FILEWATCHER: ${{ runner.os == 'Windows' && 'true' || 'false' }}
 
-      - name: Run S1-02-D installation lifecycle tests
+      - name: Run installation lifecycle tests
         working-directory: packages/opencode
         run: |
           set -o pipefail
           bun test test/installation --timeout 30000 2>&1 | tee installation-${{ matrix.settings.name }}.log
 
-      - name: Run S1-02-E Core isolation tests
+      - name: Run Core isolation tests
         working-directory: packages/core
         run: |
           set -o pipefail
           bun test test/global.test.ts test/config.test.ts --timeout 30000 2>&1 | tee boundary-core-${{ matrix.settings.name }}.log
 
-      - name: Run S1-02-E full config and permission regression
+      - name: Run full config and permission regression
         working-directory: packages/opencode
         run: |
           set -o pipefail
           bun test test/config test/effect/runtime-flags-deepcode.test.ts test/permission --timeout 30000 2>&1 | tee boundary-opencode-${{ matrix.settings.name }}.log
 
-      - name: Capture S1-02-E OpenCode string inventory
+      - name: Capture OpenCode string inventory
         if: runner.os == 'Linux' && always()
         run: |
           status=0
@@ -113,7 +113,7 @@ jobs:
           fi
           cat opencode-boundary-audit.log
 
-      - name: Upload unit and boundary logs
+      - name: Upload unit, boundary, and setup logs
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
@@ -121,6 +121,7 @@ jobs:
           if-no-files-found: error
           retention-days: 7
           path: |
+            setup-bun.log
             unit-${{ matrix.settings.name }}.log
             packages/opencode/installation-${{ matrix.settings.name }}.log
             packages/core/boundary-core-${{ matrix.settings.name }}.log
@@ -208,13 +209,14 @@ jobs:
           CI: true
         timeout-minutes: 30
 
-      - name: Upload Playwright artifacts
+      - name: Upload Playwright and setup artifacts
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: playwright-${{ matrix.settings.name }}-${{ github.run_attempt }}
-          if-no-files-found: ignore
+          if-no-files-found: error
           retention-days: 7
           path: |
+            setup-bun.log
             packages/app/e2e/test-results
             packages/app/e2e/playwright-report

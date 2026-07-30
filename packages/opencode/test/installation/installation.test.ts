@@ -43,13 +43,10 @@ describe("installation", () => {
   })
 
   describe("release lookup", () => {
-    testEffect(layer).effect("returns the installed version without contacting an upstream channel", () =>
+    testEffect(layer).effect("keeps unsupported channels fail-closed", () =>
       Effect.gen(function* () {
-        const methods: Installation.Method[] = ["curl", "npm", "yarn", "pnpm", "bun", "brew", "scoop", "choco", "unknown"]
-        for (const method of methods) {
-          expect(yield* Installation.use.latest(method)).toBe(InstallationVersion)
-        }
-
+        const methods: Installation.Method[] = ["npm", "yarn", "pnpm", "bun", "brew", "scoop", "choco", "unknown"]
+        for (const method of methods) expect(yield* Installation.use.latest(method)).toBe(InstallationVersion)
         expect(yield* Installation.use.info()).toEqual({
           version: InstallationVersion,
           latest: InstallationVersion,
@@ -59,14 +56,14 @@ describe("installation", () => {
   })
 
   describe("upgrade", () => {
-    for (const method of ["curl", "npm", "yarn", "pnpm", "bun", "brew", "scoop", "choco", "unknown"] as const) {
-      testEffect(layer).effect(`rejects ${method} without executing an upstream installer`, () =>
+    for (const method of ["npm", "yarn", "pnpm", "bun", "brew", "scoop", "choco", "unknown"] as const) {
+      testEffect(layer).effect(`rejects ${method} without executing a package-manager or upstream installer`, () =>
         Effect.gen(function* () {
           const error = yield* Effect.flip(Installation.use.upgrade(method, "9.9.9"))
           expect(error).toBeInstanceOf(Installation.UpgradeFailedError)
           expect(error.message).toBe(error.stderr)
-          expect(error.stderr).toContain("DeepCode upgrade is disabled")
-          expect(error.stderr).toContain(`method: ${method}`)
+          expect(error.stderr).toContain(`${method} upgrades are disabled`)
+          expect(error.stderr).toContain("verified GitHub Release/curl channel")
           expect(error.stderr).not.toContain("opencode.ai")
           expect(error.stderr).not.toContain("anomalyco")
         }),
