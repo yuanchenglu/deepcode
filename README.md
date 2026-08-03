@@ -4,15 +4,11 @@
 
 <br>
 
-```bash
-npm install -g deepcode
-export DEEPSEEK_API_KEY=sk-your-key-here
-deepcode
-```
+> **Alpha 状态**：DeepCode 正在准备首个可信 Release。安装命令将在 Release 准备就绪后更新。
 
 <br>
 
-<a href="https://github.com/yuanchenglu/deepcode/blob/dev/LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square" /></a>
+<a href="https://github.com/yuanchenglu/deepcode/blob/develop/LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square" /></a>
 <a href="https://github.com/yuanchenglu/deepcode/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/yuanchenglu/deepcode?style=social" /></a>
 
 ---
@@ -70,11 +66,11 @@ DeepCode：正在分析……找到问题了，第 42 行有个空指针，需�
 
 ## 快速开始
 
+> Alpha 阶段通过 GitHub Release 安装。首个 Release 准备中。
+
 ```bash
-# 安装
-npm install -g deepcode
-# 或者用 bun
-bun add -g deepcode
+# Alpha 安装（Release 准备就绪后启用）
+# curl -fsSL https://github.com/yuanchenglu/deepcode/releases/latest/download/install.sh | bash
 
 # 配置 API Key
 export DEEPSEEK_API_KEY=your_key_here
@@ -83,7 +79,7 @@ export DEEPSEEK_API_KEY=your_key_here
 deepcode
 ```
 
-配置参考 `docs/` 目录下的示例，使用 OpenCode 兼容格式（`.opencode/opencode.jsonc`）。
+配置参考 `docs/` 目录下的示例。
 
 ---
 

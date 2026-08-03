@@ -1,0 +1,54 @@
+# Third-Party Notices
+
+This product includes software developed by third parties. The following
+notices acknowledge those contributions.
+
+## OpenCode (MIT License)
+
+Copyright (c) 2025 anomalyco
+
+DeepCode is based on OpenCode and retains the original architecture.
+Source: https://github.com/anomalyco/opencode
+
+## Effect (MIT License)
+
+Copyright (c) 2024 Effectful
+
+Used for functional programming, service injection, and error handling.
+Source: https://github.com/Effect-TS/effect
+
+## Bun (MIT License)
+
+Copyright (c) 2024 Oven.sh
+
+Used as the JavaScript runtime and package manager.
+Source: https://github.com/oven-sh/bun
+
+## TypeScript (Apache License 2.0)
+
+Copyright (c) Microsoft Corporation.
+
+Used for type checking and language services.
+
+## Astro (MIT License)
+
+Copyright (c) 2024 Astro
+
+Used for the documentation website (packages/web).
+Source: https://github.com/withastro/astro
+
+## Drizzle ORM (Apache License 2.0)
+
+Copyright (c) 2024 Drizzle Team
+
+Used for SQLite database schema and queries.
+Source: https://github.com/drizzle-team/drizzle-orm
+
+---
+
+For the full list of dependencies and their licenses, run:
+```bash
+bun pm ls --all
+```
+
+Each package's `package.json` contains the complete dependency list.

@@ -1,47 +1,48 @@
-# Security
+# Security Policy
 
-## IMPORTANT
+## 报告安全漏洞
 
-We do not accept AI generated security reports. We receive a large number of
-these and we absolutely do not have the resources to review them all. If you
-submit one that will be an automatic ban from the project.
+如果你发现了安全漏洞，请**不要**在 GitHub Issue 中公开报告。
 
-## Threat Model
+请通过以下方式私密报告：
 
-### Overview
+1. 使用 GitHub 的 [Security Advisories](https://github.com/yuanchenglu/deepcode/security/advisories/new) 功能创建私密报告
+2. 或发送邮件至 yuanchenglu001@gmail.com，标题前加 `[SECURITY]`
 
-OpenCode is an AI-powered coding assistant that runs locally on your machine. It provides an agent system with access to powerful tools including shell execution, file operations, and web access.
+## 响应预期
 
-### No Sandbox
+- 收到报告后 48 小时内确认
+- 7 天内提供初步评估
+- 修复发布后公开致谢（如报告者同意）
 
-OpenCode does **not** sandbox the agent. The permission system exists as a UX feature to help users stay aware of what actions the agent is taking - it prompts for confirmation before executing commands, writing files, etc. However, it is not designed to provide security isolation.
+## 威胁模型
 
-If you need true isolation, run OpenCode inside a Docker container or VM.
+### 概述
 
-### Server Mode
+DeepCode 是基于 DeepSeek V4 的 AI 编程助手，在本地运行。它提供 Agent 系统和工具（Shell 执行、文件操作、Web 访问）。
 
-Server mode is opt-in only. When enabled, set `OPENCODE_SERVER_PASSWORD` to require HTTP Basic Auth. Without this, the server runs unauthenticated (with a warning). It is the end user's responsibility to secure the server - any functionality it provides is not a vulnerability.
+### 无沙箱
 
-### Out of Scope
+DeepCode **不**对 Agent 做沙箱隔离。权限系统作为 UX 功能存在，帮助用户了解 Agent 正在执行的操作。如果你需要真正的隔离，请在 Docker 容器或虚拟机中运行 DeepCode。
 
-| Category                        | Rationale                                                               |
-| ------------------------------- | ----------------------------------------------------------------------- |
-| **Server access when opted-in** | If you enable server mode, API access is expected behavior              |
-| **Sandbox escapes**             | The permission system is not a sandbox (see above)                      |
-| **LLM provider data handling**  | Data sent to your configured LLM provider is governed by their policies |
-| **MCP server behavior**         | External MCP servers you configure are outside our trust boundary       |
-| **Malicious config files**      | Users control their own config; modifying it is not an attack vector    |
+### 权限边界
 
----
+- DeepCode 与 OpenCode 完全隔离：不读取 OpenCode 配置、数据库或插件
+- 安装/卸载只操作 `~/.deepcode/` 目录，不碰 OpenCode 数据
+- Alpha 阶段升级 fail-closed：无可信 Release 时不执行上游下载
 
-# Reporting Security Issues
+## 支持的版本
 
-We appreciate your efforts to responsibly disclose your findings, and will make every effort to acknowledge your contributions.
+| 版本 | 支持状态 |
+|------|---------|
+| Alpha (v0.1.0-alpha.x) | 安全修复 |
+| Beta (v0.1.0-beta.x) | 安全修复 |
+| Stable | 计划中 |
 
-To report a security issue, please use the GitHub Security Advisory ["Report a Vulnerability"](https://github.com/anomalyco/opencode/security/advisories/new) tab.
+## 安全措施
 
-The team will send a response indicating the next steps in handling your report. After the initial reply to your report, the security team will keep you informed of the progress towards a fix and full announcement, and may ask for additional information or guidance.
-
-## Escalation
-
-If you do not receive an acknowledgement of your report within 6 business days, you may send an email to security@anoma.ly
+- Release 制品包含 SHA-256 校验和
+- 安装器验证哈希后原子替换
+- 升级保留旧版本可回滚
+- 卸载保留用户数据，不模糊删除
+- deny 权限规则不可被旁路（预批准只允许显式 allow）
