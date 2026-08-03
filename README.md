@@ -4,7 +4,7 @@
 
 <br>
 
-> **Alpha 状态**：DeepCode 正在准备首个可信 Release。安装命令将在 Release 准备就绪后更新。
+> **Alpha 状态**：DeepCode 正在准备首个可信 Release。安装页面：<https://yuanchenglu.github.io/deepcode/docs/install/>
 
 <br>
 

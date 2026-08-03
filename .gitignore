@@ -38,7 +38,7 @@ input/
 artifacts/
 .workbuddy/
 .hermes/
-install
+/install
 sst-env.d.ts
 sst.config.ts
 *.safetensors
