@@ -334,15 +334,15 @@ const layer = Layer.effect(
       }
       const system =
         initialized ?? (yield* SessionContextEpoch.prepare(db, events, loadSystemContext(agent), session.id))
-      const model = yield* models.resolve(session)
 
       const entries = yield* SessionHistory.entriesForRunner(db, session.id, system.baselineSeq)
       const context = entries.map((entry) => entry.message)
 
       // ============================================================
       // DeepCode 深接入 Hook 点 1：Turn 开始决策链（T02）
-      // 意图分类 → 约束提取 → 模型路由记录 → reasoning_effort → 窗口状态
+      // 意图分类 -> 约束提取 -> 模型路由记录 -> reasoning_effort -> 窗口状态
       // 每个 yield* 包裹 Effect.catch，失败不阻断主流程
+      // 安全修复：决策链移到 model resolve 之前，让 Router 在当前轮生效
       // ============================================================
 
       // --- 1a. 提取最后一条用户消息文本 ---
@@ -371,9 +371,10 @@ const layer = Layer.effect(
       yield* intentRouter.setCurrent(intentResult)
       const strategy = intentRouter.getStrategy(intentResult.intent)
 
-      // --- 1d. 模型路由记录 ---
-      // 注意：model 已在上方 resolve，此处仅记录决策，不改变当前轮模型。
-      // 模型切换通过 setOverride 影响下一轮的 resolve。
+      // --- 1d. 模型路由决策 ---
+      // Router 在 model resolve 之前生效：decide 返回 tier，记录决策理由
+      // Alpha 阶段单模型：tier 影响 reasoning_effort 和窗口管理，不切换模型
+      // 未来多模型时，resolve 可消费 tier 选择不同模型
       const tier = yield* modelRouter
         .decide({
           turn: currentStep,
@@ -414,6 +415,9 @@ const layer = Layer.effect(
             }),
           ),
         )
+
+      // model 在 Router 决策之后 resolve：Router tier 已可用于未来多模型选择
+      const model = yield* models.resolve(session)
 
       const isLastStep = agent.info?.steps !== undefined && currentStep >= agent.info.steps
       const toolMaterialization = isLastStep ? undefined : yield* tools.materialize(agent.info?.permissions)
