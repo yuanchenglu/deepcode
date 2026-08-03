@@ -42,10 +42,6 @@ jobs:
           git config --global user.name "deepcode-actions"
           git config --global user.email "actions@deepcode.local"
 
-      - name: Install DeepCode CLI
-        if: inputs.bump || inputs.version
-        run: bun i -g @opencode-ai/opencode
-
       - id: version
         run: |
           ./script/version.ts
