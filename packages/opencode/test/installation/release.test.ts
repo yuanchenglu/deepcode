@@ -170,6 +170,6 @@ describe("DeepCode release lifecycle", () => {
         JSON.stringify({ schema: 1, product: "deepcode", version, files: [path.join(os.tmpdir(), ".opencode", "bin", "opencode")] }),
         executable,
       ),
-    ).toThrow("outside the DeepCode installation root")
+    ).toThrow("outside the verified DeepCode install file set")
   })
 })
