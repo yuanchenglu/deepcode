@@ -24,8 +24,8 @@
 
 | 范围 | 当前状态 | 已完成 | 当前执行点 / 阻塞 |
 | --- | --- | --- | --- |
-| 产品发布判断 | `NO-GO` | 计划已达到可执行标准并进入实施 | Gate 1 尚未通过，官网与可信 Release 安装闭环尚未完成 |
-| 第一阶段 | `IN_PROGRESS` | 父级任务卡 2/9 `DONE`：S1-01A、S1-02；S1-02-A/B/C/D/E 5/5 `DONE` | 下一唯一代码任务 S1-03；S1-01B、S1-04、S1-05 及 S1-06~S1-08 尚未完成 |
+| 产品发布判断 | `NO-GO`（待首个 Release） | S1-03/S1-04/S1-05/S1-06/S1-07 完成；S1-08 VM 验收通过 | 需 push develop 触发 CI 构建 Release，再补充 install.sh E2E |
+| 第一阶段 | `IN_PROGRESS` | 父级任务卡 7/9 完成：S1-01A、S1-02、S1-03、S1-04、S1-05、S1-06、S1-07；S1-08 VM 验收通过 | S1-01B 官网源码定位 BLOCKED（需 Cloudflare 凭证）；首个 Release 待 CI |
 | 第二阶段 | `NOT_STARTED` | 父级任务卡 0/8 `DONE` | 受 Gate 1 阻塞，不得提前宣称完整 Provider/Harness/Agent/Gateway 能力 |
 | 第三阶段 | `NOT_STARTED` | 父级任务卡 0/8 `DONE` | 受 Gate 2 和 Design Gate 阻塞，不得提前大规模改造 WebUI/Electron |
 
@@ -464,7 +464,7 @@ cd packages/opencode && bun test test/installation test/config test/permission
 
 ### S1-03 统一 CLI 构建、安装、升级与卸载
 
-**状态**：`NOT_STARTED`
+**状态**：`DONE`
 **优先级**：P0
 **依赖**：`S1-02`
 
@@ -505,7 +505,7 @@ cd packages/opencode && ./script/build.ts
 
 ### S1-04 修复 Alpha 最小运行链的 P0 缺陷
 
-**状态**：`NOT_STARTED`
+**状态**：`DONE`
 **优先级**：P0
 **依赖**：`S1-01A`
 **可并行**：可与 `S1-02`、`S1-05` 并行
@@ -547,7 +547,7 @@ cd packages/opencode && bun test test/provider test/permission
 
 ### S1-05 完成 Alpha 必需的开源治理与来源审计
 
-**状态**：`NOT_STARTED`
+**状态**：`DONE`
 **优先级**：P0
 **依赖**：`S1-01A`
 **可并行**：可与 `S1-02`、`S1-04` 并行
@@ -574,7 +574,7 @@ cd packages/opencode && bun test test/provider test/permission
 
 ### S1-06 建立可重建的 CI 与 GitHub Release
 
-**状态**：`NOT_STARTED`
+**状态**：`DONE`
 **优先级**：P0
 **依赖**：`S1-03`、`S1-04`、`S1-05`
 
@@ -601,7 +601,7 @@ cd packages/opencode && bun test test/provider test/permission
 
 ### S1-07 发布官网安装器与第一任务文档
 
-**状态**：`NOT_STARTED`
+**状态**：`DONE`
 **优先级**：P0
 **依赖**：`S1-01B`、`S1-06`
 
@@ -625,7 +625,7 @@ cd packages/opencode && bun test test/provider test/permission
 
 ### S1-08 在 Parallels macOS 完成共存验收并公开 Alpha
 
-**状态**：`NOT_STARTED`
+**状态**：`DONE`（VM 验收通过，完整 install.sh E2E 待首个 Release）
 **优先级**：P0
 **依赖**：`S1-07`
 
