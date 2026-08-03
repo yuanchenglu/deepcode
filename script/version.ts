@@ -7,13 +7,11 @@ const output = [`version=${Script.version}`]
 const sha = process.env.GITHUB_SHA ?? (await $`git rev-parse HEAD`.text()).trim()
 
 if (!Script.preview) {
-  await $`bun script/changelog.ts --to ${sha}`.cwd(process.cwd())
-  const file = `${process.cwd()}/UPCOMING_CHANGELOG.md`
-  const body = await Bun.file(file)
-    .text()
-    .catch(() => "No notable changes")
+  // 跳过 changelog.ts（需要 opencode CLI 在 PATH 中），用 git log 生成简单 release notes
+  const log = await $`git log --oneline -20 ${sha}`.text().catch(() => "No notable changes")
+  const body = `DeepCode ${Script.version}\n\nChanges:\n${log}`
   const dir = process.env.RUNNER_TEMP ?? "/tmp"
-  const notesFile = `${dir}/opencode-release-notes.txt`
+  const notesFile = `${dir}/deepcode-release-notes.txt`
   await Bun.write(notesFile, body)
   await $`gh release create v${Script.version} -d --target ${sha} --title "v${Script.version}" --notes-file ${notesFile}`
   const release = await $`gh release view v${Script.version} --json tagName,databaseId`.json()
