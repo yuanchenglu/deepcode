@@ -68,8 +68,41 @@
 
 install.sh 完整 E2E 通过：校验、安装、幂等、升级、回滚、卸载隔离、插件隔离全部验证。**VMM-003/004 全绿。**
 
-## 8. 限制
+## 8. 真实 DeepSeek 首任务（Gate 1 硬性条件）
+
+在 VM（192.168.64.6）上使用真实 DeepSeek API key 执行三个最小任务：
+
+### 任务 1：基础对话
+```
+deepcode run "回复一句话：DeepCode Alpha 首任务成功"
+```
+- 模型：`deepseek-v4-pro`（自动路由）
+- 结果：返回 "DeepCode Alpha 首任务成功" ✅
+
+### 任务 2：模型推理
+```
+deepcode run "1+1等于几？只回复数字"
+```
+- 结果：返回 "2" ✅
+
+### 任务 3：工具调用（工作目录内文件读取）
+```
+echo '{"name":"test","version":"0.1.0"}' > package.json
+deepcode run "读取当前目录的 package.json 并告诉我 version 字段的值，只回复版本号"
+```
+- 工具调用：`-> Read package.json` 执行
+- 结果：返回 "0.1.0" ✅
+
+### 任务 4：权限隔离验证（工作目录外访问）
+```
+deepcode run "读取 /tmp/deepcode-test/test.json 并告诉我 version 字段的值"
+```
+- 权限拒绝：`permission requested: external_directory (/tmp/deepcode-test/*); auto-rejecting` ✅
+- 这是 S1-04 deny 隔离的正确行为：deepcode 拒绝工作目录外的文件访问
+
+**结论**：真实 DeepSeek 首任务成功。基础对话、模型推理、工具调用链和权限隔离全部验证通过。
+
+## 9. 限制
 
 1. 升级回滚用同版本二进制模拟（无第二个 release），验证的是替换+回滚的 shell 逻辑，非真实不同版本升级。
-2. 真实 DeepSeek 首任务待 API key（见 Gate 1 判定）。
-3. VM 上 OpenCode 为 fixture 配置（真实二进制在本机），插件隔离验证的是 deepcode 不读取配置。
+2. VM 上 OpenCode 为 fixture 配置（真实二进制在本机），插件隔离验证的是 deepcode 不读取配置。

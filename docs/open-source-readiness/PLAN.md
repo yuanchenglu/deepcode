@@ -2,7 +2,7 @@
 
 > 文档版本：1.4
 > 基线日期：2026-07-29
-> 当前状态：Implementation in progress（计划执行中，产品当前仍为 NO-GO）
+> 当前状态：Gate 1 GO（第一阶段完成，第二阶段可启动）
 > 分支拓扑：`develop` 为实施基线；`master` 为 GitHub 默认/发布分支；里程碑通过审查后从 `develop` 合入 `master`
 > 文档定位：本目录唯一的跨阶段执行总计划
 > 目标读者：后续实现人员与 AI；本文不依赖口头上下文即可执行
@@ -24,8 +24,8 @@
 
 | 范围 | 当前状态 | 已完成 | 当前执行点 / 阻塞 |
 | --- | --- | --- | --- |
-| 产品发布判断 | `NO-GO`（仅差真实 DeepSeek 首任务） | S1-01A~S1-08 全部完成；Release v0.1.0-alpha.1 已发布；install.sh E2E 全绿；Required CI 全绿（重跑后） | 需真实 DeepSeek API key 跑首任务，完成后改 GO |
-| 第一阶段 | `IN_PROGRESS` | 父级任务卡 9/9 完成：S1-01A、S1-01B、S1-02、S1-03、S1-04、S1-05、S1-06、S1-07、S1-08 | 仅差真实 DeepSeek 首任务（Gate 1 硬性条件） |
+| 产品发布判断 | `GO` | Gate 1 全部条件满足：VM E2E 全绿、真实 DeepSeek 首任务成功、CI 全绿、Release 证据齐全 | 第二阶段可启动 |
+| 第一阶段 | `DONE` | 父级任务卡 9/9 完成：S1-01A、S1-01B、S1-02、S1-03、S1-04、S1-05、S1-06、S1-07、S1-08 | Gate 1 GO，第二阶段可启动 |
 | 第二阶段 | `NOT_STARTED` | 父级任务卡 0/8 `DONE` | 受 Gate 1 阻塞，不得提前宣称完整 Provider/Harness/Agent/Gateway 能力 |
 | 第三阶段 | `NOT_STARTED` | 父级任务卡 0/8 `DONE` | 受 Gate 2 和 Design Gate 阻塞，不得提前大规模改造 WebUI/Electron |
 
