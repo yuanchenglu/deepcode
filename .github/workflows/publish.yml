@@ -479,15 +479,15 @@ jobs:
           ssh-keyscan -H aur.archlinux.org >> ~/.ssh/known_hosts || true
 
       - name: Upload desktop release assets
-        if: needs.version.outputs.release
+        if: needs.version.outputs.release && hashFiles('/tmp/desktop/**') != ''
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           shopt -s nullglob
           files=(/tmp/desktop/*.{exe,blockmap,dmg,zip,AppImage,deb,rpm} /tmp/desktop/*.app.tar.gz)
           if (( ${#files[@]} == 0 )); then
-            echo "No desktop release assets found"
-            exit 1
+            echo "No desktop release assets found, skipping"
+            exit 0
           fi
           gh release upload "v${{ needs.version.outputs.version }}" "${files[@]}" --clobber --repo "${{ needs.version.outputs.repo }}"
 
