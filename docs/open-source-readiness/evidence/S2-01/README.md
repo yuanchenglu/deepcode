@@ -48,5 +48,24 @@
 ## 5. 下一步（S2-02）
 
 - 对 11 个已接入模块建立 Provider Contract 测试（wire 层）
-- 对 5 个未接入模块决定 Adapt 或明确 Experimental 标记，不允许"代码存在即完成"
+- 对 4 个未接入模块决定 Adapt 或明确 Experimental 标记，不允许"代码存在即完成"
 - Router 决策记录（model.applied）补齐
+
+## 6. oh-my-deepagent 与 deepcode-gateway 接入状态（S2-01 范围补充）
+
+### oh-my-deepagent（@deepcode/oh-my-deepagent）
+- 54 文件，src 含 role（13+ 角色：metis/momus/oracle/planner/coordinator/builder/coding/search/knowledge/system 等）、llm、planning、memory、runtime、skill、tool、transport
+- **0 生产消费者**：core/src 和 opencode/src 均无引用 → 插件未接入 Host
+- S2-03 范围：将 role/skill/planning 通过最小 Adapter 接入 Host Session
+
+### deepcode-gateway（@deepcode/gateway）
+- 55 文件，src 含 feishu/dingtalk/wecom/qq/wechat adapter、session-bridge、lifecycle、connection、router
+- **0 生产消费者**：core/src 和 opencode/src 均无引用；仅有独立 `startup.ts`（`bun run startup.ts`）入口
+- 已知技术债（TASK_LOG）：飞书 WSClient 连接成功但消息到 session-bridge 传递断（Effect.runFork Runtime 问题）
+- S2-06/07 范围：Gateway Core 安全整改 + 飞书 Stable
+
+## 7. 来源图与契约清单（待补）
+
+- `input/oh-my-openagent` 来源：README/LICENSE 存在（S1-05 已审计许可证）
+- Host↔Plugin 契约：未冻结（S2-03 前置）
+- Host↔Gateway 契约：未冻结（S2-06 前置）
