@@ -18,14 +18,14 @@
 | 2026-07-27 |  1.0 | 将交付重构为“官网可安装 → 完整能力 → 设计驱动的 WebUI/Electron”三阶段，并补齐任务级输入、步骤、测试、证据和门禁 | 用户目标澄清、源码与现有开源准备文档复核 |
 
 
-## 当前执行快照（2026-07-29）
+## 当前执行快照（2026-08-04）
 
 > 本节记录实施事实，不替代各任务卡验收条件。CI、PR 和分支状态变化时，后续执行者必须以 GitHub 实时状态复核。
 
 | 范围 | 当前状态 | 已完成 | 当前执行点 / 阻塞 |
 | --- | --- | --- | --- |
-| 产品发布判断 | `NO-GO`（待首个 Release） | S1-03/S1-04/S1-05/S1-06/S1-07 完成；S1-08 VM 验收通过 | 需 push develop 触发 CI 构建 Release，再补充 install.sh E2E |
-| 第一阶段 | `IN_PROGRESS` | 父级任务卡 7/9 完成：S1-01A、S1-02、S1-03、S1-04、S1-05、S1-06、S1-07；S1-08 VM 验收通过 | S1-01B 官网源码定位 BLOCKED（需 Cloudflare 凭证）；首个 Release 待 CI |
+| 产品发布判断 | `NO-GO`（仅差真实 DeepSeek 首任务） | S1-01A~S1-08 全部完成；Release v0.1.0-alpha.1 已发布；install.sh E2E 全绿；Required CI 全绿（重跑后） | 需真实 DeepSeek API key 跑首任务，完成后改 GO |
+| 第一阶段 | `IN_PROGRESS` | 父级任务卡 9/9 完成：S1-01A、S1-01B、S1-02、S1-03、S1-04、S1-05、S1-06、S1-07、S1-08 | 仅差真实 DeepSeek 首任务（Gate 1 硬性条件） |
 | 第二阶段 | `NOT_STARTED` | 父级任务卡 0/8 `DONE` | 受 Gate 1 阻塞，不得提前宣称完整 Provider/Harness/Agent/Gateway 能力 |
 | 第三阶段 | `NOT_STARTED` | 父级任务卡 0/8 `DONE` | 受 Gate 2 和 Design Gate 阻塞，不得提前大规模改造 WebUI/Electron |
 
@@ -625,7 +625,7 @@ cd packages/opencode && bun test test/provider test/permission
 
 ### S1-08 在 Parallels macOS 完成共存验收并公开 Alpha
 
-**状态**：`DONE`（VM 验收通过，完整 install.sh E2E 待首个 Release）
+**状态**：`DONE`（VM-003/004 install.sh E2E 完成，Release v0.1.0-alpha.1 验证通过；真实 DeepSeek 首任务待 API key）
 **优先级**：P0
 **依赖**：`S1-07`
 
