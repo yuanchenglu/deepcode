@@ -64,8 +64,26 @@
 - 已知技术债（TASK_LOG）：飞书 WSClient 连接成功但消息到 session-bridge 传递断（Effect.runFork Runtime 问题）
 - S2-06/07 范围：Gateway Core 安全整改 + 飞书 Stable
 
-## 7. 来源图与契约清单（待补）
+## 7. 来源图与契约清单（已冻结 2026-08-05）
 
-- `input/oh-my-openagent` 来源：README/LICENSE 存在（S1-05 已审计许可证）
-- Host↔Plugin 契约：未冻结（S2-03 前置）
-- Host↔Gateway 契约：未冻结（S2-06 前置）
+### 来源图
+
+| 来源 | 版本 | 许可证 | 用途 |
+|---|---|---|---|
+| `input/oh-my-openagent`（github.com/code-yeongyu/oh-my-openagent） | oh-my-opencode 4.15.1 | SUL-1.0（Sustainable Use License，限制性） | packages/oh-my-deepagent 插件能力来源（role/skill/planning/tool/memory/transport/llm） |
+| `input/superpowers`（github.com/obra/superpowers） | - | MIT（Jesse Vincent 2025） | 角色/技能方法论参考 |
+| `input/DeepSeek-V4-Flash/Pro(-Base)` | - | MIT（DeepSeek 2023） | 模型契约/权重参考 |
+| `input/OpenSpec` | - | - | 规格文档参考 |
+
+**许可证约束**：oh-my-openagent 为 SUL-1.0 限制性许可，从插件复制进 Host 的代码必须保持许可证标注；MIT 来源（superpowers/DeepSeek）可自由合并但需保留版权声明。S1-05 已审计通过。
+
+### 契约清单（FROZEN）
+
+- Host↔Plugin 契约：`docs/open-source-readiness/HOST_PLUGIN_CONTRACT.md`（v1.0 冻结）
+- Host↔Gateway 契约：`docs/open-source-readiness/HOST_GATEWAY_CONTRACT.md`（v1.0 冻结）
+
+冻结内容包括：输入/输出/错误/取消/证据契约 + 边界原则 + 锚点签名。S2-03/S2-06 实现必须遵守，变更需走 PLAN 变更流程。
+
+### MIGRATION_MANIFEST
+
+已按审计结论更新：`docs/open-source-readiness/13_V0.1_MIGRATION_MANIFEST.md` §4（oh-my-deepagent 分类）与更新记录。

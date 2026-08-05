@@ -691,7 +691,7 @@ DeepCode Host
 
 ### S2-01 重建真实调用图、来源图与契约清单
 
-**状态**：`IN_PROGRESS`（调用图审计已交付，来源图/契约清单待补）
+**状态**：`DONE`（2026-08-05，证据：evidence/S2-01/README.md + HOST_PLUGIN_CONTRACT.md + HOST_GATEWAY_CONTRACT.md + 13_V0.1_MIGRATION_MANIFEST.md 更新）
 **依赖**：Gate 1（已满足）
 **范围**：`packages/core/src/deepcode`、`packages/oh-my-deepagent`、`packages/deepcode-gateway`、Host Session/Tool/Permission/Provider 入口、`input/oh-my-openagent` 来源。
 
