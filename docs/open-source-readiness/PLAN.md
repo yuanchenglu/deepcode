@@ -1063,7 +1063,7 @@ cd packages/app && bun run test:stability
 
 ### S3-07 建立 DeepCode Electron 身份并接入共享 WebUI
 
-**状态**：`NOT_STARTED`
+**状态**：`IN_PROGRESS`（2026-08-05；步骤 1-2 完成：appId/productName/scheme/publish/store-key/深链/日志全套 opencode→deepcode 迁移，desktop typecheck 0 错误 + 测试全绿；步骤 4-6 待扩展，见 evidence/S3-07）
 **依赖**：`S3-06`
 **主要范围**：`packages/desktop/electron-builder.config.ts`、`package.json`、`src/main`、`src/preload`、`src/renderer`、resources。
 

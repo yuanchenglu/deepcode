@@ -15,6 +15,15 @@ const signScript = path.join(rootDir, "script", "sign-windows.ps1")
 const legacyDesktopEntry = path.join(packageDir, "resources", "linux", "opencode-desktop.desktop")
 const legacyDesktopEntryFpm = `${legacyDesktopEntry}=/usr/share/applications/opencode-desktop.desktop`
 
+// S3-07: DeepCode 桌面身份冻结（PLAN S3-07 步骤 1）
+// 决策：仓库 owner=yuanchenglu + 品牌 DeepCode → appId 前缀 ai.deepcode.desktop
+// 保留 opencode 桌面入口作兼容（不共享锁/端口/数据/scheme，仅旧 .desktop 文件引用）
+const DEEPCODE_APP_IDS = {
+  dev: "ai.deepcode.desktop.dev",
+  beta: "ai.deepcode.desktop.beta",
+  prod: "ai.deepcode.desktop",
+} as const
+
 async function signWindows(configuration: { path: string }) {
   if (process.platform !== "win32") return
   if (process.env.GITHUB_ACTIONS !== "true") return
@@ -32,14 +41,10 @@ const channel = (() => {
   return "dev"
 })()
 
-const APP_IDS = {
-  dev: "ai.opencode.desktop.dev",
-  beta: "ai.opencode.desktop.beta",
-  prod: "ai.opencode.desktop",
-} as const
+const APP_IDS = DEEPCODE_APP_IDS
 
 const getBase = (appId: string): Configuration => ({
-  artifactName: "opencode-desktop-${os}-${arch}.${ext}",
+  artifactName: "deepcode-desktop-${os}-${arch}.${ext}",
   directories: {
     output: "dist",
     buildResources: "resources",
@@ -115,29 +120,30 @@ function getConfig() {
       return {
         ...base,
         appId,
-        productName: "OpenCode Dev",
-        rpm: { packageName: "opencode-dev" },
+        productName: "DeepCode Dev",
+        protocols: { name: "DeepCode Dev", schemes: ["deepcode"] },
+        rpm: { packageName: "deepcode-dev" },
       }
     }
     case "beta": {
       return {
         ...base,
         appId,
-        productName: "OpenCode Beta",
-        protocols: { name: "OpenCode Beta", schemes: ["opencode"] },
-        publish: { provider: "github", owner: "anomalyco", repo: "opencode-beta", channel: "latest" },
-        rpm: { packageName: "opencode-beta" },
+        productName: "DeepCode Beta",
+        protocols: { name: "DeepCode Beta", schemes: ["deepcode"] },
+        publish: { provider: "github", owner: "yuanchenglu", repo: "deepcode-beta", channel: "latest" },
+        rpm: { packageName: "deepcode-beta" },
       }
     }
     case "prod": {
       return {
         ...base,
         appId,
-        productName: "OpenCode",
-        protocols: { name: "OpenCode", schemes: ["opencode"] },
-        publish: { provider: "github", owner: "anomalyco", repo: "opencode", channel: "latest" },
+        productName: "DeepCode",
+        protocols: { name: "DeepCode", schemes: ["deepcode"] },
+        publish: { provider: "github", owner: "yuanchenglu", repo: "deepcode", channel: "latest" },
         deb: { fpm: [legacyDesktopEntryFpm] },
-        rpm: { packageName: "opencode", fpm: [legacyDesktopEntryFpm] },
+        rpm: { packageName: "deepcode", fpm: [legacyDesktopEntryFpm] },
       }
     }
   }
