@@ -90,30 +90,44 @@ export function processMessage(
       console.log(`[SessionBridge] 已存储 session ID: ${result.sessionId} for chat=${msg.chat.id}`)
     }
 
-    // 截断过长输出（飞书消息有长度限制）
-    const replyText = result.text.length > 3000
-      ? result.text.slice(0, 3000) + "\n\n…（输出过长已截断）"
-      : result.text
-
-    // 回发结果：路由回原 source adapter（多 Adapter 并存时不抢回复）
-    const reply: OutboundMessage = { chatId: msg.chat.id, type: "text", content: replyText }
+    // 长回复分段：超过 3000 字按段回发（每段保留完整性，最后一段加截断提示）
+    const reply: OutboundMessage = { chatId: msg.chat.id, type: "text", content: "" }
+    const MAX_SEGMENT = 3000
     const sourceAdapter = msg.sourceAdapter
       ? adapters.get(msg.sourceAdapter)
       : undefined
-    if (sourceAdapter) {
-      yield* sourceAdapter.send(reply).pipe(Effect.ignore)
-      console.log(`[SessionBridge] 已回发结果给 chat=${msg.chat.id} via ${sourceAdapter.name}`)
+    const sendTo = (adapter: PlatformAdapter | undefined, text: string) => {
+      if (!adapter) return Effect.void
+      return adapter.send({ ...reply, content: text }).pipe(Effect.ignore)
+    }
+    if (result.text.length <= MAX_SEGMENT) {
+      yield* sendTo(sourceAdapter ?? adapters.values().next().value, result.text)
     } else {
-      // 无 sourceAdapter 或找不到对应适配器：回退到第一个适配器（兼容旧行为）
-      const fallback = adapters.values().next().value
-      if (fallback) {
-        yield* fallback.send(reply).pipe(Effect.ignore)
-        console.log(`[SessionBridge] 已回发结果给 chat=${msg.chat.id} via fallback ${fallback.name}`)
+      const segments: string[] = []
+      for (let i = 0; i < result.text.length; i += MAX_SEGMENT) {
+        segments.push(result.text.slice(i, i + MAX_SEGMENT))
+      }
+      // 最后一段加截断提示（仅当确实有更多内容）
+      if (segments.length > 1) {
+        segments[segments.length - 1] += "\n\n…（输出过长已分段）"
+      }
+      for (const seg of segments) {
+        yield* sendTo(sourceAdapter ?? adapters.values().next().value, seg)
       }
     }
+    const via = sourceAdapter?.name ?? "fallback"
+    console.log(`[SessionBridge] 已回发 ${result.text.length > MAX_SEGMENT ? `${Math.ceil(result.text.length / MAX_SEGMENT)} 段` : "结果"} 给 chat=${msg.chat.id} via ${via}`)
   }).pipe(
-    // 任何错误都记日志但不中断消费循环
-    Effect.ignore({ log: true }),
+    // 任何错误都记日志并回发错误回执（不中断消费循环）
+    Effect.catch((err) =>
+      Effect.gen(function* () {
+        const text = `(处理失败) ${(err as Error).message ?? String(err)}`
+        const reply: OutboundMessage = { chatId: msg.chat.id, type: "text", content: text.slice(0, 500) }
+        const sourceAdapter = msg.sourceAdapter ? adapters.get(msg.sourceAdapter) : undefined
+        const target = sourceAdapter ?? adapters.values().next().value
+        if (target) yield* target.send(reply).pipe(Effect.ignore)
+      }),
+    ),
   )
 }
 

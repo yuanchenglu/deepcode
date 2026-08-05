@@ -809,7 +809,7 @@ cd packages/deepcode-gateway && bun test
 
 ### S2-07 交付飞书 Stable，并对其他 Adapter 分级
 
-**状态**：`NOT_STARTED`
+**状态**：`DONE`（2026-08-05，证据：evidence/S2-07/README.md；飞书幂等+分段+错误回执，8 fixture Contract 测试，gateway 70 全绿；其余平台 Experimental）
 **依赖**：`S2-06`
 
 **飞书步骤**：
