@@ -883,7 +883,7 @@ Electron renderer 已导入 `AppInterface`，因此桌面版必须复用 `packag
 
 ### S3-01 建立 UX 基线和产品设计简报
 
-**状态**：`NOT_STARTED`
+**状态**：`DONE`（2026-08-05；4 份文档：PRODUCT_UI_BRIEF / CURRENT_UX_AUDIT / UX_RESEARCH / COMPONENT_INVENTORY，基于代码审计与子代理布局/Tokne 审计，均附行号证据）
 **依赖**：Gate 2
 **允许修改**：仅设计文档、研究材料和必要测试工具；不做视觉重构。
 
