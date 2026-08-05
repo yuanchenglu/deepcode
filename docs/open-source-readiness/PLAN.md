@@ -910,7 +910,7 @@ Electron renderer 已导入 `AppInterface`，因此桌面版必须复用 `packag
 
 ### S3-02 完成信息架构、流程、线框和可测试原型
 
-**状态**：`NOT_STARTED`
+**状态**：`IN_PROGRESS`（2026-08-05；IA/USER_FLOWS/WIREFRAMES/PROTOTYPE_TEST_REPORT 已交付；方向 A 默认选定并细化线框；原型用户测试待执行）
 **依赖**：`S3-01`
 
 **交付文件**：
