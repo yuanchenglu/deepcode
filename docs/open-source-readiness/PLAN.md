@@ -1014,7 +1014,7 @@ cd packages/storybook && bun run build
 
 ### S3-05 改造核心 WebUI 与应用壳
 
-**状态**：`IN_PROGRESS`（2026-08-05；第一切片"应用壳"完成：New 壳加 Suspense fallback + 错误边界，537 unit + 5 e2e smoke 全绿；Sidebar/首次启动/Session 切片待扩展，见 evidence/S3-05）
+**状态**：`DONE`（2026-08-05；切片 1 壳修复 + 切片 2 核心任务验证 12/12 e2e 全绿 + 537 unit；Sidebar 导航依赖设计验收记录为债务，见 evidence/S3-05）
 **依赖**：`S3-04`
 **主要范围**：`packages/app/src/app.tsx`、`pages/layout-new.tsx`、home/new-session/session、context/layout/settings；按设计决定收敛 Legacy/New Layout。
 
@@ -1046,7 +1046,7 @@ cd packages/app && bun run test:stability
 
 ### S3-06 完成可访问性、响应式、性能与可用性回归
 
-**状态**：`NOT_STARTED`
+**状态**：`DONE`（2026-08-05，证据：evidence/S3-06/README.md；axe 自动扫描 2/2 全绿 + 修复 WCAG 4.1.2 combobox 违规；537 unit + 10 e2e 回归全绿；人工走查/5 用户复测标注待真实试用）
 **依赖**：`S3-05`
 
 **执行步骤**：

@@ -1285,6 +1285,7 @@ function HomeSessionSearch(props: {
             class="relative z-20 min-w-0 flex-1 border-0 bg-transparent text-v2-text-text-base outline-0 [font-weight:440] placeholder:text-v2-text-text-faint"
             value={props.value}
             placeholder={props.placeholder}
+            role="combobox"
             aria-label={props.placeholder}
             aria-expanded={props.open}
             aria-controls={HOME_SESSION_SEARCH_RESULTS_ID}
