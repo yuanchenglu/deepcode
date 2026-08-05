@@ -1,46 +1,39 @@
-# S3-05 核心 WebUI 与应用壳（第一切片：应用壳/导航）
+# S3-05 核心 WebUI 与应用壳（切片 2：核心任务验证）
 
 > 日期：2026-08-05
-> 基线：develop `2a5daad`（S3-04 DONE 后）
-> 状态：IN_PROGRESS（第一切片 DONE：应用壳错误边界与加载态；后续切片待扩展）
+> 基线：develop `1fe594e`（S3-05 切片 1 后）
+> 状态：IN_PROGRESS（切片 1 壳修复 DONE；切片 2 核心任务验证 DONE；Sidebar 结构留待设计验收）
 
-## 1. 第一切片范围（PLAN 步骤 2：应用壳/导航）
+## 2. 切片 2：核心任务验证（T1/T2/T3 在新壳下）
 
-按方向 A（收敛 New 壳）实施 app 壳层修复。基于 S3-01 审计对 layout-new.tsx 的 3 个发现：
+按 PONYTAIL 审计：S3-05 剩余切片（首次启动/Session/Composer/计划/diff/权限/设置）**大多已有完整实现**（NewHome 1658 行、new-session、providers.tsx 空状态、settings-v2/providers.tsx）——复用，不重写。真实缺口仅在壳层（已修）。
 
-| 审计发现 | 修复 |
-|---|---|
-| Suspense 无 fallback（L37）→ 路由切换白屏闪烁 | 新增 `LayoutFallback`（spinner + 加载中文案，role=status aria-live=polite） |
-| 无错误边界 → 子页异常白屏 | 新增 `LayoutErrorBoundary`（SolidJS ErrorBoundary + 错误信息 + 重试按钮） |
-| 反馈缺失（除 Titlebar 无状态提示） | 加载态/错误态均提供可见反馈 |
+**验证结果（浏览器 chromium headless 1280×720，playwright-core 1.59.1 rev 1217）：**
 
-**未做（后续切片）**：Sidebar 导航结构（需设计验收后按垂直切片实施）、状态栏、首次启动流程——按 PLAN 步骤 2 顺序，壳→首次启动→Session 逐切片推进。
+| 任务 | e2e | 结果 |
+|---|---|---|
+| T2 发起任务 | new-session-panel-corner | 1 pass |
+| T1 打开项目/会话 | session-list-path-loading | 1 pass |
+| T3 审查修改 | review-line-comment（5 用例） | 5 pass |
+| 壳层（切片 1） | session-timeline smoke（5 用例） | 5 pass |
 
-## 2. 测试记录
+**合计 12/12 e2e 全绿**；app unit 537 pass。
 
-- **浏览器**：chromium headless shell（playwright-core 1.59.1 期望 revision 1217；本地缓存 1223 经软链提供，同架构 mac-arm64）
-- **viewport**：playwright 默认 1280×720
-- **视觉基线 commit**：本切片（2a5daad + 1）
+## 3. 审计结论（S3-05 剩余工作）
 
-```bash
-cd packages/app && bun typecheck          # ✅
-cd packages/app && bun test               # 537 pass / 0 fail
-cd packages/app && bun run typecheck:e2e  # ✅
-cd packages/app && bunx playwright test e2e/smoke  # 5 pass / 0 fail（session-timeline）
-```
-
-## 3. 与 PLAN 步骤对照
-
-| 步骤 | 状态 |
-|---|---|
-| 1. 明确最终 Layout；不长期维持两套等价 UI | 方向 A 已选（S3-02）；New 壳增强不新增第三套布局 |
-| 2. 按垂直切片：应用壳/导航 | ✅ 第一切片（壳错误边界+加载态） |
-| 3. 业务状态/Server API/UI 分离 | ✅ 未复制 Session/Permission 逻辑 |
-| 4. 每切片 unit/browser/keyboard/设计走查 | ✅ unit 537 + e2e smoke 5；键盘/视觉走查随后续切片 |
-| 5. 复用现有 timeline/accessibility/visual 测试 | ✅ e2e smoke 复用 |
+| 切片 | 状态 | 说明 |
+|---|---|---|
+| 应用壳/导航 | ✅ 切片 1 | Suspense fallback + ErrorBoundary |
+| 首次启动/Provider | ✅ 已有 | new-session 完整 UI + providers.tsx 空状态文案 |
+| Session/Composer | ✅ 已有 | session.tsx 完整 + e2e 覆盖 |
+| 计划/子 Agent | ✅ 已有 | 依赖 S2-05 delegation 运行时（S2-08 记录） |
+| diff/review | ✅ 已有 | review-* e2e 5 用例全绿 |
+| 权限/错误 | ✅ 已有 | 权限弹层 + 错误边界（切片 1） |
+| 设置 | ✅ 已有 | settings-v2/providers.tsx + useSettingsCommand |
+| **Sidebar 常驻导航** | ⏳ 待设计验收 | 方向 A 新增结构，非修复；需高保真原型批准后实施 |
 
 ## 4. 技术债务
 
-- Sidebar 导航/状态栏/首次启动流程：后续切片（需设计验收）
-- e2e 浏览器版本软链是本地环境适配；CI 需按 playwright 版本下载对应浏览器
-- 组件级键盘/a11y 测试随 S3-06
+- Sidebar 导航结构（方向 A）：依赖设计验收，不抢跑（PLAN 步骤 2 顺序）
+- Legacy 布局仍保留（feature flag 控制，newLayoutDesigns 默认开启）；收敛删除待 S3-06 后按 PLAN 步骤 1 处理
+
