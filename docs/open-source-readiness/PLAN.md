@@ -1094,7 +1094,7 @@ cd packages/desktop && bun run build
 
 ### S3-08 打包、签名、公证、更新并发布 Desktop
 
-**状态**：`IN_PROGRESS`（2026-08-05；步骤 1 Preview smoke 全绿：desktop 57 测试 + build + Electron 启动 + sidecar ready + DeepCode userData；步骤 2-6 签名/公证/Parallels 依赖外部凭据 → ENV_BLOCKED，见 evidence/S3-08）
+**状态**：`IN_PROGRESS`（2026-08-05；步骤 1 Preview smoke 全绿：desktop 57 测试 + build + Electron 启动 + sidecar ready + DeepCode userData；**用户决策不申请 macOS 签名** → 步骤 2-3 正式放弃（见 evidence/S3-08 §5），步骤 4-6 依赖 Parallels/官网权限 → ENV_BLOCKED；未签名包不宣称 Stable）
 **依赖**：`S3-07`
 
 **执行步骤**：
