@@ -199,7 +199,7 @@
   [data-slot="toast-progress-fill"] {
     height: 100%;
     width: var(--kb-toast-progress-fill-width);
-    background-color: var(--color-primary);
+    background-color: var(--button-primary-base);
     transition: width 250ms linear;
   }
 }

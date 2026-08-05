@@ -987,7 +987,7 @@ npx -y @google/design.md lint DESIGN.md
 
 ### S3-04 实现共享 Token、主题和基础组件
 
-**状态**：`NOT_STARTED`
+**状态**：`DONE`（2026-08-05，证据：evidence/S3-04/README.md；P1 悬空引用/hex bug 修复 + 控件尺寸 token + Button 垂直切片，ui build + storybook build 全过）
 **依赖**：Design Gate
 **主要范围**：`packages/ui/src/theme`、styles/components、`packages/storybook`；不改业务流程。
 
