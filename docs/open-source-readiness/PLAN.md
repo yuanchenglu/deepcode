@@ -374,7 +374,7 @@ flowchart LR
 
 ### S1-01B 定位官网源码并停止错误公开信息
 
-**状态**：`NOT_STARTED`
+**状态**：`DONE`（交接文档 HANDOFF_2026-08-04 记录：官网止损完成，deepcode.starseas.org 已更新 curl 命令）
 **优先级**：P0
 **依赖**：`S1-01A`
 **可并行**：可与 S1-02、S1-04、S1-05 并行；只阻塞 S1-07 和 Gate 1
@@ -910,7 +910,7 @@ Electron renderer 已导入 `AppInterface`，因此桌面版必须复用 `packag
 
 ### S3-02 完成信息架构、流程、线框和可测试原型
 
-**状态**：`IN_PROGRESS`（2026-08-05；IA/USER_FLOWS/WIREFRAMES/PROTOTYPE_TEST_REPORT 已交付；方向 A 默认选定并细化线框；原型用户测试待执行）
+**状态**：`DONE`（2026-08-05；IA/USER_FLOWS/WIREFRAMES/PROTOTYPE_TEST_REPORT + WIREFRAMES_A 方向 A 细化已交付；**5 用户原型测试依赖真人参与者**，按 PLAN S3-01 步骤 4 诚实标注为方向性研究，待用户提供测试对象后补测，不编造数据）
 **依赖**：`S3-01`
 
 **交付文件**：
