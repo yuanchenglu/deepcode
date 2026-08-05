@@ -780,7 +780,7 @@ DeepCode Host
 
 ### S2-06 完成 Gateway Core 安全和生命周期
 
-**状态**：`NOT_STARTED`
+**状态**：`DONE`（2026-08-05，证据：evidence/S2-06/README.md；有界队列 + sourceAdapter 回发路由 + server 传 adapters，62 gateway 测试全绿）
 **依赖**：`S2-01`、`S2-03`
 **主要范围**：`packages/deepcode-gateway/src/server.ts`、`lifecycle.ts`、`router.ts`、`session-bridge.ts`、`connection.ts`、`adapter.ts`、`config.ts`。
 

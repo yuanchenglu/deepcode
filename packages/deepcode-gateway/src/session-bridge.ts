@@ -14,7 +14,7 @@
 
 import { Effect, Queue, Stream } from "effect"
 import type { PlatformAdapter } from "./adapter"
-import type { GatewayMessage, OutboundMessage, PlatformType } from "./message"
+import type { GatewayMessage, OutboundMessage } from "./message"
 
 /** 会话映射：平台 chatId → OpenCode sessionId */
 const sessionMap = new Map<string, string>()
@@ -66,9 +66,8 @@ interface CliResult {
  */
 export function processMessage(
   msg: GatewayMessage,
-  adapter: PlatformAdapter,
   workdir: string,
-  adapters?: Map<PlatformType, PlatformAdapter>,
+  adapters: Map<string, PlatformAdapter>,
 ): Effect.Effect<void> {
   // 用 Effect.ignoreLogged 兜底错误，不中断消费循环
   return Effect.gen(function* () {
@@ -96,10 +95,22 @@ export function processMessage(
       ? result.text.slice(0, 3000) + "\n\n…（输出过长已截断）"
       : result.text
 
-    // 回发结果
+    // 回发结果：路由回原 source adapter（多 Adapter 并存时不抢回复）
     const reply: OutboundMessage = { chatId: msg.chat.id, type: "text", content: replyText }
-    yield* adapter.send(reply).pipe(Effect.ignore)
-    console.log(`[SessionBridge] 已回发结果给 chat=${msg.chat.id}`)
+    const sourceAdapter = msg.sourceAdapter
+      ? adapters.get(msg.sourceAdapter)
+      : undefined
+    if (sourceAdapter) {
+      yield* sourceAdapter.send(reply).pipe(Effect.ignore)
+      console.log(`[SessionBridge] 已回发结果给 chat=${msg.chat.id} via ${sourceAdapter.name}`)
+    } else {
+      // 无 sourceAdapter 或找不到对应适配器：回退到第一个适配器（兼容旧行为）
+      const fallback = adapters.values().next().value
+      if (fallback) {
+        yield* fallback.send(reply).pipe(Effect.ignore)
+        console.log(`[SessionBridge] 已回发结果给 chat=${msg.chat.id} via fallback ${fallback.name}`)
+      }
+    }
   }).pipe(
     // 任何错误都记日志但不中断消费循环
     Effect.ignore({ log: true }),
@@ -249,14 +260,14 @@ async function executeCli(
  */
 export function startMessageConsumer(
   queue: Queue.Queue<GatewayMessage>,
-  adapter: PlatformAdapter,
   workdir: string,
+  adapters: Map<string, PlatformAdapter>,
 ): Effect.Effect<void> {
   console.log("[SessionBridge] 启动消息消费循环")
   return Stream.runDrain(
     Stream.mapEffect(
       Stream.fromQueue(queue),
-      (msg: GatewayMessage) => processMessage(msg, adapter, workdir),
+      (msg: GatewayMessage) => processMessage(msg, workdir, adapters),
     ),
   )
 }
