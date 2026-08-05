@@ -375,7 +375,7 @@ const layer = Layer.effect(
       // Router 在 model resolve 之前生效：decide 返回 tier，记录决策理由
       // Alpha 阶段单模型：tier 影响 reasoning_effort 和窗口管理，不切换模型
       // 未来多模型时，resolve 可消费 tier 选择不同模型
-      const tier = yield* modelRouter
+      const routeDecision = yield* modelRouter
         .decide({
           turn: currentStep,
           intent: intentResult.intent,
@@ -383,6 +383,7 @@ const layer = Layer.effect(
           isPlanning: intentResult.intent === "architecture",
         })
         .pipe(Effect.catch(() => Effect.succeed("flash" as const)))
+      const tier = routeDecision
 
       // --- 1e. reasoning_effort 设置 ---
       const reasoningEffort = yield* reasoningManager
@@ -455,6 +456,23 @@ const layer = Layer.effect(
           ...(session.model?.variant === undefined ? {} : { variant: session.model.variant }),
         },
         snapshot: startSnapshot,
+        // DeepCode Harness 路由证据：从 Router 历史取本轮决策（S2-02）
+        // 失败时省略 route 字段（Step.Started 的 route 是可选的）
+        ...(yield* modelRouter.getHistory().pipe(
+          Effect.map((history) => {
+            const last = history.at(-1)
+            return last === undefined
+              ? {}
+              : {
+                  route: {
+                    tier: last.selected,
+                    reason: last.reason,
+                    riskLevel: last.riskLevel,
+                  },
+                }
+          }),
+          Effect.catch(() => Effect.succeed({})),
+        )),
       })
       const withPublication = Semaphore.makeUnsafe(1).withPermit
       const publish = (event: LLMEvent, outputPaths: ReadonlyArray<string> = []) =>

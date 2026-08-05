@@ -155,6 +155,14 @@ export namespace Step {
       agent: Schema.String,
       model: Model.Ref,
       snapshot: Schema.String.pipe(optional),
+      // DeepCode Harness 路由证据：本轮为什么选该模型（S2-02）
+      route: optional(
+        Schema.Struct({
+          tier: Schema.Union([Schema.Literal("flash"), Schema.Literal("pro")]),
+          reason: Schema.String,
+          riskLevel: Schema.Union([Schema.Literal("low"), Schema.Literal("medium"), Schema.Literal("high")]),
+        }),
+      ),
     },
   })
   export type Started = typeof Started.Type

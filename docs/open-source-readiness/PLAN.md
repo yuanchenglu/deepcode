@@ -709,7 +709,7 @@ DeepCode Host
 
 ### S2-02 完成 Provider、Routing 与 Harness 契约
 
-**状态**：`NOT_STARTED`
+**状态**：`DONE`（2026-08-05，证据：evidence/S2-02/README.md；Route→Session 证据 + 30 Contract 测试全绿，1105 全量测试通过）
 **依赖**：`S2-01`
 **主要范围**：Host Provider/Session runner、`packages/core/src/deepcode/router`、reasoning、hard-constraint、immune-system、review、scope guard、evidence。
 
