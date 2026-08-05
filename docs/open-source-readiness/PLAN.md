@@ -828,7 +828,7 @@ cd packages/deepcode-gateway && bun test
 
 ### S2-08 可靠性、可观察性、性能与核心能力发布
 
-**状态**：`NOT_STARTED`
+**状态**：`DONE`（2026-08-05，证据：evidence/S2-08/README.md；event 可关联性 4 测试 + SLO 基线 + Secret/许可证扫描通过；RC→Stable 需真实试用反馈，标注待执行）
 **依赖**：`S2-02`、`S2-05`、`S2-07`
 
 **执行步骤**：
