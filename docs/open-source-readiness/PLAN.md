@@ -936,7 +936,7 @@ Electron renderer 已导入 `AppInterface`，因此桌面版必须复用 `packag
 
 ### S3-03 冻结 DESIGN.md、组件规格和设计验收
 
-**状态**：`DONE`（2026-08-05；仓库根 DESIGN.md 冻结 + lint 0 errors；COMPONENT_SPEC/MOTION_AND_FEEDBACK/ACCESSIBILITY/DESIGN_ACCEPTANCE 已交付；用户批准主方向与高保真原型待用户确认，见 DESIGN_ACCEPTANCE）
+**状态**：`DONE`（2026-08-05；仓库根 DESIGN.md 冻结 + lint 0 errors；COMPONENT_SPEC/MOTION_AND_FEEDBACK/ACCESSIBILITY/DESIGN_ACCEPTANCE 已交付；**用户已批准方向 A（2026-08-05）**，Sidebar 导航已在 NewHome 实现（DESIGN_ACCEPTANCE §3b））
 **依赖**：`S3-02`
 
 **交付文件**：

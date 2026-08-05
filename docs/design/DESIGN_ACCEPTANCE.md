@@ -7,7 +7,7 @@
 
 | Go 条件 | 状态 | 证据 |
 |---|---|---|
-| 用户明确批准主方向和高保真原型 | ⏳ | 方向 A 默认选定（WIREFRAMES_A）；高保真原型待用户批准 |
+| 用户明确批准主方向和高保真原型 | ✅ **方向 A 已批准**（2026-08-05）；高保真原型延后补 |
 | DESIGN.md lint 通过 | ✅ | `npx @google/design.md lint DESIGN.md` → 0 errors（24 orphaned-tokens warnings 正常） |
 | 组件与页面迁移映射完整 | ✅ | COMPONENT_INVENTORY Keep/Adapt/Replace + DESIGN.md components token 映射 |
 | 关键流程、异常状态、响应式、可访问性均有规格 | ✅ | USER_FLOWS 状态覆盖 + WIREFRAMES_A F1-F7 + ACCESSIBILITY + MOTION |
@@ -32,9 +32,19 @@
 
 ## 3. 待用户决策
 
-1. 批准方向 A 作为 S3-04 实现主方向？
-2. 是否改选方向 B/C（WIREFRAMES.md §1 保留）
-3. 高保真原型需要先做还是直接进 S3-04 实现（原型测试可延后补）
+1. ~~批准方向 A 作为 S3-04 实现主方向？~~ **✅ 已批准（2026-08-05 用户"批准"）**
+2. ~~是否改选方向 B/C~~ → 不改选（方向 A 批准）
+3. ~~高保真原型需要先做还是直接进 S3-04 实现~~ → **方向 A Sidebar 已在 NewHome 实现**（grid-cols-[280px_minmax(0,720px)] HomeProjectColumn 侧栏 + 主区），无需新建；高保真原型可延后补
+
+## 3b. 方向 A 批准后的 Sidebar 验证（S3-05 债务关闭）
+
+PONYTAIL 阶梯 2：方向 A 的"常驻 Sidebar 导航"已在 `packages/app/src/pages/home.tsx` 实现：
+
+- `grid-cols-[280px_minmax(0,720px)]`（L700）——280px 侧栏 + 720px 主区，与 WIREFRAMES_A 一致
+- `HomeProjectColumn`（L667）——项目列表 + 新建会话 + 设置 + 帮助入口（导航项齐备）
+- `HomeServerRow`/`HomeProjectList`（L752+）——多 server 项目树
+
+**S3-05 遗留债务"Sidebar 常驻导航"关闭**（无需新组件，已有实现符合方向 A）。
 
 ## 4. 变更流程
 

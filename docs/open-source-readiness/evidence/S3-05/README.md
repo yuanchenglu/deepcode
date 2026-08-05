@@ -34,6 +34,6 @@
 
 ## 4. 技术债务
 
-- Sidebar 导航结构（方向 A）：依赖设计验收，不抢跑（PLAN 步骤 2 顺序）
+- ~~Sidebar 导航结构（方向 A）：依赖设计验收，不抢跑~~ **✅ 已关闭（2026-08-05 方向 A 批准后验证：NewHome grid-cols-[280px_1fr] + HomeProjectColumn 已实现方向 A Sidebar，见 DESIGN_ACCEPTANCE §3b）**
 - Legacy 布局仍保留（feature flag 控制，newLayoutDesigns 默认开启）；收敛删除待 S3-06 后按 PLAN 步骤 1 处理
 
