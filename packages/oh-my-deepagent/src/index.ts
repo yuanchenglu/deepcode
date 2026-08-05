@@ -9,6 +9,7 @@ export * from "./errors"
 
 export { AgentRuntime, runMessageLoop } from "./runtime"
 export type { MessageLoopInput, MessageLoopResult } from "./runtime"
+export { deepagentPlugin, roleToAgent } from "./host-plugin"
 
 export {
   ToolRegistry,

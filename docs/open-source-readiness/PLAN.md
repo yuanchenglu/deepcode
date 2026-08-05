@@ -727,7 +727,7 @@ DeepCode Host
 
 ### S2-03 接通 Built-in Agent Plugin 与宿主安全桥
 
-**状态**：`NOT_STARTED`
+**状态**：`DONE`（2026-08-05，证据：evidence/S2-03/README.md；deepagentPlugin 注册 coding/planner 为 Host Agent，权限空安全桥，7 测试全绿，1108 core + 214 plugin）
 **依赖**：`S2-01`、`S2-02`
 **主要范围**：`packages/oh-my-deepagent/src/runtime`、tool、memory、transport 与 Host Session/Tool/Permission/Workspace。
 
