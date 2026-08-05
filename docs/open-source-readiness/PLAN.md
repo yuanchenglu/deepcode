@@ -1014,7 +1014,7 @@ cd packages/storybook && bun run build
 
 ### S3-05 改造核心 WebUI 与应用壳
 
-**状态**：`NOT_STARTED`
+**状态**：`IN_PROGRESS`（2026-08-05；第一切片"应用壳"完成：New 壳加 Suspense fallback + 错误边界，537 unit + 5 e2e smoke 全绿；Sidebar/首次启动/Session 切片待扩展，见 evidence/S3-05）
 **依赖**：`S3-04`
 **主要范围**：`packages/app/src/app.tsx`、`pages/layout-new.tsx`、home/new-session/session、context/layout/settings；按设计决定收敛 Legacy/New Layout。
 
