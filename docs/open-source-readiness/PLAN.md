@@ -763,7 +763,7 @@ DeepCode Host
 
 ### S2-05 完成 Delegation、Subagent 与 Multi-Agent
 
-**状态**：`NOT_STARTED`
+**状态**：`DONE`（2026-08-05，证据：evidence/S2-05/README.md；delegation 规则层：权限只缩不扩 + workspace 校验 + 冲突检测，12 测试全绿，235 plugin + 1108 core）
 **依赖**：`S2-04`
 
 **执行步骤**：
