@@ -181,6 +181,12 @@ export interface RoleDefinition {
   skills: string[]
   /** 偏好的模型标识（仅作元数据，runtime 不直接使用）。 */
   model?: string
+  /**
+   * 默认权限规则（S2-04）。
+   * 格式对齐 Host Permission：{ action, resource, effect }。
+   * 空数组 = 无额外权限，由 Host 默认策略控制。
+   */
+  permissions?: Array<{ action: string; resource: string; effect: "allow" | "ask" | "deny" }>
 }
 
 /** AgentRuntime 构造参数。 */

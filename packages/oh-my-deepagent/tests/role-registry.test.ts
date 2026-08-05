@@ -57,12 +57,12 @@ describe("renderSystemPrompt", () => {
 })
 
 describe("默认角色", () => {
-  test("createDefaultRoleRegistry 含 13 个角色", () => {
+  test("createDefaultRoleRegistry 含 14 个角色", () => {
     const r = createDefaultRoleRegistry()
     expect(r.list().map((x) => x.id).sort()).toEqual(
       ["artistry", "builder-agent", "coding-agent", "coding-agent-mini", "coordinator",
        "knowledge-agent", "metis", "momus", "multimodal", "oracle",
-       "planner-agent", "search", "system-agent"].sort(),
+       "planner-agent", "reviewer", "search", "system-agent"].sort(),
     )
   })
 
@@ -74,11 +74,11 @@ describe("默认角色", () => {
     }
   })
 
-  test("defaultRoles 包含全部 13 个", () => {
+  test("defaultRoles 包含全部 14 个", () => {
     expect(Object.keys(defaultRoles).sort()).toEqual(
       ["artistry", "builder", "coding", "codingMini", "coordinator",
        "knowledge", "metis", "momus", "multimodal", "oracle",
-       "planner", "search", "system"].sort(),
+       "planner", "reviewer", "search", "system"].sort(),
     )
   })
 

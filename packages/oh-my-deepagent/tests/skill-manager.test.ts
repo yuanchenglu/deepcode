@@ -148,6 +148,21 @@ describe("SkillManager", () => {
     expect(mgr.discover()).toHaveLength(1)
   })
 
+  test("只加载受控 roots 目录，目录外技能不被发现（S2-04）", () => {
+    // 受控目录：root
+    const root = mkdtempSync(join(tmpdir(), "da-controlled-"))
+    mkdirSync(join(root, "inside"))
+    writeFileSync(join(root, "inside", "SKILL.md"), "---\nname: inside\ndescription: in\n---\n")
+    // 受控目录外：unmanaged（不在 roots 中）
+    const unmanaged = mkdtempSync(join(tmpdir(), "da-unmanaged-"))
+    mkdirSync(join(unmanaged, "outside"))
+    writeFileSync(join(unmanaged, "outside", "SKILL.md"), "---\nname: outside\ndescription: out\n---\n")
+    const mgr = new SkillManager({ roots: [root] })
+    const names = mgr.discover().map((s) => s.name)
+    expect(names).toContain("inside")
+    expect(names).not.toContain("outside")
+  })
+
   test("list 返回所有已加载技能", async () => {
     const mgr = new SkillManager()
     await mgr.load({ name: "a", description: "da" })

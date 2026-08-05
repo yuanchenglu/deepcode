@@ -17,7 +17,7 @@ import { agentHost, host } from "./plugin/host"
 const it = testEffect(AppNodeBuilder.build(AgentV2.node))
 
 describe("deepagentPlugin 接入 Host（S2-03）", () => {
-  it.effect("加载插件后 coding-agent 与 planner-agent 注册为 Host Agent", () =>
+  it.effect("加载插件后 coding/planner/reviewer 注册为 Host Agent", () =>
     Effect.gen(function* () {
       const agent = yield* AgentV2.Service
       const ctx = host({ agent: agentHost(agent) })
@@ -34,6 +34,13 @@ describe("deepagentPlugin 接入 Host（S2-03）", () => {
       expect(plannerAgent).toMatchObject({
         id: AgentV2.ID.make("planner-agent"),
         system: expect.stringContaining("不要直接写代码"),
+      })
+
+      const reviewerAgent = yield* agent.get(AgentV2.ID.make("reviewer"))
+      expect(reviewerAgent).toMatchObject({
+        id: AgentV2.ID.make("reviewer"),
+        system: expect.stringContaining("引用"),
+        description: "Reviewer",
       })
     }),
   )

@@ -745,7 +745,7 @@ DeepCode Host
 
 ### S2-04 完成角色、技能、规划与评审能力
 
-**状态**：`NOT_STARTED`
+**状态**：`DONE`（2026-08-05，证据：evidence/S2-04/README.md；reviewer 角色 + 三角权限矩阵 + skill 受控目录契约，223 plugin + 1108 core 全绿）
 **依赖**：`S2-03`
 **主要范围**：`packages/oh-my-deepagent/src/role`、`skill`、`planning`、`memory`。
 

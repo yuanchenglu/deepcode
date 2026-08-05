@@ -16,7 +16,7 @@
 
 import { define } from "@opencode-ai/plugin/v2/effect/plugin"
 import { Effect } from "effect"
-import { coding, planner } from "./role"
+import { coding, planner, reviewer } from "./role"
 import type { RoleDefinition } from "./types"
 
 /** 将插件角色映射为 Host AgentV2.Info */
@@ -27,7 +27,7 @@ export function roleToAgent(role: RoleDefinition) {
     system: role.systemPrompt,
     mode: "all" as const,
     hidden: false,
-    permissions: [],
+    permissions: role.permissions ?? [],
   }
 }
 
@@ -35,7 +35,7 @@ export const deepagentPlugin = define({
   id: "@deepcode/oh-my-deepagent",
   effect: (context) =>
     Effect.gen(function* () {
-      const roles: RoleDefinition[] = [coding, planner]
+      const roles: RoleDefinition[] = [coding, planner, reviewer]
       yield* context.agent.transform(
         Effect.fn(function* (draft) {
           for (const role of roles) {

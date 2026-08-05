@@ -7,10 +7,7 @@
  * 3. 插件关闭（不加载）时 Host 基础能力可用（本插件是可选的注册器）
  */
 import { describe, expect, test } from "bun:test"
-import { Effect } from "effect"
-import { AgentV2 } from "@opencode-ai/core/agent"
-import { AppNodeBuilder } from "@opencode-ai/core/effect/app-node-builder"
-import { coding, planner } from "../src/role"
+import { coding, planner, reviewer } from "../src/role"
 import { roleToAgent, deepagentPlugin } from "../src/host-plugin"
 
 describe("roleToAgent（Host Agent 映射契约）", () => {
@@ -27,11 +24,17 @@ describe("roleToAgent（Host Agent 映射契约）", () => {
     expect(agent.system).toContain("不要直接写代码")
   })
 
-  test("权限默认空——Tool 执行由 Host Permission 统一控制（不绕过）", () => {
-    for (const role of [coding, planner]) {
-      const agent = roleToAgent(role)
-      expect(agent.permissions).toEqual([])
-    }
+  test("权限映射来自角色定义——不绕过 Host Permission（S2-04 更新）", () => {
+    // coding 有明确权限定义，映射后必须原样保留
+    const codingAgent = roleToAgent(coding)
+    expect(codingAgent.permissions.length).toBeGreaterThan(0)
+    expect(codingAgent.permissions).toEqual(coding.permissions ?? [])
+    // planner 只读：bash deny 保留
+    const plannerAgent = roleToAgent(planner)
+    expect(plannerAgent.permissions).toContainEqual({ action: "bash", resource: "*", effect: "deny" })
+    // reviewer 只读：edit deny 保留
+    const reviewerAgent = roleToAgent(reviewer)
+    expect(reviewerAgent.permissions).toContainEqual({ action: "edit", resource: "*", effect: "deny" })
   })
 
   test("映射结果不包含插件内部执行字段——不复制 Host 执行层", () => {
