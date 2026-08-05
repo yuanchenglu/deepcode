@@ -1,8 +1,33 @@
-# S3-07 DeepCode Electron 身份（步骤 1-3 完成）
+# S3-07 DeepCode Electron 身份（完成）
 
 > 日期：2026-08-05
-> 基线：develop `2e97434`（S3-06 DONE 后）
-> 状态：IN_PROGRESS（步骤 1 身份冻结 + 步骤 2 持久化/深链/日志迁移 DONE；步骤 4-6 待扩展）
+> 基线：develop `da81517`
+> 状态：DONE（步骤 1-2 迁移 + Preview 启动验证；步骤 4-6 依赖签名证书/Parallels 标记 ENV_BLOCKED）
+
+## 6. Preview 启动验证（S3-08 步骤 1 前置）
+
+Electron 二进制经 npmmirror 镜像安装后，`electron-vite preview` 启动日志：
+
+```
+sidecar connection started { url: 'http://127.0.0.1:58746' }
+spawning sidecar → loading task finished → server ready
+userData: .../Application Support/ai.deepcode.desktop.dev/logs/...
+```
+
+**验证点**：
+- ✅ sidecar 正常启动 + server ready（完整链路）
+- ✅ **userData 路径为 ai.deepcode.desktop.dev**（S3-07 身份迁移生效，非 opencode）
+- ✅ desktop 全量测试 57/57 全绿（Electron 二进制修复后）
+- ✅ desktop `bun run build`（electron-vite）成功（fixture 模型数据绕过 models.dev 阻断）
+
+**models.dev 网络阻断处理**：`generate.ts` 已有 `MODELS_DEV_API_JSON` 环境变量支持 → 复用 `packages/opencode/test/tool/fixtures/models-api.json`，零代码改动（PONYTAIL 阶梯 2）。
+
+## 7. 技术债务（更新）
+
+- **WSL CLI 路径/安装源**：依赖 DeepCode CLI 发布 WSL 安装源（PLAN 步骤 5）
+- **签名/公证/跨平台发布**（S3-08 步骤 2-6）：需 macOS 签名证书、公证凭据、Parallels 环境 → 标记 ENV_BLOCKED，不能在本地生成未签名包后宣称 Stable
+- 日志目录注意：server 内部仍叫 "opencode server"（业务语义保留，品牌路径已迁移）
+
 
 ## 1. 身份冻结（步骤 1）
 

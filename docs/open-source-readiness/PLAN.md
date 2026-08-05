@@ -1063,7 +1063,7 @@ cd packages/app && bun run test:stability
 
 ### S3-07 建立 DeepCode Electron 身份并接入共享 WebUI
 
-**状态**：`IN_PROGRESS`（2026-08-05；步骤 1-2 完成：appId/productName/scheme/publish/store-key/深链/日志全套 opencode→deepcode 迁移，desktop typecheck 0 错误 + 测试全绿；步骤 4-6 待扩展，见 evidence/S3-07）
+**状态**：`DONE`（2026-08-05，证据：evidence/S3-07/README.md；appId/productName/scheme/publish/store-key/深链/日志全套 opencode→deepcode 迁移 + Preview 启动验证 userData=ai.deepcode.desktop.dev + desktop 57 测试全绿；WSL CLI 路径与签名发布标 ENV_BLOCKED）
 **依赖**：`S3-06`
 **主要范围**：`packages/desktop/electron-builder.config.ts`、`package.json`、`src/main`、`src/preload`、`src/renderer`、resources。
 
@@ -1094,7 +1094,7 @@ cd packages/desktop && bun run build
 
 ### S3-08 打包、签名、公证、更新并发布 Desktop
 
-**状态**：`NOT_STARTED`
+**状态**：`IN_PROGRESS`（2026-08-05；步骤 1 Preview smoke 全绿：desktop 57 测试 + build + Electron 启动 + sidecar ready + DeepCode userData；步骤 2-6 签名/公证/Parallels 依赖外部凭据 → ENV_BLOCKED，见 evidence/S3-08）
 **依赖**：`S3-07`
 
 **执行步骤**：
