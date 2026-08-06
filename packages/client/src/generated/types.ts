@@ -843,6 +843,11 @@ export type SessionsHistoryOutput = {
           readonly agent: string
           readonly model: { readonly id: string; readonly providerID: string; readonly variant?: string }
           readonly snapshot?: string
+          readonly route?: {
+            readonly tier: "flash" | "pro"
+            readonly reason: string
+            readonly riskLevel: "low" | "medium" | "high"
+          }
         }
       }
     | {
@@ -1301,6 +1306,11 @@ export type SessionsEventsOutput =
         readonly agent: string
         readonly model: { readonly id: string; readonly providerID: string; readonly variant?: string }
         readonly snapshot?: string
+        readonly route?: {
+          readonly tier: "flash" | "pro"
+          readonly reason: string
+          readonly riskLevel: "low" | "medium" | "high"
+        }
       }
     }
   | {
