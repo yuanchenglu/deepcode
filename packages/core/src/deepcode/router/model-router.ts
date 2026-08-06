@@ -98,7 +98,7 @@ export interface RouteDecision {
 /**
  * 路由配置
  *
- * 可通过 opencode.json 的 deepcode.routing 段覆盖，此处为默认值。
+ * 可通过 deepcode.json 的 deepcode.routing 段覆盖，此处为默认值。
  */
 export interface RoutingConfig {
   /** 高风险文件 glob 模式列表，匹配时强制 Pro */

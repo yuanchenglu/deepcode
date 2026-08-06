@@ -2,20 +2,49 @@ name: typecheck
 
 on:
   push:
-    branches: [dev]
+    branches: [develop, master]
   pull_request:
-    branches: [dev]
+    branches: [develop, master]
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   typecheck:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          show-progress: false
 
       - name: Setup Bun
         uses: ./.github/actions/setup-bun
 
-      - name: Run typecheck
-        run: bun typecheck
+      - name: Verify generated dependency metadata is clean
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code -- bun.lock package.json packages/opencode/package.json packages/opencode/bin/deepcode packages/opencode/script/install.sh
+
+      - name: Run package typechecks
+        run: |
+          set -euo pipefail
+          {
+            echo "== packages/core =="
+            bun --cwd packages/core typecheck
+            echo "== packages/opencode =="
+            bun --cwd packages/opencode typecheck
+          } 2>&1 | tee typecheck.log
+
+      - name: Upload typecheck and setup evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: typecheck-${{ github.run_attempt }}
+          if-no-files-found: error
+          retention-days: 7
+          path: |
+            setup-bun.log
+            typecheck.log

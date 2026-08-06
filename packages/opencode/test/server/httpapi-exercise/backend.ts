@@ -60,7 +60,7 @@ function app(modules: Runtime, options: CallOptions) {
     modules.HttpApiApp.routes.pipe(
       Layer.provide(
         ConfigProvider.layer(
-          ConfigProvider.fromUnknown({ OPENCODE_SERVER_PASSWORD: password, OPENCODE_SERVER_USERNAME: username }),
+          ConfigProvider.fromUnknown({ DEEPCODE_SERVER_PASSWORD: password, DEEPCODE_SERVER_USERNAME: username }),
         ),
       ),
     ),
@@ -94,7 +94,7 @@ function toAuthProbeRequest(scenario: ActiveScenario, credentials: "missing" | "
   const headers = {
     ...(spec.body === undefined ? {} : { "content-type": "application/json" }),
     ...spec.headers,
-    ...(credentials === "valid" ? { authorization: basic("opencode", "secret") } : {}),
+    ...(credentials === "valid" ? { authorization: basic("deepcode", "secret") } : {}),
   }
   return new Request(new URL(spec.path, "http://localhost"), {
     method: scenario.method,

@@ -7,7 +7,7 @@ import { setTimeout as sleep } from "node:timers/promises"
 import { afterAll } from "bun:test"
 
 // Set XDG env vars FIRST, before any src/ imports
-const dir = path.join(os.tmpdir(), "opencode-test-data-" + process.pid)
+const dir = path.join(os.tmpdir(), "deepcode-test-data-" + process.pid)
 await fs.mkdir(dir, { recursive: true })
 afterAll(async () => {
   const { AppRuntime } = await import("../src/effect/app-runtime")
@@ -35,22 +35,21 @@ process.env["XDG_DATA_HOME"] = path.join(dir, "share")
 process.env["XDG_CACHE_HOME"] = path.join(dir, "cache")
 process.env["XDG_CONFIG_HOME"] = path.join(dir, "config")
 process.env["XDG_STATE_HOME"] = path.join(dir, "state")
-process.env["OPENCODE_MODELS_PATH"] = path.join(import.meta.dir, "tool", "fixtures", "models-api.json")
-process.env["OPENCODE_EXPERIMENTAL_EVENT_SYSTEM"] = "true"
-process.env["OPENCODE_EXPERIMENTAL_WORKSPACES"] = "true"
+process.env["DEEPCODE_MODELS_PATH"] = path.join(import.meta.dir, "tool", "fixtures", "models-api.json")
+process.env["DEEPCODE_EXPERIMENTAL_EVENT_SYSTEM"] = "true"
+process.env["DEEPCODE_EXPERIMENTAL_WORKSPACES"] = "true"
 
 // Set test home directory to isolate tests from user's actual home directory
-// This prevents tests from picking up real user configs/skills from ~/.claude/skills
 const testHome = path.join(dir, "home")
 await fs.mkdir(testHome, { recursive: true })
-process.env["OPENCODE_TEST_HOME"] = testHome
+process.env["DEEPCODE_TEST_HOME"] = testHome
 
 // Set test managed config directory to isolate tests from system managed settings
 const testManagedConfigDir = path.join(dir, "managed")
-process.env["OPENCODE_TEST_MANAGED_CONFIG_DIR"] = testManagedConfigDir
+process.env["DEEPCODE_TEST_MANAGED_CONFIG_DIR"] = testManagedConfigDir
 
 // Write the cache version file to prevent global/index.ts from clearing the cache
-const cacheDir = path.join(dir, "cache", "opencode")
+const cacheDir = path.join(dir, "cache", "deepcode")
 await fs.mkdir(cacheDir, { recursive: true })
 await fs.writeFile(path.join(cacheDir, "version"), "14")
 
@@ -75,16 +74,16 @@ delete process.env["DEEPSEEK_API_KEY"]
 delete process.env["FIREWORKS_API_KEY"]
 delete process.env["CEREBRAS_API_KEY"]
 delete process.env["SAMBANOVA_API_KEY"]
-delete process.env["OPENCODE_SERVER_PASSWORD"]
-delete process.env["OPENCODE_SERVER_USERNAME"]
-delete process.env["OPENCODE_EXPERIMENTAL"]
-delete process.env["OPENCODE_ENABLE_EXPERIMENTAL_MODELS"]
+delete process.env["DEEPCODE_SERVER_PASSWORD"]
+delete process.env["DEEPCODE_SERVER_USERNAME"]
+delete process.env["DEEPCODE_EXPERIMENTAL"]
+delete process.env["DEEPCODE_ENABLE_EXPERIMENTAL_MODELS"]
 delete process.env["OTEL_EXPORTER_OTLP_ENDPOINT"]
 delete process.env["OTEL_EXPORTER_OTLP_HEADERS"]
 delete process.env["OTEL_RESOURCE_ATTRIBUTES"]
 
 // Use in-memory sqlite
-process.env["OPENCODE_DB"] = ":memory:"
+process.env["DEEPCODE_DB"] = ":memory:"
 
 // Now safe to import from src/
 const { initProjectors } = await import("../src/server/projectors")

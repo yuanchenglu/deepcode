@@ -15,7 +15,7 @@ const dim = (value: string) => UI.Style.TEXT_DIM + value + UI.Style.TEXT_NORMAL
 
 const activeSuffix = (isActive: boolean) => (isActive ? dim(" (active)") : "")
 
-export const defaultConsoleUrl = "https://console.opencode.ai"
+export const defaultConsoleUrl: string | undefined = undefined
 
 export const formatAccountLabel = (account: { email: string; url: string }, isActive: boolean) =>
   `${account.email} ${dim(account.url)}${activeSuffix(isActive)}`
@@ -185,7 +185,11 @@ export const LoginCommand = effectCmd({
     }),
   handler: Effect.fn("Cli.account.login")(function* (args) {
     UI.empty()
-    yield* Effect.orDie(loginEffect(args.url ?? defaultConsoleUrl))
+    if (!args.url) {
+      yield* Prompt.log.error("A DeepCode account server URL is required; no default upstream account service is configured.")
+      return yield* Prompt.outro("Login cancelled")
+    }
+    yield* Effect.orDie(loginEffect(args.url))
   }),
 })
 

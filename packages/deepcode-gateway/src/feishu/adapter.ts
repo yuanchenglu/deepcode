@@ -26,6 +26,8 @@ export class FeishuAdapter implements PlatformAdapter {
   private tokenCache: { token: string; expiry: number } | null = null
   /** 飞书 WebSocket 客户端实例 */
   private wsClient: FeishuWSClient | null = null
+  /** 已处理消息 ID（事件幂等：重复投递去重，最多保留 10000 条） */
+  private seenMessageIds = new Set<string>()
 
   constructor(config: FeishuConfig) {
     this.cfg = config
@@ -118,6 +120,8 @@ export class FeishuAdapter implements PlatformAdapter {
    * SDK 的 EventDispatcher 传入的 data 结构为 { sender, message }，
    * 即事件体中的 event 字段内容（不含 header，因为 SDK 已按事件类型分发）。
    *
+   * 幂等：按 message_id 去重，同一消息重复投递只处理一次。
+   *
    * @param data   - SDK 传入的事件数据 { sender, message }
    * @param queue  - 共享消息队列
    */
@@ -125,6 +129,15 @@ export class FeishuAdapter implements PlatformAdapter {
     try {
       const msg = parseFeishuMessage(data)
       if (!msg) return // 无法解析的消息，忽略
+
+      // 事件幂等：重复投递按 message_id 去重
+      if (this.seenMessageIds.has(msg.id)) {
+        console.log(`[FeishuAdapter] 忽略重复投递: message_id=${msg.id}`)
+        return
+      }
+      // 有界去重集合：超过上限时清空（消息 ID 短时间不重复，清空可接受）
+      if (this.seenMessageIds.size > 10000) this.seenMessageIds.clear()
+      this.seenMessageIds.add(msg.id)
 
       // 推入共享消息队列（Effect.runFork 在非 Effect 上下文中驱动 Effect）
       Effect.runFork(Queue.offer(queue, msg))
@@ -159,7 +172,7 @@ export class FeishuAdapter implements PlatformAdapter {
  * @param data - SDK 传入的事件数据 { sender, message }
  * @returns 解析后的 GatewayMessage；无法解析返回 undefined
  */
-function parseFeishuMessage(data: Record<string, unknown>): GatewayMessage | undefined {
+export function parseFeishuMessage(data: Record<string, unknown>): GatewayMessage | undefined {
   const sender = data.sender as Record<string, unknown> | undefined
   const message = data.message as Record<string, unknown> | undefined
 

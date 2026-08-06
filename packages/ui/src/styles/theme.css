@@ -48,6 +48,14 @@
   --radius-lg: 0.5rem;
   --radius-xl: 0.625rem;
 
+  /* S3-04: 控件尺寸 token（DESIGN.md components.height/padding 映射） */
+  --control-height-small: 24px;
+  --control-height-normal: 28px;
+  --control-height-large: 32px;
+  --control-padding-x-small: 8px;
+  --control-padding-x-normal: 12px;
+  --control-padding-x-large: 16px;
+
   --shadow-xs:
     0 1px 2px -0.5px light-dark(hsl(0 0% 0% / 0.04), hsl(0 0% 0% / 0.06)),
     0 0.5px 1.5px 0 light-dark(hsl(0 0% 0% / 0.025), hsl(0 0% 0% / 0.08)),

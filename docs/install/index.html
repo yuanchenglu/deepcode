@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DeepCode - 安装</title>
+<style>
+:root { --bg:#0d1117; --fg:#e6edf3; --accent:#58a6ff; --border:#30363d; --code:#161b22; }
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--fg); font-family:-apple-system,system-ui,sans-serif; line-height:1.6; padding:2rem 1rem; }
+.container { max-width:720px; margin:0 auto; }
+h1 { font-size:1.8rem; margin-bottom:0.5rem; }
+.tag { display:inline-block; background:var(--accent); color:#000; font-size:0.75rem; padding:2px 8px; border-radius:4px; margin-bottom:1.5rem; }
+h2 { font-size:1.2rem; margin:2rem 0 0.5rem; border-bottom:1px solid var(--border); padding-bottom:0.3rem; }
+code { background:var(--code); padding:2px 6px; border-radius:3px; font-size:0.9em; }
+pre { background:var(--code); border:1px solid var(--border); border-radius:6px; padding:1rem; overflow-x:auto; margin:0.5rem 0; }
+pre code { background:none; padding:0; }
+.copy-btn { background:var(--border); color:var(--fg); border:none; padding:4px 12px; border-radius:4px; cursor:pointer; font-size:0.8rem; float:right; }
+.copy-btn:hover { background:var(--accent); color:#000; }
+.note { color:#8b949e; font-size:0.9rem; margin:0.5rem 0; }
+a { color:var(--accent); }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>DeepCode</h1>
+<span class="tag">Alpha</span>
+
+<h2 id="install">安装</h2>
+<p class="note">支持 macOS (arm64/x64) 和 Linux (arm64/x64)。</p>
+
+<div>
+  <button class="copy-btn" onclick="copyCode('cmd')">复制</button>
+  <pre><code id="cmd">curl -fsSL https://github.com/yuanchenglu/deepcode/releases/latest/download/install.sh | bash</code></pre>
+</div>
+
+<p class="note">安装后重新打开终端，或运行 <code>source ~/.zshrc</code>（macOS）/ <code>source ~/.profile</code>（Linux）。</p>
+
+<h2 id="configure">配置 API Key</h2>
+<pre><code>export DEEPSEEK_API_KEY=sk-your-key-here</code></pre>
+<p class="note">将此行加入 <code>~/.zshrc</code> 或 <code>~/.bashrc</code> 持久化。</p>
+
+<h2 id="first-task">首个任务</h2>
+<pre><code>deepcode</code></pre>
+<p>启动后进入交互式终端。尝试：</p>
+<pre><code>帮我读取当前目录的 package.json 并解释项目结构</code></pre>
+
+<h2 id="upgrade">升级</h2>
+<pre><code>deepcode upgrade</code></pre>
+
+<h2 id="uninstall">卸载</h2>
+<pre><code>deepcode uninstall</code></pre>
+<p class="note">卸载只删除 <code>~/.deepcode/</code>，不影响 OpenCode 或其他工具。</p>
+
+<h2 id="coexistence">与 OpenCode 共存</h2>
+<p>DeepCode 与 OpenCode 完全隔离：</p>
+<ul style="padding-left:1.5rem; margin:0.5rem 0;">
+  <li>DeepCode 使用 <code>~/.deepcode/</code></li>
+  <li>OpenCode 使用 <code>~/.opencode/</code></li>
+  <li>两者可同时安装，互不影响</li>
+</ul>
+
+<h2 id="alpha-limitations">Alpha 已知限制</h2>
+<ul style="padding-left:1.5rem; margin:0.5rem 0;">
+  <li>仅支持 CLI，不含桌面应用</li>
+  <li>Gateway（飞书/微信）为实验性</li>
+  <li>Subagent/Multi-Agent 未正式承诺</li>
+  <li>Windows 为非阻塞实验制品</li>
+</ul>
+
+<h2 id="troubleshooting">故障排查</h2>
+<p>安装失败？手动检查：</p>
+<pre><code># 验证 curl 和 shasum 是否可用
+command -v curl && command -v shasum
+
+# 手动下载安装器
+curl -fsSL https://github.com/yuanchenglu/deepcode/releases/latest/download/install.sh -o /tmp/deepcode-install.sh
+sh /tmp/deepcode-install.sh</code></pre>
+
+<p style="margin-top:2rem; color:#8b949e; font-size:0.85rem;">
+  <a href="https://github.com/yuanchenglu/deepcode">GitHub</a> ·
+  <a href="https://github.com/yuanchenglu/deepcode/issues">报告问题</a> ·
+  MIT License
+</p>
+</div>
+<script>
+function copyCode(id){const t=document.getElementById(id);navigator.clipboard.writeText(t.textContent)}
+</script>
+</body>
+</html>

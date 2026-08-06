@@ -9,6 +9,9 @@ export * from "./errors"
 
 export { AgentRuntime, runMessageLoop } from "./runtime"
 export type { MessageLoopInput, MessageLoopResult } from "./runtime"
+export { deepagentPlugin, roleToAgent } from "./host-plugin"
+export { inheritPermissions, validateWorkspace, detectWriteConflicts } from "./delegation"
+export type { DelegationPermission, SubTask, ConflictDetection } from "./delegation"
 
 export {
   ToolRegistry,

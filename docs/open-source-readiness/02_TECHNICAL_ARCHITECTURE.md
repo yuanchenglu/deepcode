@@ -1,20 +1,29 @@
 # DeepCode 技术架构
 
-> 版本：2.2
-> 状态：Phase 0 勘误后基线
+> 版本：3.0
+> 状态：分阶段目标技术架构；v0.1 发行隔离优先
 > 详细版本：[10_V0.1_TECHNICAL_ARCHITECTURE.md](./10_V0.1_TECHNICAL_ARCHITECTURE.md)
 > Runtime 勘误：[14_PHASE0_ERRATA_AGENT_RUNTIME.md](./14_PHASE0_ERRATA_AGENT_RUNTIME.md)
 
+## 更新记录（Update Log）
+
+| 时间 | 更新内容 | 来源 |
+|---|---|---|
+| 2026-07-27 | 新增发行身份/共存边界；Plugin/Gateway Contract 改为 v0.2/v0.3 目标 | 开源准备复核与用户确认 |
+
 ## 1. 核心原则
 
-1. Host 对真实副作用、权限、工作区和正式证据保持治理权。
-2. oh-my-deepagent 可拥有 Role、Subagent 和 Multi-Agent Orchestration Loop。
-3. “存在独立 Runtime 类”不等于“存在第二套生产 Runtime”。
-4. 先做调用图和上游插件契约审计，再做迁移或删除。
-5. Enforcement fail-closed，Advisory 必须可观察。
-6. Provider、Tool、Reasoning 和 Gateway 必须验证 Applied Behavior。
+1. v0.1 用户可见和持久化边界必须使用 DeepCode 独立命名空间，不得默认读取 OpenCode 状态。
+2. Host 对真实副作用、权限、工作区和正式证据保持治理权。
+3. v0.2 oh-my-deepagent 可拥有 Role、Subagent 和 Multi-Agent Orchestration Loop。
+4. “存在独立 Runtime 类”不等于“存在第二套生产 Runtime”。
+5. 先做调用图和上游插件契约审计，再做迁移或删除。
+6. Enforcement fail-closed，Advisory 必须可观察。
+7. Provider、Tool、Reasoning 和 Gateway 必须验证 Applied Behavior。
 
-## 2. 技术边界
+## 2. 目标技术边界
+
+下图是 v0.1~v0.3 目标拓扑，不代表 Plugin/Gateway 已进入当前生产链：
 
 ```text
 CLI/TUI/Gateway
@@ -74,11 +83,19 @@ Role/Skill Policy
 
 在 Contract 和调用方审计前，不预设删除。
 
-## 6. Gateway
+## 6. Gateway（v0.3）
 
 Gateway 负责平台 Auth、Identity、Workspace/Session Mapping、Queue 和 Delivery。Gateway 进入 Host/Plugin 产品链路，但不能复制或绕过 Permission 和 Workspace 语义。
 
-## 7. Phase 1 技术交付
+## 7. 分阶段技术交付
+
+### v0.1
+
+- CLI/help、配置、数据、数据库、环境变量和 install/upgrade/uninstall 独立命名空间；
+- DeepSeek Provider/Permission 最小任务链；
+- Release、CI 和 OpenCode/Oh-my-OpenAgent 共存测试。
+
+### v0.2/v0.3
 
 - 原始 OpenCode/oh-my-OpenAgent 插件契约报告。
 - 当前生产入口调用图。

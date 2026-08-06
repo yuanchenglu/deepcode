@@ -4,6 +4,7 @@
   "description": "DeepAgent: a self-contained Agent runtime with tools, skills, memory, planning, and roles.",
   "type": "module",
   "private": true,
+  "license": "MIT",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {
@@ -22,5 +23,9 @@
   },
   "devDependencies": {
     "@types/bun": "1.3.13"
+  },
+  "dependencies": {
+    "@opencode-ai/plugin": "workspace:*",
+    "effect": "catalog:"
   }
 }

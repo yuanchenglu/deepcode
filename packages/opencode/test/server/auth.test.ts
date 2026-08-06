@@ -4,13 +4,13 @@ import { Flag } from "@opencode-ai/core/flag/flag"
 import { ServerAuth } from "../../src/server/auth"
 
 const original = {
-  OPENCODE_SERVER_PASSWORD: Flag.OPENCODE_SERVER_PASSWORD,
-  OPENCODE_SERVER_USERNAME: Flag.OPENCODE_SERVER_USERNAME,
+  DEEPCODE_SERVER_PASSWORD: Flag.OPENCODE_SERVER_PASSWORD,
+  DEEPCODE_SERVER_USERNAME: Flag.OPENCODE_SERVER_USERNAME,
 }
 
 afterEach(() => {
-  Flag.OPENCODE_SERVER_PASSWORD = original.OPENCODE_SERVER_PASSWORD
-  Flag.OPENCODE_SERVER_USERNAME = original.OPENCODE_SERVER_USERNAME
+  Flag.OPENCODE_SERVER_PASSWORD = original.DEEPCODE_SERVER_PASSWORD
+  Flag.OPENCODE_SERVER_USERNAME = original.DEEPCODE_SERVER_USERNAME
 })
 
 describe("ServerAuth", () => {
@@ -22,12 +22,12 @@ describe("ServerAuth", () => {
     expect(ServerAuth.headers()).toBeUndefined()
   })
 
-  test("defaults to the opencode username", () => {
+  test("defaults to the deepcode username", () => {
     Flag.OPENCODE_SERVER_PASSWORD = "secret"
     Flag.OPENCODE_SERVER_USERNAME = undefined
 
     expect(ServerAuth.headers()).toEqual({
-      Authorization: `Basic ${Buffer.from("opencode:secret").toString("base64")}`,
+      Authorization: `Basic ${Buffer.from("deepcode:secret").toString("base64")}`,
     })
   })
 
@@ -54,6 +54,6 @@ describe("ServerAuth", () => {
 
     expect(ServerAuth.required(config)).toBe(true)
     expect(ServerAuth.authorized({ username: "alice", password: Redacted.make("secret") }, config)).toBe(true)
-    expect(ServerAuth.authorized({ username: "opencode", password: Redacted.make("secret") }, config)).toBe(false)
+    expect(ServerAuth.authorized({ username: "deepcode", password: Redacted.make("secret") }, config)).toBe(false)
   })
 })

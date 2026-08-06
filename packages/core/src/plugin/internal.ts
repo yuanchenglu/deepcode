@@ -9,6 +9,7 @@ import { Catalog } from "../catalog"
 import { CommandV2 } from "../command"
 import { Config } from "../config"
 import { ConfigAgentPlugin } from "../config/plugin/agent"
+import { deepagentPlugin } from "@deepcode/oh-my-deepagent"
 import { ConfigCommandPlugin } from "../config/plugin/command"
 import { ConfigExternalPlugin } from "../config/plugin/external"
 import { ConfigProviderPlugin } from "../config/plugin/provider"
@@ -113,6 +114,7 @@ const layer = Layer.effectDiscard(
         yield* add(SkillPlugin.Plugin)
         yield* add(ModelsDevPlugin)
         yield* add(ConfigAgentPlugin.Plugin)
+        yield* add(deepagentPlugin)
         yield* add(ConfigCommandPlugin.Plugin)
         yield* add(ConfigSkillPlugin.Plugin)
         for (const item of ProviderPlugins) yield* add(item)

@@ -14,6 +14,7 @@ import {
   builder,
   knowledge,
   planner,
+  reviewer,
   system,
   coordinator,
   search,
@@ -27,13 +28,14 @@ import {
 /** 遗留角色（允许含 "Agent"） */
 const legacyRoleIds = new Set(["coding", "codingMini", "builder", "knowledge", "planner", "system"])
 
-/** 所有 13 个角色 */
+/** 所有 14 个角色 */
 const allRoles = [
   { key: "coding", role: coding },
   { key: "codingMini", role: codingMini },
   { key: "builder", role: builder },
   { key: "knowledge", role: knowledge },
   { key: "planner", role: planner },
+  { key: "reviewer", role: reviewer },
   { key: "system", role: system },
   { key: "coordinator", role: coordinator },
   { key: "search", role: search },
@@ -45,8 +47,8 @@ const allRoles = [
 ]
 
 describe("角色名回归测试", () => {
-  test("allRoles 包含 13 个角色", () => {
-    expect(allRoles).toHaveLength(13)
+  test("allRoles 包含 14 个角色", () => {
+    expect(allRoles).toHaveLength(14)
   })
 
   test("每个角色 id 使用合法短横线命名法", () => {
@@ -69,13 +71,13 @@ describe("角色名回归测试", () => {
     }
   })
 
-  test("defaultRoles 包含全部 13 个", () => {
+  test("defaultRoles 包含全部 14 个", () => {
     const keys = Object.keys(defaultRoles)
-    expect(keys).toHaveLength(13)
+    expect(keys).toHaveLength(14)
     expect(keys.sort()).toEqual(
       ["artistry", "builder", "coding", "codingMini", "coordinator",
        "knowledge", "metis", "momus", "multimodal", "oracle",
-       "planner", "search", "system"].sort(),
+       "planner", "reviewer", "search", "system"].sort(),
     )
   })
 

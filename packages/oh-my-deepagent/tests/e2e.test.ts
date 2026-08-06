@@ -148,12 +148,12 @@ describe("E2E-4: 会话记忆持久化（重启 MemoryStore 后历史仍在）",
 })
 
 describe("E2E-5: 默认角色全部可注册，角色命名为易懂英文", () => {
-  test("createDefaultRoleRegistry 注册 13 个角色，命名符合验收点 6", () => {
+  test("createDefaultRoleRegistry 注册 14 个角色，命名符合验收点 6", () => {
     const reg = createDefaultRoleRegistry()
     expect(reg.list().map((r) => r.id).sort()).toEqual(
       ["artistry", "builder-agent", "coding-agent", "coding-agent-mini", "coordinator",
        "knowledge-agent", "metis", "momus", "multimodal", "oracle",
-       "planner-agent", "search", "system-agent"].sort(),
+       "planner-agent", "reviewer", "search", "system-agent"].sort(),
     )
     // 所有默认角色都能构造 AgentRuntime（不抛错）
     for (const role of Object.values(defaultRoles)) {

@@ -17,6 +17,7 @@ import { InstanceRef } from "@/effect/instance-ref"
 import { InstallationVersion } from "@opencode-ai/core/installation/version"
 import path from "path"
 import { Global } from "@opencode-ai/core/global"
+import { Product } from "@opencode-ai/core/product"
 import { modify, applyEdits } from "jsonc-parser"
 import { Filesystem } from "@/util/filesystem"
 import { Effect } from "effect"
@@ -119,7 +120,7 @@ export const McpListCommand = effectCmd({
 
     if (servers.length === 0) {
       prompts.log.warn("No MCP servers configured")
-      prompts.outro("Add servers with: opencode mcp add")
+      prompts.outro("Add servers with: deepcode mcp add")
       return
     }
 
@@ -187,7 +188,7 @@ export const McpAuthCommand = effectCmd({
 
     if (servers.length === 0) {
       prompts.log.warn("No OAuth-capable MCP servers configured")
-      prompts.log.info("Remote MCP servers support OAuth by default. Add a remote server in opencode.json:")
+      prompts.log.info("Remote MCP servers support OAuth by default. Add a remote server in deepcode.json:")
       prompts.log.info(`
   "mcp": {
     "my-server": {
@@ -392,21 +393,20 @@ export const McpLogoutCommand = effectCmd({
 })
 
 async function resolveConfigPath(baseDir: string, global = false) {
-  // Check for existing config files (prefer .jsonc over .json, check .opencode/ subdirectory too)
-  const candidates = [path.join(baseDir, "opencode.json"), path.join(baseDir, "opencode.jsonc")]
+  // Prefer JSONC, then JSON, and never discover OpenCode configuration.
+  const files = [...Product.config.files].toReversed()
+  const candidates = files.map((file) => path.join(baseDir, file))
 
   if (!global) {
-    candidates.push(path.join(baseDir, ".opencode", "opencode.json"), path.join(baseDir, ".opencode", "opencode.jsonc"))
+    candidates.push(...files.map((file) => path.join(baseDir, Product.config.directory, file)))
   }
 
   for (const candidate of candidates) {
-    if (await Filesystem.exists(candidate)) {
-      return candidate
-    }
+    if (await Filesystem.exists(candidate)) return candidate
   }
 
-  // Default to opencode.json if none exist
-  return candidates[0]
+  // New configuration is written to the canonical project DeepCode file.
+  return path.join(baseDir, Product.config.files[0])
 }
 
 async function addMcpToConfig(name: string, mcpConfig: ConfigMCPV1.Info, configPath: string) {

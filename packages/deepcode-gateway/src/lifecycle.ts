@@ -8,13 +8,13 @@
 
 import { Effect, Queue, Scope } from "effect"
 import type { PlatformAdapter } from "./adapter"
-import type { GatewayMessage } from "./message"
+import type { GatewayMessage, PlatformType } from "./message"
 import { Router } from "./router"
 import { startServer, stopServer } from "./server"
 import { startMessageConsumer } from "./session-bridge"
 import type { GatewayError } from "./error"
 
-/** 已注册的平台适配器 */
+/** 已注册的平台适配器（key 为平台名，与 PlatformType 对齐） */
 const adapters = new Map<string, PlatformAdapter>()
 /** 全局消息队列 */
 let mq: Queue.Queue<GatewayMessage> | null = null
@@ -38,8 +38,9 @@ export function registerAdapter(adapter: PlatformAdapter): void {
  */
 export function startGateway(port: number = 3099): Effect.Effect<void, GatewayError, Scope.Scope> {
   return Effect.gen(function* () {
-    // 1. 创建消息队列
-    mq = yield* Queue.unbounded<GatewayMessage>()
+    // 1. 创建有界消息队列（背压保护，防内存无界增长）
+    // 容量 1024：超过时 offer 阻塞，由消费循环自然形成背压
+    mq = yield* Queue.bounded<GatewayMessage>(1024)
 
     // 2. 初始化路由，为每个适配器注册路径
     const router = new Router()
@@ -55,16 +56,18 @@ export function startGateway(port: number = 3099): Effect.Effect<void, GatewayEr
       yield* a.start()
     }
 
-    // 4. 启动 HTTP Server
-    yield* startServer(port, router)
+    // 4. 启动 HTTP Server（传入 adapters，使平台签名校验可达）
+    yield* startServer(port, router, adapters)
 
     // 5. 启动消息消费循环（后台 Fiber，需要 Scope）
-    const replyAdapter = adapters.values().next().value
-    if (replyAdapter && mq) {
+    // 回发路由：消息带 sourceAdapter，消费循环按来源路由回发，
+    // 不再由"第一个注册的 Adapter"抢回复。
+    const allAdapters = adapters
+    if (allAdapters.size > 0 && mq) {
       const workdir = process.cwd()
       // forkScoped: 在当前 Scope 下启动后台 Fiber，Scope 关闭时自动终止
       yield* Effect.forkScoped(
-        startMessageConsumer(mq, replyAdapter, workdir).pipe(
+        startMessageConsumer(mq, workdir, allAdapters).pipe(
           // ignore: 静默吞掉所有错误，避免后台 Fiber 因未捕获异常而崩溃
           Effect.ignore,
         ),

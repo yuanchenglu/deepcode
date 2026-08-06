@@ -11,6 +11,11 @@ type Input = {
   readonly agent: string
   readonly model: ModelV2.Ref
   readonly snapshot?: string
+  readonly route?: {
+    readonly tier: "flash" | "pro"
+    readonly reason: string
+    readonly riskLevel: "low" | "medium" | "high"
+  }
 }
 
 const safe = (value: number | undefined) => Math.max(0, Number.isFinite(value) ? (value ?? 0) : 0)
@@ -80,6 +85,7 @@ export const createLLMEventPublisher = (events: EventV2.Interface, input: Input)
       assistantMessageID,
       timestamp: yield* timestamp,
       snapshot: input.snapshot,
+      ...(input.route === undefined ? {} : { route: input.route }),
     })
     return assistantMessageID
   })

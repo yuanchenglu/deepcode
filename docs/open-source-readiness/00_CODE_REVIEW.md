@@ -3,22 +3,26 @@
 > 审查基线：`master@ff79c93cc8c865349a74e6844d4881be99f5ce65`
 > 文档分支：`develop`
 > 审查日期：2026-07-27
-> 状态：静态审查；Runtime 架构结论已勘误
+> 状态：静态审查 + 当前工作区测试/线上发行链复核；Runtime 架构结论已勘误
 > 勘误：[14_PHASE0_ERRATA_AGENT_RUNTIME.md](./14_PHASE0_ERRATA_AGENT_RUNTIME.md)
+
+## 更新记录（Update Log）
+
+| 时间 | 更新内容 | 来源 |
+|---|---|---|
+| 2026-07-27 | 新增无效官网安装、OpenCode 共存和上游发布配置 P0；撤销无量表评分；调整 CLI Alpha 审计顺序 | 开源准备复核 |
 
 ## 1. 执行结论
 
-DeepCode 当前处于研究型 Alpha / 集成验证阶段。核心问题仍包括安全、Provider 协议、Routing Applied、Permission、Gateway 和测试发布闭环。
+DeepCode 当前处于研究型 Alpha / 集成验证阶段。核心问题包括无效公开安装、OpenCode 共存隔离、发布流水线、安全、Provider 协议、Routing Applied 和 Permission。Gateway 问题继续成立，但不再阻塞 CLI-first v0.1 Alpha，前提是其默认关闭且不进入 Alpha 暴露面。
 
 此前报告将 `oh-my-deepagent` 中存在 AgentRuntime、Message Loop、ToolRunner、MemoryStore、Provider 和 Transport，描述为“第二套生产 Runtime”或“必然语义漂移”。该判断证据不足，现修正为：
 
 > **存在一组可独立组合的 Runtime 实现，但其生产调用关系、插件职责和状态权威性尚未完成审计。**
 
-## 2. 评分
+## 2. 评分状态
 
-当前静态评分：**4.5/10**。
-
-该分数不因 Runtime 勘误而自动提高，因为 P0/P1 安全、协议和测试问题仍然存在。
+此前 `4.5/10` 没有公开量表、权重和复现方法，现撤销。后续只使用逐项状态和 Go/No-Go 门禁，不使用不可复核的综合分数。
 
 ## 3. P0 Findings
 
@@ -70,6 +74,24 @@ DeepCode 当前处于研究型 Alpha / 集成验证阶段。核心问题仍包�
 
 要求：统一根命令和 Required CI。
 
+### P0-09 官网安装指向第三方 npm 包
+
+风险：官网和根 README 的 `npm install -g deepcode` 当前不会安装本项目制品，用户可能执行无关第三方代码。
+
+要求：在本项目 Release 通过安装 Smoke 前移除公开命令；Alpha 使用本项目 GitHub Release 和 SHA-256 校验。
+
+### P0-10 OpenCode/Oh-my-OpenAgent 状态冲突
+
+风险：DeepCode 复用 `opencode` 配置、数据、数据库、环境变量、插件发现和卸载目标，可能读取、修改或删除用户现有 OpenCode/Oh-my-OpenAgent 状态。
+
+要求：实现 `deepcode` 独立命名空间，默认不读取 `.opencode`/`OPENCODE_*`，并通过共存安装、运行和卸载测试。
+
+### P0-11 发布脚本仍指向上游 OpenCode
+
+风险：wrapper、平台包、postinstall、GitHub Actions、Docker、AUR、Homebrew 和更新源名称不一致或仍指向 `anomalyco/opencode`，当前 Commit 无法形成可信 DeepCode Release。
+
+要求：先建立最小 GitHub Release 流水线；npm、AUR、Homebrew 和 Desktop 分发在名称及所有权确认后逐步启用。
+
 ## 4. P1 Findings
 
 ### P1-01 Scope/Workspace Fail-open
@@ -109,11 +131,10 @@ Role/Skill 白名单存在定义，但生产 Tool 暴露和 Permission 交集缺
 - Host/Plugin 状态权威性；
 - 生产、兼容、测试或过渡用途。
 
-正确处理：Phase 1 生成调用图并分类，不预设删除。
+正确处理：v0.2 Agent 集成前生成调用图并分类，不预设删除。
 
 ## 5. P2 Findings
 
-- README 安装主张与 Package 状态可能不一致。
 - 根测试命令和 Turbo 覆盖不完整。
 - 核心路径存在同步 I/O 和无界状态风险。
 - Fork 和依赖维护成本高。
@@ -138,16 +159,16 @@ DeepCode/OpenCode Host
 
 ## 7. 下一步审计顺序
 
-1. 原始 OpenCode/oh-my-OpenAgent 插件契约。
-2. 当前 CLI/TUI/Gateway 生产调用图。
-3. AgentRuntime/runMessageLoop/ToolRunner/MemoryStore/Provider/Transport 调用方。
-4. State Authority Matrix。
-5. Tool/Permission Path Matrix。
-6. Keep/Adapt/Bridge/Replace/Remove 决策。
-7. 再进入代码整改。
+1. 公开安装信息止损。
+2. 发行身份和 OpenCode/Oh-my-OpenAgent 共存隔离。
+3. Provider/Permission 最小任务链。
+4. 默认分支、Required CI 和 GitHub Release。
+5. Parallels macOS 共存验收和官网 Alpha。
+6. v0.2 前再完成原始插件契约、生产调用图、State Authority、Tool/Permission 和迁移分类。
+7. v0.3 前完成 Gateway 调用图和安全整改。
 
 ## 8. 发布判断
 
 当前：**NO-GO**。
 
-原因仍是 P0 安全、Provider Contract、Routing、Permission、Gateway 和测试发布闭环，而不是“插件中存在第二个 Loop”本身。
+原因是官网安装、发行身份、OpenCode 共存、发布流水线、Provider Contract、Routing、Permission 和测试闭环未完成，而不是“插件中存在第二个 Loop”本身。Gateway 若不进入 v0.1 Alpha 默认制品，可作为后续版本 P0 独立处理。

@@ -6,7 +6,12 @@ import type { RoleDefinition } from "../types"
 
 /** 创建角色定义的便捷函数。 */
 export function defineRole(def: RoleDefinition): RoleDefinition {
-  return { ...def, tools: [...def.tools], skills: [...def.skills] }
+  return {
+    ...def,
+    tools: [...def.tools],
+    skills: [...def.skills],
+    ...(def.permissions === undefined ? {} : { permissions: [...def.permissions] }),
+  }
 }
 
 /** 把角色系统提示词中的 {role} 占位符替换为 displayName。 */

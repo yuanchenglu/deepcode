@@ -2,8 +2,14 @@
 
 > 日期：2026-07-27
 > 分支：`develop`
-> 状态：立即生效
+> 状态：架构原则继续生效；旧 Phase 1 编号已由迭代计划 v3.0 重新编排
 > 影响范围：Phase 0 中关于“唯一生产 Runtime”“第二套生产 Agent Loop”“oh-my-deepagent 独立 Runtime”的判断
+
+## 更新记录（Update Log）
+
+| 时间 | 更新内容 | 来源 |
+|---|---|---|
+| 2026-07-27 | 保留 Runtime 勘误结论；原 Phase 1 审计后移为 v0.2 Agent 审计，避免与新版发行隔离 Phase 1 重名 | 开源准备复核与用户确认 |
 
 ## 1. 勘误结论
 
@@ -96,7 +102,7 @@ oh-my-deepagent 可以负责：
 
 ## 5. 撤销的预设删除结论
 
-在 Phase 1 审计完成前，不再预设删除：
+在 v0.2 Agent 审计完成前，不再预设删除：
 
 - `AgentRuntime`；
 - `runMessageLoop`；
@@ -117,9 +123,9 @@ oh-my-deepagent 可以负责：
 + 删除不会损失插件能力
 ```
 
-## 6. Phase 1 调整
+## 6. v0.2 Agent 审计调整
 
-Phase 1 首要任务变更为：
+原 Phase 1 的 Runtime 审计任务后移至 v0.2，内容保持为：
 
 1. 还原 OpenCode 与原始 oh-my-OpenAgent 的宿主—插件契约。
 2. 生成当前 DeepCode 与 oh-my-deepagent 的真实调用图。

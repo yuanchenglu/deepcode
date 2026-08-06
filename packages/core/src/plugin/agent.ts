@@ -44,7 +44,6 @@ const PROMPT_TITLE = `You are a title generator. You output ONLY a thread title.
 
 <task>
 Generate a brief title that would help the user find this conversation later.
-
 Follow all rules in <rules>
 Use the <examples> so you know what a good title looks like.
 Your output must be:
@@ -143,7 +142,7 @@ export const Plugin = define({
             { action: "plan_exit", resource: "*", effect: "allow" },
             { action: "external_directory", resource: path.join(Global.Path.data, "plans", "*"), effect: "allow" },
             { action: "edit", resource: "*", effect: "deny" },
-            { action: "edit", resource: path.join(".opencode", "plans", "*.md"), effect: "allow" },
+            { action: "edit", resource: path.join(".deepcode", "plans", "*.md"), effect: "allow" },
             {
               action: "edit",
               resource: path.relative(worktree, path.join(Global.Path.data, "plans", "*.md")),
@@ -162,7 +161,7 @@ export const Plugin = define({
 
       draft.update(AgentV2.ID.make("explore"), (item) => {
         item.description =
-          'Fast agent specialized for exploring codebases. Use this when you need to quickly find files by patterns (eg. "src/components/**/*.tsx"), search code for keywords (eg. "API endpoints"), or answer questions about the codebase (eg. "how do API endpoints work?"). When calling this agent, specify the desired thoroughness level: "quick" for basic searches, "medium" for moderate exploration, or "very thorough" for comprehensive analysis across multiple locations and naming conventions.'
+          'Fast agent specialized for exploring codebases using glob, grep, and read operations. Specify "quick", "medium", or "very thorough" when delegating.'
         item.system = PROMPT_EXPLORE
         item.mode = "subagent"
         item.permissions.push(

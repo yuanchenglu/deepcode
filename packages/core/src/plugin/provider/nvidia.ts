@@ -11,9 +11,9 @@ export const NvidiaPlugin = define({
           if (item.provider.api.package !== "@ai-sdk/openai-compatible") continue
           if (item.provider.api.url !== "https://integrate.api.nvidia.com/v1") continue
           evt.provider.update(item.provider.id, (provider) => {
-            provider.request.headers["HTTP-Referer"] = "https://opencode.ai/"
-            provider.request.headers["X-Title"] = "opencode"
-            provider.request.headers["X-BILLING-INVOKE-ORIGIN"] ??= "OpenCode"
+            provider.request.headers["HTTP-Referer"] = "https://github.com/yuanchenglu/deepcode"
+            provider.request.headers["X-Title"] = "deepcode"
+            provider.request.headers["X-BILLING-INVOKE-ORIGIN"] ??= "DeepCode"
           })
         }
       }),

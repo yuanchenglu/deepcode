@@ -19,6 +19,11 @@ export const coding: RoleDefinition = defineRole({
   tools: ["echo", "calculator", "now"],
   skills: [],
   model: undefined,
+  permissions: [
+    { action: "read", resource: "*", effect: "allow" },
+    { action: "edit", resource: "*", effect: "allow" },
+    { action: "bash", resource: "*", effect: "ask" },
+  ],
 })
 
 /** 轻量编码子 Agent，可用于并行子任务。 */

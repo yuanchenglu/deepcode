@@ -147,9 +147,12 @@ const live: Layer.Layer<
         }
 
         const ruleset = Permission.merge(input.agent.permission ?? [], input.permission ?? [])
+        // 安全修复：deny 规则的工具不能进入预批准列表
+        // 原逻辑 `!match || match.action !== "ask"` 会把 deny 当作预批准
+        // 修正：只有显式 allow 的工具才预批准，ask 和 deny 都不预批准
         workflowModel.sessionPreapprovedTools = Object.keys(prepared.tools).filter((name) => {
           const match = ruleset.findLast((rule) => Wildcard.match(name, rule.permission))
-          return !match || match.action !== "ask"
+          return match?.action === "allow"
         })
 
         const approvedToolsForSession = new Set<string>()

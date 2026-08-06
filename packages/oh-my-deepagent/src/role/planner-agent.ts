@@ -17,4 +17,8 @@ export const planner: RoleDefinition = defineRole({
   ].join("\n"),
   tools: ["echo", "plan_reader"],
   skills: [],
+  permissions: [
+    { action: "read", resource: "*", effect: "allow" },
+    { action: "bash", resource: "*", effect: "deny" },
+  ],
 })

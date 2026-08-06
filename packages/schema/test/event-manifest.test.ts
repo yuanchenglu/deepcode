@@ -9,8 +9,8 @@ import { WorkspaceEvent } from "../src/workspace-event"
 
 describe("public event manifest", () => {
   test("owns the complete public event surface", () => {
-    expect(EventManifest.ServerDefinitions.length).toBe(55)
-    expect(EventManifest.Definitions.length).toBe(85)
+    expect(EventManifest.ServerDefinitions.length).toBe(58)
+    expect(EventManifest.Definitions.length).toBe(88)
     expect(SessionV1.Event.Definitions).toEqual([
       SessionV1.Event.Created,
       SessionV1.Event.Updated,
@@ -23,8 +23,8 @@ describe("public event manifest", () => {
       SessionV1.Event.Diff,
       SessionV1.Event.Error,
     ])
-    expect(EventManifest.Latest.size).toBe(85)
-    expect(EventManifest.Durable.size).toBe(32)
+    expect(EventManifest.Latest.size).toBe(88)
+    expect(EventManifest.Durable.size).toBe(35)
   })
 
   test("uses canonical definitions for current public events", () => {
@@ -42,11 +42,10 @@ describe("public event manifest", () => {
     expect(Reference.Event.Definitions).toEqual([Reference.Event.Updated])
     expect(EventManifest.Latest.has("ide.installed")).toBe(false)
     expect(IdeEvent.Definitions).toEqual([IdeEvent.Installed])
-    expect(EventManifest.Definitions.slice(40, 43)).toEqual([
-      SessionV1.Event.PartDelta,
-      SessionV1.Event.Diff,
-      SessionV1.Event.Error,
-    ])
+    // 位置无关断言：三类 v1 消息事件都在清单中（原 slice(40,43) 写死索引随清单增长漂移）
+    expect(EventManifest.Definitions).toContain(SessionV1.Event.PartDelta)
+    expect(EventManifest.Definitions).toContain(SessionV1.Event.Diff)
+    expect(EventManifest.Definitions).toContain(SessionV1.Event.Error)
     expect(EventManifest.Durable.has("session.next.step.ended.1")).toBe(false)
     expect(EventManifest.Durable.get("session.next.step.ended.2")).toBe(SessionEvent.Step.Ended)
   })

@@ -8,6 +8,7 @@ export { coding, codingMini } from "./coding-agent"
 export { builder } from "./builder-agent"
 export { knowledge } from "./knowledge-agent"
 export { planner } from "./planner-agent"
+export { reviewer } from "./reviewer-agent"
 export { system } from "./system-agent"
 export { coordinator } from "./coordinator-agent"
 export { search } from "./search-agent"
@@ -23,6 +24,7 @@ import { coding, codingMini } from "./coding-agent"
 import { builder } from "./builder-agent"
 import { knowledge } from "./knowledge-agent"
 import { planner } from "./planner-agent"
+import { reviewer } from "./reviewer-agent"
 import { system } from "./system-agent"
 import { coordinator } from "./coordinator-agent"
 import { search } from "./search-agent"
@@ -39,6 +41,7 @@ export const defaultRoles: Record<string, RoleDefinition> = {
   builder,
   knowledge,
   planner,
+  reviewer,
   system,
   coordinator,
   search,
