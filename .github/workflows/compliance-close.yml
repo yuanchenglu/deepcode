@@ -40,7 +40,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               path: '.github/TEAM_MEMBERS',
-              ref: 'dev',
+              ref: 'master',
             });
             const teamMembers = new Set(
               Buffer.from(file.content, 'base64')
