@@ -11,7 +11,7 @@ test("pressing mouse down on a tab navigates before mouse up", async ({ page }) 
     ({ server, sessionA, sessionB }) => {
       localStorage.setItem("settings.v3", JSON.stringify({ general: { newLayoutDesigns: true } }))
       localStorage.setItem(
-        "opencode.window.browser.dat:tabs",
+        "deepcode.window.browser.dat:tabs",
         JSON.stringify([
           { type: "session", server, sessionId: sessionA },
           { type: "session", server, sessionId: sessionB },
