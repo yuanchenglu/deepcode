@@ -1,4 +1,4 @@
-import { describe, expect } from "bun:test"
+import { describe, expect, setDefaultTimeout } from "bun:test"
 import { $ } from "bun"
 import fs from "fs/promises"
 import path from "path"
@@ -9,6 +9,9 @@ import { AbsolutePath, RelativePath } from "@opencode-ai/core/schema"
 import { branch, commit, gitRemote } from "./fixture/git"
 import { tmpdir } from "./fixture/tmpdir"
 import { testEffect } from "./lib/effect"
+
+// Git integration tests can exceed bun's 5s default on slow Windows CI runners.
+setDefaultTimeout(20_000)
 
 const it = testEffect(LayerNode.compile(Git.node))
 
